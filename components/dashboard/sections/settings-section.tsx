@@ -1,45 +1,47 @@
 'use client'
 
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useClerk, useUser } from '@clerk/nextjs'
-import { useEffect, useState } from 'react'
-import { Check, Download, Loader2, Save, Send, User, RefreshCw, ExternalLink } from 'lucide-react'
+import { Check, Download, ExternalLink, Loader2, RefreshCw, Save, Send, User } from 'lucide-react'
+import { useEffect } from 'react'
+import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 
+import {
+  getApiErrorMessage,
+  usePreferencesQuery,
+  useSavePreferencesMutation,
+  useTelegramIntegrationQuery,
+} from '@/lib/hooks/use-dashboard-api'
+import {
+  settingsFormSchema,
+  type SettingsFormValues,
+} from '@/lib/validations/dashboard-forms'
 import { SectionCard, cn } from '@/components/dashboard/ui'
-
-type UnitSystem = 'metric' | 'imperial'
-type AiModel = 'gemini-2.5-flash-lite' | 'gemini-2.5-flash'
-type TelegramStatus = 'connected' | 'disconnected' | 'error'
 
 export function SettingsSection() {
   const clerk = useClerk()
   const { isLoaded, user } = useUser()
-  const [units, setUnits] = useState<UnitSystem>('metric')
-  const [aiModel, setAiModel] = useState<AiModel>('gemini-2.5-flash-lite')
-  const [isLoadingPreferences, setIsLoadingPreferences] = useState(true)
-  const [isSavingPreferences, setIsSavingPreferences] = useState(false)
-  const [isRegisteringWebhook, setIsRegisteringWebhook] = useState(false)
-  const [isLoadingTelegram, setIsLoadingTelegram] = useState(true)
-  const [telegramConnection, setTelegramConnection] = useState<{
-    status: TelegramStatus
-    username: string | null
-    connectedAt: string | null
-  }>({
-    status: 'disconnected',
-    username: null,
-    connectedAt: null,
+  const preferencesQuery = usePreferencesQuery()
+  const telegramQuery = useTelegramIntegrationQuery()
+  const savePreferencesMutation = useSavePreferencesMutation()
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm<SettingsFormValues>({
+    resolver: zodResolver(settingsFormSchema),
+    defaultValues: {
+      unitSystem: 'metric',
+      aiModel: 'gemini-2.5-flash-lite',
+      language: 'English',
+    },
   })
-  const [telegramWebhook, setTelegramWebhook] = useState<{
-    configured: boolean
-    registered: boolean
-    expectedUrl: string | null
-    lastErrorMessage: string | null
-  }>({
-    configured: false,
-    registered: false,
-    expectedUrl: null,
-    lastErrorMessage: null,
-  })
+
+  const selectedUnitSystem = useWatch({ control, name: 'unitSystem' })
 
   const primaryEmail =
     user?.primaryEmailAddress?.emailAddress ?? user?.emailAddresses[0]?.emailAddress ?? null
@@ -56,136 +58,37 @@ export function SettingsSection() {
     : null
 
   useEffect(() => {
-    let cancelled = false
-
-    async function loadPreferences() {
-      try {
-        const response = await fetch('/api/settings/preferences', {
-          credentials: 'include',
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to load preferences')
-        }
-
-        const data = (await response.json()) as {
-          preferences?: {
-            unitSystem?: UnitSystem
-            aiModel?: AiModel
-          }
-        }
-
-        if (cancelled) {
-          return
-        }
-
-        setUnits(data.preferences?.unitSystem ?? 'metric')
-        setAiModel(data.preferences?.aiModel ?? 'gemini-2.5-flash-lite')
-      } catch {
-        if (!cancelled) {
-          toast.error('Could not load your Nutrix preferences')
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoadingPreferences(false)
-        }
-      }
+    if (!preferencesQuery.data?.preferences) {
+      return
     }
 
-    void loadPreferences()
+    reset({
+      unitSystem: preferencesQuery.data.preferences.unitSystem,
+      aiModel: preferencesQuery.data.preferences.aiModel,
+      language: 'English',
+    })
+  }, [preferencesQuery.data, reset])
 
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadTelegramStatus() {
-      try {
-        const response = await fetch('/api/integrations/telegram', {
-          credentials: 'include',
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to load Telegram integration')
-        }
-
-        const data = (await response.json()) as {
-          connection?: {
-            status?: TelegramStatus
-            username?: string | null
-            connectedAt?: string | null
-          }
-          webhook?: {
-            configured?: boolean
-            registered?: boolean
-            expectedUrl?: string | null
-            lastErrorMessage?: string | null
-          }
-        }
-
-        if (cancelled) {
-          return
-        }
-
-        setTelegramConnection({
-          status: data.connection?.status ?? 'disconnected',
-          username: data.connection?.username ?? null,
-          connectedAt: data.connection?.connectedAt ?? null,
-        })
-        setTelegramWebhook({
-          configured: Boolean(data.webhook?.configured),
-          registered: Boolean(data.webhook?.registered),
-          expectedUrl: data.webhook?.expectedUrl ?? null,
-          lastErrorMessage: data.webhook?.lastErrorMessage ?? null,
-        })
-      } catch {
-        if (!cancelled) {
-          toast.error('Could not load Telegram integration')
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoadingTelegram(false)
-        }
-      }
-    }
-
-    void loadTelegramStatus()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  async function savePreferences() {
-    setIsSavingPreferences(true)
-
+  async function onSubmit(values: SettingsFormValues) {
     try {
-      const response = await fetch('/api/settings/preferences', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          unitSystem: units,
-          aiModel,
-        }),
+      const response = await savePreferencesMutation.mutateAsync({
+        unitSystem: values.unitSystem,
+        aiModel: values.aiModel,
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to save preferences')
+      if (response.preferences.aiModelPersistencePendingMigration) {
+        toast.warning('Preferences saved, but AI model persistence is waiting on the DB migration')
+        return
       }
 
       toast.success('Preferences saved')
-    } catch {
-      toast.error('Could not save preferences')
-    } finally {
-      setIsSavingPreferences(false)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Could not save preferences'))
     }
   }
+
+  const telegramConnection = telegramQuery.data?.connection
+  const telegramWebhook = telegramQuery.data?.webhook
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -200,19 +103,13 @@ export function SettingsSection() {
           <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-[#0a0a0a]">
             {isLoaded && user?.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={user.imageUrl}
-                alt={displayName}
-                className="h-full w-full object-cover"
-              />
+              <img src={user.imageUrl} alt={displayName} className="h-full w-full object-cover" />
             ) : (
               <User className="h-8 w-8 text-[#888]" />
             )}
           </div>
           <div className="flex-1">
-            <div className="text-[#f5f5f5]">
-              {isLoaded ? displayName : 'Loading account...'}
-            </div>
+            <div className="text-[#f5f5f5]">{isLoaded ? displayName : 'Loading account...'}</div>
             <div className="text-sm text-[#777]">
               {isLoaded ? primaryEmail ?? 'No primary email found' : 'Fetching your Clerk profile'}
             </div>
@@ -239,9 +136,9 @@ export function SettingsSection() {
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
                   <span className="rounded-full bg-[#e4ff00]/10 p-2">
-                    {telegramConnection.status === 'connected' ? (
+                    {telegramConnection?.status === 'connected' ? (
                       <Check className="h-5 w-5 text-[#e4ff00]" />
-                    ) : isLoadingTelegram ? (
+                    ) : telegramQuery.isLoading ? (
                       <Loader2 className="h-5 w-5 animate-spin text-[#e4ff00]" />
                     ) : (
                       <Send className="h-5 w-5 text-[#e4ff00]" />
@@ -249,20 +146,21 @@ export function SettingsSection() {
                   </span>
                   <div>
                     <div className="text-[#f5f5f5]">
-                      {telegramConnection.status === 'connected'
+                      {telegramConnection?.status === 'connected'
                         ? 'Connected to Telegram'
                         : 'Telegram not linked yet'}
                     </div>
                     <div className="text-sm text-[#777]">
-                      {telegramConnection.username
+                      {telegramConnection?.username
                         ? `@${telegramConnection.username}`
                         : 'Connect your Telegram bot chat to log meals from messages.'}
                     </div>
                   </div>
                 </div>
-                {telegramConnection.connectedAt ? (
+                {telegramConnection?.connectedAt ? (
                   <div className="text-xs uppercase tracking-wide text-[#666]">
-                    Connected {new Intl.DateTimeFormat('en-US', {
+                    Connected{' '}
+                    {new Intl.DateTimeFormat('en-US', {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',
@@ -273,12 +171,12 @@ export function SettingsSection() {
               <div
                 className={cn(
                   'rounded-full border px-3 py-1 text-xs uppercase tracking-wide',
-                  telegramConnection.status === 'connected'
+                  telegramConnection?.status === 'connected'
                     ? 'border-[#e4ff00]/30 bg-[#e4ff00]/10 text-[#e4ff00]'
                     : 'border-white/10 bg-[#141414] text-[#888]',
                 )}
               >
-                {telegramConnection.status}
+                {telegramConnection?.status ?? 'disconnected'}
               </div>
             </div>
           </div>
@@ -288,32 +186,30 @@ export function SettingsSection() {
               <div>
                 <div className="text-[#f5f5f5]">Webhook</div>
                 <div className="mt-1 text-sm text-[#777]">
-                  {telegramWebhook.configured
+                  {telegramWebhook?.configured
                     ? telegramWebhook.registered
                       ? 'Telegram is pointed at your Nutrix webhook route.'
                       : 'Register the bot webhook so Telegram can deliver messages to Nutrix.'
                     : 'Set TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_USERNAME, and NEXT_PUBLIC_APP_URL first.'}
                 </div>
-                {telegramWebhook.expectedUrl ? (
+                {telegramWebhook?.expectedUrl ? (
                   <div className="mt-2 break-all text-xs text-[#666]">
                     {telegramWebhook.expectedUrl}
                   </div>
                 ) : null}
-                {telegramWebhook.lastErrorMessage ? (
-                  <div className="mt-2 text-xs text-red-300">
-                    {telegramWebhook.lastErrorMessage}
-                  </div>
+                {telegramWebhook?.lastErrorMessage ? (
+                  <div className="mt-2 text-xs text-red-300">{telegramWebhook.lastErrorMessage}</div>
                 ) : null}
               </div>
               <div
                 className={cn(
                   'rounded-full border px-3 py-1 text-xs uppercase tracking-wide',
-                  telegramWebhook.registered
+                  telegramWebhook?.registered
                     ? 'border-[#e4ff00]/30 bg-[#e4ff00]/10 text-[#e4ff00]'
                     : 'border-white/10 bg-[#141414] text-[#888]',
                 )}
               >
-                {telegramWebhook.registered ? 'registered' : 'not registered'}
+                {telegramWebhook?.registered ? 'registered' : 'not registered'}
               </div>
             </div>
           </div>
@@ -321,7 +217,7 @@ export function SettingsSection() {
           <div className="grid gap-3 md:grid-cols-2">
             <button
               onClick={() => {
-                window.open('/api/integrations/telegram/start', '_blank')
+                window.location.href = '/api/integrations/telegram/start'
               }}
               className="flex items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d]"
             >
@@ -330,18 +226,12 @@ export function SettingsSection() {
             </button>
             <button
               onClick={() => {
-                setIsRegisteringWebhook(true)
                 window.location.href = '/api/integrations/telegram/webhook/register'
               }}
-              disabled={isRegisteringWebhook}
-              className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/50"
             >
-              {isRegisteringWebhook ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="h-4 w-4" />
-              )}
-              {isRegisteringWebhook ? 'Registering...' : 'Register Webhook'}
+              <RefreshCw className="h-4 w-4" />
+              Register Webhook
             </button>
           </div>
         </div>
@@ -349,7 +239,7 @@ export function SettingsSection() {
 
       <SectionCard>
         <h3 className="mb-4 text-lg text-[#f5f5f5]">Preferences</h3>
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-[#f5f5f5]">Units</div>
@@ -359,68 +249,75 @@ export function SettingsSection() {
               {(['metric', 'imperial'] as const).map((unit) => (
                 <button
                   key={unit}
-                  onClick={() => setUnits(unit)}
+                  type="button"
+                  onClick={() => setValue('unitSystem', unit, { shouldDirty: true })}
                   className={cn(
                     'rounded-full border px-4 py-2 text-sm transition-colors',
-                    units === unit
+                    selectedUnitSystem === unit
                       ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
                       : 'border-white/10 bg-[#0a0a0a] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]',
                   )}
-                  disabled={isLoadingPreferences || isSavingPreferences}
+                  disabled={preferencesQuery.isLoading || isSubmitting}
                 >
                   {unit[0].toUpperCase() + unit.slice(1)}
                 </button>
               ))}
             </div>
           </div>
+
           <div className="flex flex-col gap-4 border-t border-white/10 pt-4 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-[#f5f5f5]">AI Model</div>
-              <div className="text-sm text-[#777]">
-                Choose the Gemini model used for AI meal parsing.
-              </div>
+              <div className="text-sm text-[#777]">Choose the Gemini model used for AI meal parsing.</div>
             </div>
             <select
-              value={aiModel}
-              onChange={(event) => setAiModel(event.target.value as AiModel)}
-              disabled={isLoadingPreferences || isSavingPreferences}
+              {...register('aiModel')}
+              disabled={preferencesQuery.isLoading || isSubmitting}
               className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none focus:border-[#e4ff00] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite</option>
               <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
             </select>
           </div>
+
           <div className="flex flex-col gap-4 border-t border-white/10 pt-4 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-[#f5f5f5]">Language</div>
               <div className="text-sm text-[#777]">Interface language</div>
             </div>
-            <select className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none focus:border-[#e4ff00]">
-              <option>English</option>
-              <option>Spanish</option>
-              <option>French</option>
-              <option>German</option>
+            <select
+              {...register('language')}
+              className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none focus:border-[#e4ff00]"
+            >
+              <option value="English">English</option>
             </select>
           </div>
+
+          {errors.aiModel || errors.unitSystem || errors.language ? (
+            <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
+              {errors.aiModel?.message || errors.unitSystem?.message || errors.language?.message}
+            </div>
+          ) : null}
+
           <div className="border-t border-white/10 pt-4">
             <button
-              onClick={() => void savePreferences()}
-              disabled={isLoadingPreferences || isSavingPreferences}
+              type="submit"
+              disabled={preferencesQuery.isLoading || isSubmitting || savePreferencesMutation.isPending}
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSavingPreferences ? (
+              {isSubmitting || savePreferencesMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Save className="h-4 w-4" />
               )}
-              {isLoadingPreferences
+              {preferencesQuery.isLoading
                 ? 'Loading Preferences'
-                : isSavingPreferences
+                : isSubmitting || savePreferencesMutation.isPending
                   ? 'Saving Preferences'
                   : 'Save Preferences'}
             </button>
           </div>
-        </div>
+        </form>
       </SectionCard>
 
       <SectionCard>
@@ -430,7 +327,6 @@ export function SettingsSection() {
             <Download className="h-4 w-4" />
             Export Data (CSV/JSON)
           </button>
-         
         </div>
       </SectionCard>
     </div>
