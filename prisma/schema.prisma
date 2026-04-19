@@ -50,6 +50,11 @@ enum IntegrationStatus {
   error
 }
 
+enum AiMealFeedback {
+  accurate
+  inaccurate
+}
+
 model User {
   id                     String                  @id @default(cuid())
   clerkId                String?                 @unique
@@ -60,10 +65,12 @@ model User {
   hashedPassword         String?
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
+  onBoarded              Boolean                 @default(false)
   foods                  Food[]
   goals                  Goal[]
   integrationConnections IntegrationConnection[]
   mealEntries            MealEntry[]
+  dailyReports           DailyReport[]
   pendingLinks           PendingLink[]
   profile                UserProfile?
 }
@@ -120,16 +127,17 @@ model Food {
 }
 
 model MealEntry {
-  id        String      @id @default(cuid())
-  userId    String
-  loggedAt  DateTime
-  mealType  MealType
-  notes     String?
-  source    EntrySource @default(manual)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  items     MealItem[]
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         String          @id @default(cuid())
+  userId     String
+  loggedAt   DateTime
+  mealType   MealType
+  notes      String?
+  source     EntrySource     @default(manual)
+  aiFeedback AiMealFeedback?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  items      MealItem[]
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, loggedAt])
 }
@@ -183,4 +191,18 @@ model PendingLink {
 
   @@index([userId, provider])
   @@index([provider, expiresAt])
+}
+
+model DailyReport {
+  id         String   @id @default(cuid())
+  userId     String
+  reportDate DateTime
+  rating     Int?
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, reportDate])
+  @@index([userId, reportDate])
 }

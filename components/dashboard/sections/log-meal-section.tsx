@@ -24,6 +24,7 @@ import {
 
 type MealType = 'breakfast' | 'lunch' | 'snack' | 'dinner' | 'other'
 type AiModel = 'gemini-2.5-flash-lite' | 'gemini-2.5-flash'
+type AiFeedback = 'accurate' | 'inaccurate' | null
 
 export function LogMealSection() {
   const [activeTab, setActiveTab] = useState<'search' | 'custom' | 'ai'>('search')
@@ -32,6 +33,7 @@ export function LogMealSection() {
   const [usedModel, setUsedModel] = useState<string | null>(null)
   const [fallbackFrom, setFallbackFrom] = useState<string | null>(null)
   const [aiError, setAiError] = useState<string | null>(null)
+  const [aiFeedback, setAiFeedback] = useState<AiFeedback>(null)
 
   const preferencesQuery = usePreferencesQuery()
   const parseMealMutation = useParseMealMutation()
@@ -48,7 +50,7 @@ export function LogMealSection() {
     resolver: zodResolver(manualMealFormSchema),
     defaultValues: {
       foodName: '',
-      calories: 0,
+      calories: undefined,
       proteinGrams: undefined,
       carbsGrams: undefined,
       fatGrams: undefined,
@@ -69,6 +71,7 @@ export function LogMealSection() {
     setAiError(null)
     setAiResult(null)
     setFallbackFrom(null)
+    setAiFeedback(null)
 
     try {
       const data = await parseMealMutation.mutateAsync({
@@ -96,6 +99,7 @@ export function LogMealSection() {
       await createMealMutation.mutateAsync({
         mealType: aiResult.mealType ?? selectedMealTag,
         source: 'ai',
+        aiFeedback: aiFeedback ?? undefined,
         notes: aiResult.notes ?? aiForm.getValues('text'),
         items: aiResult.items.map((item) => ({
           foodName: item.foodName,
@@ -114,6 +118,7 @@ export function LogMealSection() {
       setAiError(null)
       setFallbackFrom(null)
       setUsedModel(null)
+      setAiFeedback(null)
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Unable to save parsed meal'))
     }
@@ -148,7 +153,7 @@ export function LogMealSection() {
       toast.success('Custom meal saved')
       manualForm.reset({
         foodName: '',
-        calories: 0,
+        calories: undefined,
         proteinGrams: undefined,
         carbsGrams: undefined,
         fatGrams: undefined,
@@ -324,6 +329,9 @@ export function LogMealSection() {
                 <div className="text-xs text-[#777]">
                   Paste a natural sentence like “chicken rice and iced coffee” and let AI structure it into meal items.
                 </div>
+                <div className="mt-2 text-xs text-[#999]">
+                  AI nutrition estimates may be imperfect, so review the parsed calories and macros before saving.
+                </div>
                 <div className="mt-3 inline-flex rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-3 py-1 text-[11px] uppercase tracking-wide text-[#e4ff00]">
                   Using {resolvedPreferredModel === 'gemini-2.5-flash' ? 'Gemini 2.5 Flash' : 'Gemini 2.5 Flash-Lite'}
                 </div>
@@ -403,17 +411,50 @@ export function LogMealSection() {
                         </div>
                         <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-[#888]">
                           <div className="rounded-xl border border-white/10 bg-[#111111] px-3 py-2">
-                            Protein {item.proteinGrams ?? 0}g
+                            Protein {item.proteinGrams}g
                           </div>
                           <div className="rounded-xl border border-white/10 bg-[#111111] px-3 py-2">
-                            Carbs {item.carbsGrams ?? 0}g
+                            Carbs {item.carbsGrams}g
                           </div>
                           <div className="rounded-xl border border-white/10 bg-[#111111] px-3 py-2">
-                            Fat {item.fatGrams ?? 0}g
+                            Fat {item.fatGrams}g
                           </div>
                         </div>
                       </div>
                     ))}
+                  </div>
+
+                  <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4">
+                    <div className="text-sm font-medium text-[#f5f5f5]">Was this estimate accurate?</div>
+                    <div className="mt-1 text-xs text-[#777]">
+                      This helps us understand whether the AI got the calories and macros roughly right.
+                    </div>
+                    <div className="mt-3 flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setAiFeedback('accurate')}
+                        className={cn(
+                          'rounded-full border px-4 py-2 text-sm transition-colors',
+                          aiFeedback === 'accurate'
+                            ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
+                            : 'border-white/10 bg-[#141414] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]',
+                        )}
+                      >
+                        Looks accurate
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAiFeedback('inaccurate')}
+                        className={cn(
+                          'rounded-full border px-4 py-2 text-sm transition-colors',
+                          aiFeedback === 'inaccurate'
+                            ? 'border-red-400 bg-red-500/10 text-red-200'
+                            : 'border-white/10 bg-[#141414] text-[#888] hover:border-red-400/50 hover:text-red-200',
+                        )}
+                      >
+                        Needs work
+                      </button>
+                    </div>
                   </div>
 
                   <button

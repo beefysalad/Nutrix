@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const aiModelSchema = z.enum(['gemini-2.5-flash-lite', 'gemini-2.5-flash'])
+export const aiMealFeedbackSchema = z.enum(['accurate', 'inaccurate'])
 
 export const mealItemInputSchema = z.object({
   foodId: z.string().cuid().optional(),
@@ -17,6 +18,7 @@ export const createMealSchema = z.object({
   loggedAt: z.string().datetime().optional(),
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack', 'other']),
   source: z.enum(['manual', 'search', 'ai', 'telegram']).default('manual'),
+  aiFeedback: aiMealFeedbackSchema.optional(),
   notes: z.string().max(2000).optional(),
   items: z.array(mealItemInputSchema).min(1),
 })
@@ -41,14 +43,18 @@ export const parseMealSchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack', 'other']).optional(),
 })
 
+export const updateMealAiFeedbackSchema = z.object({
+  aiFeedback: aiMealFeedbackSchema.nullable(),
+})
+
 export const parsedMealItemSchema = z.object({
   foodName: z.string().min(1).max(200),
-  quantity: z.number().positive().nullable().optional(),
-  unit: z.string().max(50).nullable().optional(),
+  quantity: z.number().positive().nullable(),
+  unit: z.string().max(50).nullable(),
   calories: z.number().nonnegative(),
-  proteinGrams: z.number().nonnegative().nullable().optional(),
-  carbsGrams: z.number().nonnegative().nullable().optional(),
-  fatGrams: z.number().nonnegative().nullable().optional(),
+  proteinGrams: z.number().nonnegative(),
+  carbsGrams: z.number().nonnegative(),
+  fatGrams: z.number().nonnegative(),
 })
 
 export const parsedMealResultSchema = z.object({

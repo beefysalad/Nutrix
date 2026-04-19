@@ -21,16 +21,16 @@ Return valid JSON with this exact shape:
       "quantity": number | null,
       "unit": string | null,
       "calories": number,
-      "proteinGrams": number | null,
-      "carbsGrams": number | null,
-      "fatGrams": number | null
+      "proteinGrams": number,
+      "carbsGrams": number,
+      "fatGrams": number
     }
   ]
 }
 Rules:
 - Return JSON only. No markdown.
 - Split combo meals into distinct items when helpful.
-- Use best-effort macro estimates when exact values are unknown.
+- Always provide best-effort estimates for calories, protein, carbs, and fat for every item.
 - Prefer whole numbers for calories and up to 1 decimal place for macros.
 - If quantity or unit is unclear, use null.
 - Always return at least one item.
@@ -56,11 +56,11 @@ const geminiResponseSchema = {
           quantity: { type: 'NUMBER', nullable: true },
           unit: { type: 'STRING', nullable: true },
           calories: { type: 'NUMBER' },
-          proteinGrams: { type: 'NUMBER', nullable: true },
-          carbsGrams: { type: 'NUMBER', nullable: true },
-          fatGrams: { type: 'NUMBER', nullable: true },
+          proteinGrams: { type: 'NUMBER' },
+          carbsGrams: { type: 'NUMBER' },
+          fatGrams: { type: 'NUMBER' },
         },
-        required: ['foodName', 'calories'],
+        required: ['foodName', 'quantity', 'unit', 'calories', 'proteinGrams', 'carbsGrams', 'fatGrams'],
       },
     },
   },
@@ -103,9 +103,9 @@ function normalizeParsedMeal(payload: unknown) {
       quantity: item.quantity ?? null,
       unit: item.unit?.trim() || null,
       calories: Math.round(item.calories),
-      proteinGrams: item.proteinGrams ?? null,
-      carbsGrams: item.carbsGrams ?? null,
-      fatGrams: item.fatGrams ?? null,
+      proteinGrams: Number(item.proteinGrams.toFixed(1)),
+      carbsGrams: Number(item.carbsGrams.toFixed(1)),
+      fatGrams: Number(item.fatGrams.toFixed(1)),
     })),
   }
 }

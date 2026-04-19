@@ -1,4 +1,4 @@
-import { EntrySource, MealType } from '@/app/generated/prisma/client'
+import { AiMealFeedback, EntrySource, MealType, Prisma } from '@/app/generated/prisma/client'
 import { requireAppUser } from '@/lib/api/current-app-user'
 import prisma from '@/lib/prisma'
 import { createMealSchema } from '@/lib/validations/nutrition'
@@ -57,13 +57,18 @@ export async function POST(request: Request) {
     )
   }
 
+  const mealData: Prisma.MealEntryUncheckedCreateInput = {
+    userId: user.id,
+    loggedAt: parsed.data.loggedAt ? new Date(parsed.data.loggedAt) : new Date(),
+    mealType: parsed.data.mealType as MealType,
+    source: parsed.data.source as EntrySource,
+    aiFeedback: (parsed.data.aiFeedback as AiMealFeedback | undefined) ?? null,
+    notes: parsed.data.notes,
+  }
+
   const meal = await prisma.mealEntry.create({
     data: {
-      userId: user.id,
-      loggedAt: parsed.data.loggedAt ? new Date(parsed.data.loggedAt) : new Date(),
-      mealType: parsed.data.mealType as MealType,
-      source: parsed.data.source as EntrySource,
-      notes: parsed.data.notes,
+      ...mealData,
       items: {
         create: parsed.data.items.map((item) => ({
           foodId: item.foodId,

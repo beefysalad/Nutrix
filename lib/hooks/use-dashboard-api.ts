@@ -9,6 +9,8 @@ type UnitSystem = 'metric' | 'imperial'
 type AiModel = 'gemini-2.5-flash-lite' | 'gemini-2.5-flash'
 type GoalMode = 'cutting' | 'maintenance' | 'bulking' | 'custom'
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other'
+type EntrySource = 'manual' | 'search' | 'ai' | 'telegram'
+type AiMealFeedback = 'accurate' | 'inaccurate'
 
 export type PreferencesResponse = {
   preferences: {
@@ -69,6 +71,69 @@ export type ParseMealResponse = {
   parsed: ParsedMeal
 }
 
+export type MealItemResponse = {
+  id: string
+  foodNameSnapshot: string
+  quantity: string | number | null
+  unit: string | null
+  calories: number
+  proteinGrams: string | number | null
+  carbsGrams: string | number | null
+  fatGrams: string | number | null
+}
+
+export type MealResponse = {
+  id: string
+  loggedAt: string
+  mealType: MealType
+  notes: string | null
+  source: EntrySource
+  aiFeedback: AiMealFeedback | null
+  items: MealItemResponse[]
+}
+
+export type MealsResponse = {
+  meals: MealResponse[]
+}
+
+export type DashboardSummaryResponse = {
+  date: string
+  goal: {
+    id: string
+    dailyCalories: number | null
+    proteinGrams: number | null
+    carbsGrams: number | null
+    fatGrams: number | null
+    mode: GoalMode
+  } | null
+  totals: {
+    calories: number
+    proteinGrams: number
+    carbsGrams: number
+    fatGrams: number
+    mealCount: number
+  }
+  remainingCalories: number | null
+  meals: MealResponse[]
+}
+
+export type DailyReportResponse = {
+  report: {
+    id: string
+    reportDate: string
+    rating: number | null
+    note: string | null
+  } | null
+  totals: {
+    calories: number
+    proteinGrams: number
+    carbsGrams: number
+    fatGrams: number
+    mealCount: number
+  }
+  meals: MealResponse[]
+}
+
 function getApiErrorMessage(error: unknown, fallback: string) {
   if (error instanceof AxiosError) {
     return (
@@ -126,6 +191,48 @@ export function useGoalsQuery() {
   })
 }
 
+export function useDashboardSummaryQuery() {
+  return useQuery({
+    queryKey: ['dashboard-summary'],
+    queryFn: async () => {
+      const response = await api.get<DashboardSummaryResponse>('/dashboard/summary')
+      return response.data
+    },
+  })
+}
+
+export function useMealsQuery(input?: {
+  limit?: number
+  dateFrom?: string
+  dateTo?: string
+}) {
+  return useQuery({
+    queryKey: ['meals', input?.limit ?? null, input?.dateFrom ?? null, input?.dateTo ?? null],
+    queryFn: async () => {
+      const response = await api.get<MealsResponse>('/meals', {
+        params: {
+          ...(input?.limit ? { limit: input.limit } : {}),
+          ...(input?.dateFrom ? { dateFrom: input.dateFrom } : {}),
+          ...(input?.dateTo ? { dateTo: input.dateTo } : {}),
+        },
+      })
+      return response.data
+    },
+  })
+}
+
+export function useDailyReportQuery(date: string) {
+  return useQuery({
+    queryKey: ['daily-report', date],
+    queryFn: async () => {
+      const response = await api.get<DailyReportResponse>('/reports/daily', {
+        params: { date },
+      })
+      return response.data
+    },
+  })
+}
+
 export function useSaveGoalsMutation() {
   const queryClient = useQueryClient()
 
@@ -156,10 +263,13 @@ export function useParseMealMutation() {
 }
 
 export function useCreateMealMutation() {
+  const queryClient = useQueryClient()
+
   return useMutation({
     mutationFn: async (input: {
       mealType: MealType
       source: 'manual' | 'ai'
+      aiFeedback?: AiMealFeedback
       notes?: string
       items: Array<{
         foodName: string
@@ -173,6 +283,63 @@ export function useCreateMealMutation() {
     }) => {
       const response = await api.post('/meals', input)
       return response.data
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['meals'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] }),
+      ])
+    },
+  })
+}
+
+export function useUpdateMealAiFeedbackMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: {
+      mealId: string
+      aiFeedback: AiMealFeedback | null
+    }) => {
+      const response = await api.patch(`/meals/${input.mealId}/feedback`, {
+        aiFeedback: input.aiFeedback,
+      })
+      return response.data
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['meals'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] }),
+      ])
+    },
+  })
+}
+
+export function useSaveDailyReportMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: {
+      date: string
+      rating: number
+      note?: string
+    }) => {
+      const response = await api.put<DailyReportResponse['report']>(
+        '/reports/daily',
+        {
+          rating: input.rating,
+          note: input.note,
+        },
+        {
+          params: { date: input.date },
+        },
+      )
+      return response.data
+    },
+    onSuccess: async (_data, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: ['daily-report', variables.date],
+      })
     },
   })
 }
