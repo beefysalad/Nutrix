@@ -2,6 +2,7 @@ import type { User as ClerkUser, UserJSON } from '@clerk/nextjs/server'
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { Prisma } from '@/app/generated/prisma/client'
 
+import prisma from '@/lib/prisma'
 import { userRepository } from '@/lib/repositories/user-repository'
 
 type SyncableClerkUser = {
@@ -73,13 +74,23 @@ const mapClerkWebhookUser = (user: UserJSON): SyncableClerkUser | null => {
 export const userService = {
   async upsertClerkUser(input: SyncableClerkUser) {
     try {
-      return await userRepository.upsertByClerkId({
+      const user = await userRepository.upsertByClerkId({
         clerkId: input.clerkId,
         email: input.email,
         name: input.name,
         image: input.imageUrl,
         emailVerified: input.emailVerified,
       })
+
+      await prisma.userProfile.upsert({
+        where: { userId: user.id },
+        update: {},
+        create: {
+          userId: user.id,
+        },
+      })
+
+      return user
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -91,7 +102,7 @@ export const userService = {
           throw error
         }
 
-        return userRepository.linkClerkIdentityByEmail({
+        const user = await userRepository.linkClerkIdentityByEmail({
           userId: existingByEmail.id,
           clerkId: input.clerkId,
           name: input.name,
@@ -100,6 +111,16 @@ export const userService = {
           currentName: existingByEmail.name,
           currentEmailVerified: existingByEmail.emailVerified,
         })
+
+        await prisma.userProfile.upsert({
+          where: { userId: user.id },
+          update: {},
+          create: {
+            userId: user.id,
+          },
+        })
+
+        return user
       }
 
       throw error

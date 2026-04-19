@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
-import { History, Home, Menu, PlusCircle, Settings as SettingsIcon, Target, X } from 'lucide-react'
+import { History, Home, Plus, PlusCircle, Settings as SettingsIcon, Target } from 'lucide-react'
 
 import { navItems } from '@/components/dashboard/data'
 import { DashboardHomeSection } from '@/components/dashboard/sections/dashboard-home-section'
@@ -58,8 +57,6 @@ export function NutrixDashboard({
   dashboardView?: DashboardSubview
   historyView?: HistorySubview
 }) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
   const today = new Intl.DateTimeFormat('en-US', {
     weekday: 'short',
     month: 'short',
@@ -71,26 +68,14 @@ export function NutrixDashboard({
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       <div className="flex min-h-screen flex-col lg:flex-row">
         <aside
-          className={cn(
-            'flex-shrink-0 bg-[#111111] lg:relative lg:block lg:w-64 lg:border-r lg:border-white/10',
-            isMobileMenuOpen ? 'fixed inset-0 z-50 flex flex-col' : 'hidden md:hidden lg:flex lg:flex-col',
-          )}
+          className="hidden flex-shrink-0 bg-[#111111] lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-white/10"
         >
           <div className="flex items-center justify-between border-b border-white/10 px-6 py-6">
             <div>
               <h1 className="font-mono text-2xl font-black uppercase tracking-tighter text-[#f5f5f5]">
                 NUTR<span className="text-[#e4ff00]">IX</span>
               </h1>
-              <p className="mt-2 text-xs uppercase tracking-widest text-[#666]">Nutrition cockpit</p>
             </div>
-            {isMobileMenuOpen ? (
-              <button
-                className="p-2 text-white/50 hover:text-white lg:hidden"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                <X className="h-6 w-6" />
-              </button>
-            ) : null}
           </div>
           <nav className="grid flex-1 content-start gap-1 overflow-x-hidden overflow-y-auto p-4">
             {navItems.map((item) => {
@@ -101,7 +86,6 @@ export function NutrixDashboard({
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
                     'relative flex items-center gap-3 rounded-none border border-transparent px-4 py-3 text-sm transition-colors',
                     isActive
@@ -124,19 +108,18 @@ export function NutrixDashboard({
           <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0a0a0a]/90 px-4 py-4 backdrop-blur md:px-6">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <button
-                  className="-ml-2 p-2 text-white/70 hover:text-white lg:hidden"
-                  onClick={() => setIsMobileMenuOpen(true)}
-                >
-                  <Menu className="h-6 w-6" />
-                </button>
                 <span className="hidden text-sm text-[#777] sm:inline">{today}</span>
+                <div className="sm:hidden">
+                  <h1 className="font-mono text-lg font-black uppercase tracking-tighter text-[#f5f5f5]">
+                    NUTR<span className="text-[#e4ff00]">IX</span>
+                  </h1>
+                </div>
               </div>
 
               <div className="flex items-center gap-4">
                 <Link
                   href="/dashboard/log"
-                  className="flex items-center justify-center rounded-none bg-[#e4ff00] px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-black transition-all hover:bg-[#e4ff00]/90"
+                  className="hidden items-center justify-center rounded-full bg-[#e4ff00] px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-black transition-all hover:bg-[#e4ff00]/90 md:flex"
                 >
                   <span className="mr-2">+</span> Log Meal
                 </Link>
@@ -161,11 +144,74 @@ export function NutrixDashboard({
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-6 md:px-6">
+          <main className="flex-1 px-4 py-6 pb-28 md:px-6 md:pb-6">
             {renderSection(section, { dashboardView, historyView })}
           </main>
         </div>
       </div>
+
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#111111]/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden">
+        <div className="grid grid-cols-5 items-end gap-2">
+          <MobileNavItem
+            href="/dashboard"
+            label="Home"
+            active={section === 'dashboard'}
+            icon={Home}
+          />
+          <MobileNavItem
+            href="/dashboard/history"
+            label="History"
+            active={section === 'history'}
+            icon={History}
+          />
+          <div className="flex justify-center">
+            <Link
+              href="/dashboard/log"
+              aria-label="Log meal"
+              className="flex h-16 w-16 -translate-y-5 items-center justify-center rounded-full border-4 border-[#0a0a0a] bg-[#e4ff00] text-black shadow-[0_10px_30px_rgba(228,255,0,0.28)] transition-transform hover:scale-105"
+            >
+              <Plus className="h-7 w-7" />
+            </Link>
+          </div>
+          <MobileNavItem
+            href="/dashboard/goals"
+            label="Goals"
+            active={section === 'goals'}
+            icon={Target}
+          />
+          <MobileNavItem
+            href="/dashboard/settings"
+            label="Settings"
+            active={section === 'settings'}
+            icon={SettingsIcon}
+          />
+        </div>
+      </nav>
     </div>
+  )
+}
+
+function MobileNavItem({
+  href,
+  label,
+  active,
+  icon: Icon,
+}: {
+  href: string
+  label: string
+  active: boolean
+  icon: React.ComponentType<{ className?: string }>
+}) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'flex flex-col items-center justify-center gap-1 px-2 py-2 text-[11px] transition-colors',
+        active ? 'text-[#e4ff00]' : 'text-[#777]',
+      )}
+    >
+      <Icon className={cn('h-5 w-5', active ? 'text-[#e4ff00]' : 'text-[#999]')} />
+      <span>{label}</span>
+    </Link>
   )
 }

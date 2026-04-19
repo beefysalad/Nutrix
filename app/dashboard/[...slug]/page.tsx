@@ -4,6 +4,7 @@ import type {
   DashboardSubview,
   HistorySubview,
 } from '@/components/dashboard/types'
+import { userService } from '@/lib/services/user-service'
 
 type DashboardSlugPageProps = {
   params: Promise<{ slug: string[] }>
@@ -65,6 +66,7 @@ function resolveHistoryView(slug: string[]): HistorySubview | undefined {
 
 export default async function DashboardSlugPage({ params }: DashboardSlugPageProps) {
   const { slug } = await params
+  await userService.syncCurrentUserToDatabase()
 
   return (
     <NutrixDashboard
