@@ -74,6 +74,15 @@ export const dailyReportFormSchema = z.object({
   note: z.string().trim().max(2000).optional(),
 })
 
+export const onboardingSchema = z.object({
+  gender: z.enum(['male', 'female']),
+  age: z.coerce.number().int().min(13).max(100),
+  weightKg: z.coerce.number().positive().max(500),
+  heightCm: z.coerce.number().positive().max(300),
+  activityLevel: z.enum(['sedentary', 'lightly-active', 'moderately-active', 'very-active', 'extra-active']),
+  goal: z.enum(['lose-weight', 'maintain-weight', 'gain-weight']),
+})
+
 export type SettingsFormValues = z.infer<typeof settingsFormSchema>
 export type AiMealParseFormValues = z.infer<typeof aiMealParseFormSchema>
 export type ManualMealFormValues = z.infer<typeof manualMealFormSchema>
@@ -83,3 +92,5 @@ export type GoalsFormInput = z.input<typeof goalsFormSchema>
 export type TdeeCalculatorValues = z.infer<typeof tdeeCalculatorSchema>
 export type TdeeCalculatorInput = z.input<typeof tdeeCalculatorSchema>
 export type DailyReportFormValues = z.infer<typeof dailyReportFormSchema>
+export type OnboardingFormValues = z.infer<typeof onboardingSchema>
+export type OnboardingFormInput = z.input<typeof onboardingSchema>

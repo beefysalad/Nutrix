@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 
 import api from '@/lib/axios'
+import { type OnboardingFormValues } from '@/lib/validations/dashboard-forms'
 
 type UnitSystem = 'metric' | 'imperial'
 type AiModel = 'gemini-2.5-flash-lite' | 'gemini-2.5-flash'
@@ -48,6 +49,18 @@ export type GoalResponse = {
     fatGrams: number | null
     startsAt: string | null
     endsAt: string | null
+  } | null
+  profile: {
+    gender: 'male' | 'female' | null
+    age: number | null
+    weightKg: number | null
+    heightCm: number | null
+    activityLevel:
+      | 'sedentary'
+      | 'lightly-active'
+      | 'moderately-active'
+      | 'very-active'
+      | null
   } | null
 }
 
@@ -97,6 +110,7 @@ export type MealsResponse = {
 }
 
 export type DashboardSummaryResponse = {
+  onBoarded: boolean
   date: string
   goal: {
     id: string
@@ -117,6 +131,30 @@ export type DashboardSummaryResponse = {
   meals: MealResponse[]
 }
 
+export type DashboardTrendsResponse = {
+  days: 7 | 30 | 90
+  goalCalories: number | null
+  points: Array<{
+    date: string
+    label: string
+    calories: number
+    protein: number
+    carbs: number
+    fat: number
+  }>
+}
+
+export type DashboardInsightsResponse = {
+  hasData: boolean
+  insight: {
+    daysLogged: number
+    mealCount: number
+    mostCommonMealType: string | null
+    averageCalories: number
+    remainingCalories: number | null
+  } | null
+}
+
 export type DailyReportResponse = {
   report: {
     id: string
@@ -133,6 +171,8 @@ export type DailyReportResponse = {
   }
   meals: MealResponse[]
 }
+
+type ExportFormat = 'csv' | 'json'
 
 function getApiErrorMessage(error: unknown, fallback: string) {
   if (error instanceof AxiosError) {
@@ -233,6 +273,28 @@ export function useDailyReportQuery(date: string) {
   })
 }
 
+export function useDashboardTrendsQuery(days: 7 | 30 | 90) {
+  return useQuery({
+    queryKey: ['dashboard-trends', days],
+    queryFn: async () => {
+      const response = await api.get<DashboardTrendsResponse>('/dashboard/trends', {
+        params: { days },
+      })
+      return response.data
+    },
+  })
+}
+
+export function useDashboardInsightsQuery() {
+  return useQuery({
+    queryKey: ['dashboard-insights'],
+    queryFn: async () => {
+      const response = await api.get<DashboardInsightsResponse>('/dashboard/insights')
+      return response.data
+    },
+  })
+}
+
 export function useSaveGoalsMutation() {
   const queryClient = useQueryClient()
 
@@ -288,6 +350,8 @@ export function useCreateMealMutation() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['meals'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-trends'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-insights'] }),
       ])
     },
   })
@@ -310,6 +374,28 @@ export function useUpdateMealAiFeedbackMutation() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['meals'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-trends'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-insights'] }),
+      ])
+    },
+  })
+}
+
+export function useDeleteMealMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (mealId: string) => {
+      const response = await api.delete(`/meals/${mealId}`)
+      return response.data
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['meals'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['daily-report'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-trends'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard-insights'] }),
       ])
     },
   })
@@ -340,6 +426,44 @@ export function useSaveDailyReportMutation() {
       await queryClient.invalidateQueries({
         queryKey: ['daily-report', variables.date],
       })
+    },
+  })
+}
+
+export function useOnboardingMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: OnboardingFormValues) => {
+      const response = await api.post('/user/onboarding', input)
+      return response.data
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
+    },
+  })
+}
+
+export function useExportDataMutation() {
+  return useMutation({
+    mutationFn: async (format: ExportFormat) => {
+      const response = await api.get<Blob>('/export', {
+        params: { format },
+        responseType: 'blob',
+      })
+
+      const contentDisposition = response.headers['content-disposition']
+      const filenameMatch =
+        typeof contentDisposition === 'string'
+          ? /filename="([^"]+)"/.exec(contentDisposition)
+          : null
+
+      return {
+        blob: response.data,
+        filename:
+          filenameMatch?.[1] ??
+          (format === 'csv' ? 'nutrix-meals-export.csv' : 'nutrix-export.json'),
+      }
     },
   })
 }

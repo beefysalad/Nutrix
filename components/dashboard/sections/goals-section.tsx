@@ -117,6 +117,22 @@ export function GoalsSection() {
     })
   }, [goalsQuery.data, reset])
 
+  useEffect(() => {
+    const profile = goalsQuery.data?.profile
+
+    if (!profile) {
+      return
+    }
+
+    tdeeForm.reset({
+      sex: profile.gender ?? 'male',
+      age: profile.age ?? 25,
+      weightKg: profile.weightKg ?? 70,
+      heightCm: profile.heightCm ?? 170,
+      activityLevel: profile.activityLevel ?? 'moderately-active',
+    })
+  }, [goalsQuery.data?.profile, tdeeForm])
+
   async function onSubmit(values: GoalsFormValues) {
     try {
       await saveGoalsMutation.mutateAsync({

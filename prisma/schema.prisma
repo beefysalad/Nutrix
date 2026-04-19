@@ -83,6 +83,8 @@ model UserProfile {
   timezone      String?
   heightCm      Int?
   weightKg      Decimal?   @db.Decimal(6, 2)
+  gender        String?
+  age           Int?
   activityLevel String?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt

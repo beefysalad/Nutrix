@@ -10,12 +10,14 @@ import { GoalsSection } from '@/components/dashboard/sections/goals-section'
 import { HistorySection } from '@/components/dashboard/sections/history-section'
 import { LogMealSection } from '@/components/dashboard/sections/log-meal-section'
 import { SettingsSection } from '@/components/dashboard/sections/settings-section'
-import type {
+import { OnboardingWizard } from '@/components/dashboard/onboarding/onboarding-wizard'
+import {
   DashboardSectionKey,
   DashboardSubview,
   HistorySubview,
 } from '@/components/dashboard/types'
 import { cn } from '@/components/dashboard/ui'
+import { useDashboardSummaryQuery } from '@/lib/hooks/use-dashboard-api'
 
 const iconMap = {
   dashboard: Home,
@@ -57,18 +59,24 @@ export function NutrixDashboard({
   dashboardView?: DashboardSubview
   historyView?: HistorySubview
 }) {
+  const summaryQuery = useDashboardSummaryQuery()
+  const onboarded = summaryQuery.data?.onBoarded ?? true
+
   const today = new Intl.DateTimeFormat('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  }).format(new Date('2026-04-19T09:00:00'))
+  }).format(new Date())
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       <div className="flex min-h-screen flex-col lg:flex-row">
         <aside
-          className="hidden flex-shrink-0 bg-[#111111] lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-white/10"
+          className={cn(
+            'hidden flex-shrink-0 bg-[#111111] lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-white/10',
+            !onboarded && 'lg:hidden',
+          )}
         >
           <div className="flex items-center justify-between border-b border-white/10 px-6 py-6">
             <div>
@@ -105,88 +113,95 @@ export function NutrixDashboard({
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0a0a0a]/90 px-4 py-4 backdrop-blur md:px-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <span className="hidden text-sm text-[#777] sm:inline">{today}</span>
-                <div className="sm:hidden">
-                  <h1 className="font-mono text-lg font-black uppercase tracking-tighter text-[#f5f5f5]">
-                    NUTR<span className="text-[#e4ff00]">IX</span>
-                  </h1>
+          {!onboarded ? null : (
+            <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0a0a0a]/90 px-4 py-4 backdrop-blur md:px-6">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="hidden text-sm text-[#777] sm:inline">{today}</span>
+                  <div className="sm:hidden">
+                    <h1 className="font-mono text-lg font-black uppercase tracking-tighter text-[#f5f5f5]">
+                      NUTR<span className="text-[#e4ff00]">IX</span>
+                    </h1>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex items-center gap-4">
-                <Link
-                  href="/dashboard/log"
-                  className="hidden items-center justify-center rounded-full bg-[#e4ff00] px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-black transition-all hover:bg-[#e4ff00]/90 md:flex"
-                >
-                  <span className="mr-2">+</span> Log Meal
-                </Link>
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#141414]">
-                  <UserButton
-                    appearance={{
-                      elements: {
-                        userButtonAvatarBox: 'h-10 w-10 rounded-full',
-                        userButtonTrigger:
-                          'h-10 w-10 rounded-full border-0 shadow-none focus:shadow-none focus:ring-0',
-                        userButtonPopoverCard:
-                          'border border-white/10 bg-[#141414] rounded-2xl text-white shadow-2xl',
-                        userButtonPopoverActionButton:
-                          'text-white hover:bg-white/5 rounded-xl',
-                        userButtonPopoverActionButtonText: 'text-white',
-                        userButtonPopoverFooter: 'hidden',
-                      },
-                    }}
-                  />
+                <div className="flex items-center gap-4">
+                  <Link
+                    href="/dashboard/log"
+                    className="hidden items-center justify-center rounded-full bg-[#e4ff00] px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-black transition-all hover:bg-[#e4ff00]/90 md:flex"
+                  >
+                    <span className="mr-2">+</span> Log Meal
+                  </Link>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#141414]">
+                    <UserButton
+                      appearance={{
+                        elements: {
+                          userButtonAvatarBox: 'h-10 w-10 rounded-full',
+                          userButtonTrigger:
+                            'h-10 w-10 rounded-full border-0 shadow-none focus:shadow-none focus:ring-0',
+                          userButtonPopoverCard:
+                            'border border-white/10 bg-[#141414] rounded-2xl text-white shadow-2xl',
+                          userButtonPopoverActionButton: 'text-white hover:bg-white/5 rounded-xl',
+                          userButtonPopoverActionButtonText: 'text-white',
+                          userButtonPopoverFooter: 'hidden',
+                        },
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          </header>
+            </header>
+          )}
 
           <main className="flex-1 px-4 py-6 pb-28 md:px-6 md:pb-6">
-            {renderSection(section, { dashboardView, historyView })}
+            {!onboarded ? (
+              <OnboardingWizard />
+            ) : (
+              renderSection(section, { dashboardView, historyView })
+            )}
           </main>
         </div>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#111111]/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden">
-        <div className="grid grid-cols-5 items-end gap-2">
-          <MobileNavItem
-            href="/dashboard"
-            label="Home"
-            active={section === 'dashboard'}
-            icon={Home}
-          />
-          <MobileNavItem
-            href="/dashboard/history"
-            label="History"
-            active={section === 'history'}
-            icon={History}
-          />
-          <div className="flex justify-center">
-            <Link
-              href="/dashboard/log"
-              aria-label="Log meal"
-              className="flex h-16 w-16 -translate-y-5 items-center justify-center rounded-full border-4 border-[#0a0a0a] bg-[#e4ff00] text-black shadow-[0_10px_30px_rgba(228,255,0,0.28)] transition-transform hover:scale-105"
-            >
-              <Plus className="h-7 w-7" />
-            </Link>
+      {!onboarded ? null : (
+        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#111111]/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden">
+          <div className="grid grid-cols-5 items-end gap-2">
+            <MobileNavItem
+              href="/dashboard"
+              label="Home"
+              active={section === 'dashboard'}
+              icon={Home}
+            />
+            <MobileNavItem
+              href="/dashboard/history"
+              label="History"
+              active={section === 'history'}
+              icon={History}
+            />
+            <div className="flex justify-center">
+              <Link
+                href="/dashboard/log"
+                aria-label="Log meal"
+                className="flex h-16 w-16 -translate-y-5 items-center justify-center rounded-full border-4 border-[#0a0a0a] bg-[#e4ff00] text-black shadow-[0_10px_30px_rgba(228,255,0,0.28)] transition-transform hover:scale-105"
+              >
+                <Plus className="h-7 w-7" />
+              </Link>
+            </div>
+            <MobileNavItem
+              href="/dashboard/goals"
+              label="Goals"
+              active={section === 'goals'}
+              icon={Target}
+            />
+            <MobileNavItem
+              href="/dashboard/settings"
+              label="Settings"
+              active={section === 'settings'}
+              icon={SettingsIcon}
+            />
           </div>
-          <MobileNavItem
-            href="/dashboard/goals"
-            label="Goals"
-            active={section === 'goals'}
-            icon={Target}
-          />
-          <MobileNavItem
-            href="/dashboard/settings"
-            label="Settings"
-            active={section === 'settings'}
-            icon={SettingsIcon}
-          />
-        </div>
-      </nav>
+        </nav>
+      )}
     </div>
   )
 }

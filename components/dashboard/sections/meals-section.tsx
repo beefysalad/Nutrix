@@ -1,11 +1,12 @@
 'use client'
 
-import { Filter, Loader2, Search, Sparkles } from 'lucide-react'
+import { Bot, Filter, Loader2, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import { EmptyState, SectionCard } from '@/components/dashboard/ui'
 import {
+  useDeleteMealMutation,
   getApiErrorMessage,
   useMealsQuery,
   useUpdateMealAiFeedbackMutation,
@@ -18,6 +19,7 @@ export function MealsSection() {
     limit: 100,
   })
   const updateFeedbackMutation = useUpdateMealAiFeedbackMutation()
+  const deleteMealMutation = useDeleteMealMutation()
 
   const filteredMeals = useMemo(() => {
     const meals = mealsQuery.data?.meals ?? []
@@ -105,7 +107,7 @@ export function MealsSection() {
                           </div>
                           {(meal.source === 'ai' || meal.source === 'telegram') ? (
                             <div className="flex items-center gap-1 rounded-full border border-white/10 bg-[#141414] px-3 py-1 text-[11px] uppercase tracking-wide text-[#cfcfcf]">
-                              <Sparkles className="h-3.5 w-3.5 text-[#e4ff00]" />
+                              <Bot className="h-3.5 w-3.5 text-[#e4ff00]" />
                               AI Generated
                             </div>
                           ) : null}
@@ -125,11 +127,35 @@ export function MealsSection() {
                           <div className="text-sm text-[#777]">{meal.notes}</div>
                         ) : null}
                       </div>
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        <MetricPill label="Calories" value={`${calories}`} />
-                        <MetricPill label="Protein" value={`${protein.toFixed(1)}g`} />
-                        <MetricPill label="Carbs" value={`${carbs.toFixed(1)}g`} />
-                        <MetricPill label="Fat" value={`${fat.toFixed(1)}g`} />
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                          <MetricPill label="Calories" value={`${calories}`} />
+                          <MetricPill label="Protein" value={`${protein.toFixed(1)}g`} />
+                          <MetricPill label="Carbs" value={`${carbs.toFixed(1)}g`} />
+                          <MetricPill label="Fat" value={`${fat.toFixed(1)}g`} />
+                        </div>
+                        <div className="flex justify-end">
+                          <button
+                            type="button"
+                            disabled={deleteMealMutation.isPending}
+                            onClick={async () => {
+                              try {
+                                await deleteMealMutation.mutateAsync(meal.id)
+                                toast.success('Meal deleted')
+                              } catch (error) {
+                                toast.error(getApiErrorMessage(error, 'Could not delete meal'))
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#111111] px-2.5 py-1.5 text-[11px] uppercase tracking-wide text-[#666] transition-colors hover:border-red-400/30 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {deleteMealMutation.isPending ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-3 w-3" />
+                            )}
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     </div>
 

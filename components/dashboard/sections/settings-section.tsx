@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 
 import {
   getApiErrorMessage,
+  useExportDataMutation,
   usePreferencesQuery,
   useSavePreferencesMutation,
   useTelegramIntegrationQuery,
@@ -25,6 +26,7 @@ export function SettingsSection() {
   const preferencesQuery = usePreferencesQuery()
   const telegramQuery = useTelegramIntegrationQuery()
   const savePreferencesMutation = useSavePreferencesMutation()
+  const exportDataMutation = useExportDataMutation()
   const {
     register,
     handleSubmit,
@@ -89,6 +91,23 @@ export function SettingsSection() {
 
   const telegramConnection = telegramQuery.data?.connection
   const telegramWebhook = telegramQuery.data?.webhook
+
+  async function downloadExport(format: 'csv' | 'json') {
+    try {
+      const { blob, filename } = await exportDataMutation.mutateAsync(format)
+      const url = window.URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+      anchor.href = url
+      anchor.download = filename
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      window.URL.revokeObjectURL(url)
+      toast.success(`${format.toUpperCase()} export ready`)
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, `Could not export ${format.toUpperCase()} data`))
+    }
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -323,10 +342,40 @@ export function SettingsSection() {
       <SectionCard>
         <h3 className="mb-4 text-lg text-[#f5f5f5]">Data</h3>
         <div className="space-y-3">
-          <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/50">
-            <Download className="h-4 w-4" />
-            Export Data (CSV/JSON)
-          </button>
+          <div className="text-sm text-[#777]">
+            Export your Nutrix data as a full JSON archive or a flat meals CSV for spreadsheets.
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <button
+              type="button"
+              disabled={exportDataMutation.isPending}
+              onClick={() => void downloadExport('json')}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {exportDataMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Export JSON Archive
+            </button>
+            <button
+              type="button"
+              disabled={exportDataMutation.isPending}
+              onClick={() => void downloadExport('csv')}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {exportDataMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Export Meals CSV
+            </button>
+          </div>
+          <div className="text-xs text-[#666]">
+            JSON includes profile, goals, reports, integrations, and meals. CSV exports meal items in spreadsheet-friendly rows.
+          </div>
         </div>
       </SectionCard>
     </div>

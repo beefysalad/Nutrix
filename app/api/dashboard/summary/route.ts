@@ -61,6 +61,7 @@ export async function GET() {
   )
 
   return NextResponse.json({
+    onBoarded: user.onBoarded,
     date: startOfDay.toISOString(),
     goal: activeGoal,
     totals,

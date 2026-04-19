@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, PlusCircle, Search, Sparkles } from 'lucide-react'
+import { Bot, Loader2, PlusCircle, Search } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -64,7 +64,7 @@ export function LogMealSection() {
   const tabs = [
     { id: 'search', label: 'Search', description: 'Look up foods', icon: Search },
     { id: 'custom', label: 'Custom', description: 'Add manually', icon: PlusCircle },
-    { id: 'ai', label: 'AI Parse', description: 'Paste meal text', icon: Sparkles },
+    { id: 'ai', label: 'AI Parsing', description: 'Paste meal text', icon: Bot },
   ] as const
 
   async function handleAiParse(values: AiMealParseFormValues) {
@@ -357,7 +357,7 @@ export function LogMealSection() {
                   {aiForm.formState.isSubmitting || parseMealMutation.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Sparkles className="h-4 w-4" />
+                    <Bot className="h-4 w-4" />
                   )}
                   {aiForm.formState.isSubmitting || parseMealMutation.isPending ? 'Parsing Meal' : 'Parse with AI'}
                 </button>

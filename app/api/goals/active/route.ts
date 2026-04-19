@@ -11,17 +11,52 @@ export async function GET() {
     return result.response
   }
 
-  const goal = await prisma.goal.findFirst({
-    where: {
-      userId: result.user.id,
-      isActive: true,
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  })
+  const [goal, profile] = await Promise.all([
+    prisma.goal.findFirst({
+      where: {
+        userId: result.user.id,
+        isActive: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    }),
+    prisma.userProfile.findUnique({
+      where: {
+        userId: result.user.id,
+      },
+      select: {
+        gender: true,
+        age: true,
+        weightKg: true,
+        heightCm: true,
+        activityLevel: true,
+      },
+    }),
+  ])
 
-  return NextResponse.json({ goal })
+  return NextResponse.json({
+    goal,
+    profile: profile
+      ? {
+          gender:
+            profile.gender === 'male' || profile.gender === 'female'
+              ? profile.gender
+              : null,
+          age: profile.age,
+          weightKg:
+            profile.weightKg != null ? Number(profile.weightKg) : null,
+          heightCm: profile.heightCm,
+          activityLevel:
+            profile.activityLevel === 'sedentary' ||
+            profile.activityLevel === 'lightly-active' ||
+            profile.activityLevel === 'moderately-active' ||
+            profile.activityLevel === 'very-active'
+              ? profile.activityLevel
+              : null,
+        }
+      : null,
+  })
 }
 
 export async function PUT(request: Request) {
