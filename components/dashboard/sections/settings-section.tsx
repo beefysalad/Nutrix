@@ -91,6 +91,16 @@ export function SettingsSection() {
 
   const telegramConnection = telegramQuery.data?.connection
   const telegramWebhook = telegramQuery.data?.webhook
+  const isTelegramConnected = telegramConnection?.status === 'connected'
+  const isWebhookConfigured = Boolean(telegramWebhook?.configured)
+  const isWebhookRegistered = Boolean(telegramWebhook?.registered)
+  const telegramSetupState = !isWebhookConfigured
+    ? 'Configuration needed'
+    : !isTelegramConnected
+      ? 'Connect your Telegram chat'
+      : !isWebhookRegistered
+        ? 'Register webhook'
+        : 'Ready to log meals'
 
   async function downloadExport(format: 'csv' | 'json') {
     try {
@@ -151,106 +161,135 @@ export function SettingsSection() {
         <h3 className="mb-4 text-lg text-[#f5f5f5]">Telegram Integration</h3>
         <div className="space-y-4">
           <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-1">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <span className="rounded-full bg-[#e4ff00]/10 p-2">
-                    {telegramConnection?.status === 'connected' ? (
-                      <Check className="h-5 w-5 text-[#e4ff00]" />
-                    ) : telegramQuery.isLoading ? (
+                    {telegramQuery.isLoading ? (
                       <Loader2 className="h-5 w-5 animate-spin text-[#e4ff00]" />
+                    ) : isTelegramConnected ? (
+                      <Check className="h-5 w-5 text-[#e4ff00]" />
                     ) : (
                       <Send className="h-5 w-5 text-[#e4ff00]" />
                     )}
                   </span>
                   <div>
-                    <div className="text-[#f5f5f5]">
-                      {telegramConnection?.status === 'connected'
-                        ? 'Connected to Telegram'
-                        : 'Telegram not linked yet'}
-                    </div>
-                    <div className="text-sm text-[#777]">
-                      {telegramConnection?.username
-                        ? `@${telegramConnection.username}`
-                        : 'Connect your Telegram bot chat to log meals from messages.'}
-                    </div>
+                    <div className="text-[#f5f5f5]">Telegram Bot</div>
+                    <div className="text-sm text-[#777]">{telegramSetupState}</div>
                   </div>
                 </div>
-                {telegramConnection?.connectedAt ? (
-                  <div className="text-xs uppercase tracking-wide text-[#666]">
-                    Connected{' '}
-                    {new Intl.DateTimeFormat('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    }).format(new Date(telegramConnection.connectedAt))}
-                  </div>
-                ) : null}
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <TelegramStatusTile
+                    title="Chat Connection"
+                    status={isTelegramConnected ? 'Connected' : 'Not connected'}
+                    tone={isTelegramConnected ? 'success' : 'default'}
+                    body={
+                      telegramConnection?.username
+                        ? `Linked with @${telegramConnection.username}`
+                        : 'Link your Telegram chat so meals sent to the bot can sync into Nutrix.'
+                    }
+                    footer={
+                      telegramConnection?.connectedAt
+                        ? `Connected ${new Intl.DateTimeFormat('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          }).format(new Date(telegramConnection.connectedAt))}`
+                        : 'Step 1 of 2'
+                    }
+                  />
+                  <TelegramStatusTile
+                    title="Webhook"
+                    status={
+                      !isWebhookConfigured
+                        ? 'Needs env setup'
+                        : isWebhookRegistered
+                          ? 'Registered'
+                          : 'Not registered'
+                    }
+                    tone={isWebhookRegistered ? 'success' : isWebhookConfigured ? 'warning' : 'default'}
+                    body={
+                      !isWebhookConfigured
+                        ? 'Add TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_USERNAME, and NEXT_PUBLIC_APP_URL first.'
+                        : isWebhookRegistered
+                          ? 'Telegram is pointing to Nutrix.'
+                          : 'Register the webhook so Telegram can send meal messages into Nutrix.'
+                    }
+                    footer={isWebhookRegistered ? 'Step 2 complete' : 'Step 2 of 2'}
+                  />
+                </div>
               </div>
+
               <div
                 className={cn(
-                  'rounded-full border px-3 py-1 text-xs uppercase tracking-wide',
-                  telegramConnection?.status === 'connected'
+                  'self-start rounded-full border px-3 py-1 text-xs uppercase tracking-wide',
+                  isTelegramConnected && isWebhookRegistered
                     ? 'border-[#e4ff00]/30 bg-[#e4ff00]/10 text-[#e4ff00]'
                     : 'border-white/10 bg-[#141414] text-[#888]',
                 )}
               >
-                {telegramConnection?.status ?? 'disconnected'}
+                {telegramQuery.isLoading ? 'checking' : telegramSetupState}
               </div>
             </div>
+
+            {telegramWebhook?.lastErrorMessage ? (
+              <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-500/10 p-3 text-xs text-red-200">
+                {telegramWebhook.lastErrorMessage}
+              </div>
+            ) : null}
+
+            {telegramWebhook?.expectedUrl ? (
+              <div className="mt-4 rounded-2xl border border-white/10 bg-[#111] p-3">
+                <div className="text-[11px] font-bold uppercase tracking-wide text-[#666]">
+                  Expected Webhook URL
+                </div>
+                <div className="mt-2 break-all text-xs text-[#888]">
+                  {telegramWebhook.expectedUrl}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <div className="text-[#f5f5f5]">Webhook</div>
-                <div className="mt-1 text-sm text-[#777]">
-                  {telegramWebhook?.configured
-                    ? telegramWebhook.registered
-                      ? 'Telegram is pointed at your Nutrix webhook route.'
-                      : 'Register the bot webhook so Telegram can deliver messages to Nutrix.'
-                    : 'Set TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_USERNAME, and NEXT_PUBLIC_APP_URL first.'}
-                </div>
-                {telegramWebhook?.expectedUrl ? (
-                  <div className="mt-2 break-all text-xs text-[#666]">
-                    {telegramWebhook.expectedUrl}
-                  </div>
-                ) : null}
-                {telegramWebhook?.lastErrorMessage ? (
-                  <div className="mt-2 text-xs text-red-300">{telegramWebhook.lastErrorMessage}</div>
-                ) : null}
+            <div className="text-[#f5f5f5]">Quick Setup</div>
+            <div className="mt-1 text-sm text-[#777]">
+              Follow these steps to start logging meals from Telegram.
+            </div>
+            <div className="mt-4 space-y-3 text-sm">
+              <div className="rounded-2xl border border-white/10 bg-[#141414] p-3 text-[#aaa]">
+                1. Open your Nutrix bot in Telegram and start the connection flow.
               </div>
-              <div
-                className={cn(
-                  'rounded-full border px-3 py-1 text-xs uppercase tracking-wide',
-                  telegramWebhook?.registered
-                    ? 'border-[#e4ff00]/30 bg-[#e4ff00]/10 text-[#e4ff00]'
-                    : 'border-white/10 bg-[#141414] text-[#888]',
-                )}
-              >
-                {telegramWebhook?.registered ? 'registered' : 'not registered'}
+              <div className="rounded-2xl border border-white/10 bg-[#141414] p-3 text-[#aaa]">
+                2. Register the webhook so Telegram can deliver new messages.
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-[#141414] p-3 text-[#aaa]">
+                3. Send a meal message like <span className="font-mono text-[#f5f5f5]">2 eggs and rice</span> to test it.
               </div>
             </div>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
             <button
+              type="button"
               onClick={() => {
-                window.location.href = '/api/integrations/telegram/start'
+                window.open('/api/integrations/telegram/start', '_blank', 'noopener,noreferrer')
               }}
               className="flex items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d]"
             >
               <ExternalLink className="h-4 w-4" />
-              Connect Telegram
+              {isTelegramConnected ? 'Reconnect Telegram' : 'Connect Telegram'}
             </button>
             <button
+              type="button"
+              disabled={!isWebhookConfigured}
               onClick={() => {
                 window.location.href = '/api/integrations/telegram/webhook/register'
               }}
-              className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/50"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <RefreshCw className="h-4 w-4" />
-              Register Webhook
+              {isWebhookRegistered ? 'Re-register Webhook' : 'Register Webhook'}
             </button>
           </div>
         </div>
@@ -378,6 +417,42 @@ export function SettingsSection() {
           </div>
         </div>
       </SectionCard>
+    </div>
+  )
+}
+
+function TelegramStatusTile({
+  title,
+  status,
+  body,
+  footer,
+  tone,
+}: {
+  title: string
+  status: string
+  body: string
+  footer: string
+  tone: 'success' | 'warning' | 'default'
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#141414] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="text-[#f5f5f5]">{title}</div>
+        <div
+          className={cn(
+            'rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-wide',
+            tone === 'success'
+              ? 'border-[#e4ff00]/30 bg-[#e4ff00]/10 text-[#e4ff00]'
+              : tone === 'warning'
+                ? 'border-amber-400/20 bg-amber-400/10 text-amber-300'
+                : 'border-white/10 bg-[#101010] text-[#888]',
+          )}
+        >
+          {status}
+        </div>
+      </div>
+      <div className="mt-2 text-sm leading-relaxed text-[#777]">{body}</div>
+      <div className="mt-3 text-[11px] uppercase tracking-wide text-[#666]">{footer}</div>
     </div>
   )
 }
