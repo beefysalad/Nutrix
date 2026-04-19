@@ -9,11 +9,11 @@ import { WeeklySummarySection } from '@/components/dashboard/sections/weekly-sum
 import type { HistorySubview } from '@/components/dashboard/types'
 import { cn } from '@/components/dashboard/ui'
 
-const tabs: Array<{ key: HistorySubview; label: string }> = [
+const tabs: Array<{ key: HistorySubview; label: string; isBeta?: boolean }> = [
   { key: 'meals', label: 'Meals' },
-  { key: 'calendar', label: 'Calendar' },
-  { key: 'daily-report', label: 'Daily Report' },
-  { key: 'weekly-summary', label: 'Weekly Summary' },
+  { key: 'calendar', label: 'Calendar', isBeta: true },
+  { key: 'daily-report', label: 'Daily Report', isBeta: true },
+  { key: 'weekly-summary', label: 'Weekly Summary', isBeta: true },
 ]
 
 export function HistorySection({
@@ -41,13 +41,27 @@ export function HistorySection({
                   key={tab.key}
                   onClick={() => setActiveView(tab.key)}
                   className={cn(
-                    'shrink-0 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-bold transition-all md:px-6',
+                    'shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold transition-all md:px-6',
                     isActive
                       ? 'bg-[#e4ff00] text-[#0a0a0a] shadow-[0_2px_10px_rgba(228,255,0,0.2)]'
                       : 'text-[#666] hover:text-[#aaa]',
                   )}
                 >
-                  {tab.label}
+                  <span className="flex items-center gap-2 whitespace-nowrap">
+                    <span>{tab.label}</span>
+                    {tab.isBeta ? (
+                      <span
+                        className={cn(
+                          'rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em]',
+                          isActive
+                            ? 'border-black/10 bg-black/10 text-[#0a0a0a]'
+                            : 'border-[#e4ff00]/20 bg-[#e4ff00]/10 text-[#e4ff00]',
+                        )}
+                      >
+                        Beta
+                      </span>
+                    ) : null}
+                  </span>
                 </button>
               )
             })}
