@@ -1,13 +1,16 @@
 export type DashboardSectionKey =
-  | 'overview'
+  | 'dashboard'
   | 'log'
-  | 'meals'
-  | 'calendar'
-  | 'trends'
-  | 'insights'
-  | 'daily-report'
-  | 'weekly-summary'
+  | 'history'
   | 'goals'
   | 'settings'
+
+export type DashboardSubview = 'overview' | 'trends' | 'insights'
+
+export type HistorySubview =
+  | 'meals'
+  | 'calendar'
+  | 'daily-report'
+  | 'weekly-summary'
 
 export type AuthMode = 'sign-in' | 'sign-up'

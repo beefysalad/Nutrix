@@ -1,5 +1,9 @@
 import { NutrixDashboard } from '@/components/dashboard/nutrix-dashboard'
-import type { DashboardSectionKey } from '@/components/dashboard/types'
+import type {
+  DashboardSectionKey,
+  DashboardSubview,
+  HistorySubview,
+} from '@/components/dashboard/types'
 
 type DashboardSlugPageProps = {
   params: Promise<{ slug: string[] }>
@@ -11,29 +15,62 @@ function resolveSection(slug: string[]): DashboardSectionKey {
   switch (joined) {
     case 'log':
       return 'log'
+    case 'history':
     case 'meals':
-      return 'meals'
     case 'calendar':
-      return 'calendar'
-    case 'trends':
-      return 'trends'
-    case 'insights':
-      return 'insights'
     case 'report/daily':
-      return 'daily-report'
     case 'report/weekly':
-      return 'weekly-summary'
+      return 'history'
+    case 'trends':
+    case 'insights':
+      return 'dashboard'
     case 'goals':
       return 'goals'
     case 'settings':
       return 'settings'
     default:
-      return 'overview'
+      return 'dashboard'
+  }
+}
+
+function resolveDashboardView(slug: string[]): DashboardSubview | undefined {
+  const joined = slug.join('/')
+
+  switch (joined) {
+    case 'trends':
+      return 'trends'
+    case 'insights':
+      return 'insights'
+    default:
+      return undefined
+  }
+}
+
+function resolveHistoryView(slug: string[]): HistorySubview | undefined {
+  const joined = slug.join('/')
+
+  switch (joined) {
+    case 'calendar':
+      return 'calendar'
+    case 'report/daily':
+      return 'daily-report'
+    case 'report/weekly':
+      return 'weekly-summary'
+    case 'meals':
+      return 'meals'
+    default:
+      return undefined
   }
 }
 
 export default async function DashboardSlugPage({ params }: DashboardSlugPageProps) {
   const { slug } = await params
 
-  return <NutrixDashboard section={resolveSection(slug)} />
+  return (
+    <NutrixDashboard
+      section={resolveSection(slug)}
+      dashboardView={resolveDashboardView(slug)}
+      historyView={resolveHistoryView(slug)}
+    />
+  )
 }
