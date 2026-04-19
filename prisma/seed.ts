@@ -14,23 +14,7 @@ const prisma = new PrismaClient({ adapter })
 
 async function main() {
   console.log('🌱 Seeding database...')
-  const counter = await prisma.count.findUnique({
-    where: {
-      key: 'global_counter',
-    },
-  })
-
-  if (counter) {
-    console.log('Counter already exists')
-    return
-  }
-
-  await prisma.count.create({
-    data: {
-      key: 'global_counter',
-      value: 0,
-    },
-  })
+  
 }
 
 main()
