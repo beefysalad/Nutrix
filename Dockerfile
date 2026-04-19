@@ -7,6 +7,8 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+ARG SKIP_ENV_VALIDATION=true
+ENV SKIP_ENV_VALIDATION=${SKIP_ENV_VALIDATION}
 RUN npm run build
 
 FROM node:20-alpine AS runner

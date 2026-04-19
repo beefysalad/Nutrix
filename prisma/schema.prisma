@@ -13,13 +13,6 @@ datasource db {
   provider = "postgresql"
 }
 
-model Count {
-  id         Int      @id @default(autoincrement())
-  key        String   @unique @default("global_counter")
-  value      Int      @default(0)
-  modifiedAt DateTime @updatedAt
-}
-
 model User {
   id             String    @id @default(cuid())
   clerkId        String?   @unique
