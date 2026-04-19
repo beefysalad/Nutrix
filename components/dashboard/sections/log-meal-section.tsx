@@ -250,7 +250,7 @@ export function LogMealSection() {
               />
               <EmptyState
                 title="Food search is not connected yet"
-                description="The next step here is a real food search provider or your own saved foods table."
+                description="USDA Food Database is not connected yet."
               />
             </div>
           ) : null}

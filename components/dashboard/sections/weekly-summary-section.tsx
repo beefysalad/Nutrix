@@ -109,18 +109,18 @@ export function WeeklySummarySection() {
         </SectionCard>
       ) : (
         <>
-          <div className="grid gap-4 md:grid-cols-3">
-            <SectionCard>
-              <div className="text-sm text-[#777]">Weekly calories</div>
-              <div className="mt-3 font-mono text-3xl text-[#f5f5f5]">{summary.totalCalories}</div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <SectionCard className="p-4 sm:p-6">
+              <div className="text-xs uppercase tracking-wider text-[#666]">Weekly calories</div>
+              <div className="mt-2 font-mono text-2xl text-[#f5f5f5] sm:text-3xl">{summary.totalCalories}</div>
             </SectionCard>
-            <SectionCard>
-              <div className="text-sm text-[#777]">Average per day</div>
-              <div className="mt-3 font-mono text-3xl text-[#f5f5f5]">{summary.averageCalories}</div>
+            <SectionCard className="p-4 sm:p-6">
+              <div className="text-xs uppercase tracking-wider text-[#666]">Average per day</div>
+              <div className="mt-2 font-mono text-2xl text-[#f5f5f5] sm:text-3xl">{summary.averageCalories}</div>
             </SectionCard>
-            <SectionCard>
-              <div className="text-sm text-[#777]">Meals logged</div>
-              <div className="mt-3 font-mono text-3xl text-[#f5f5f5]">{summary.totalMeals}</div>
+            <SectionCard className="p-4 sm:p-6">
+              <div className="text-xs uppercase tracking-wider text-[#666]">Meals logged</div>
+              <div className="mt-2 font-mono text-2xl text-[#f5f5f5] sm:text-3xl">{summary.totalMeals}</div>
             </SectionCard>
           </div>
 

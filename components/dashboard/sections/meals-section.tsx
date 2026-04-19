@@ -1,6 +1,6 @@
 'use client'
 
-import { Bot, Filter, Loader2, Search, Trash2 } from 'lucide-react'
+import { Bot, Filter, Loader2, Search, Trash2, Clock } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -55,22 +55,18 @@ export function MealsSection() {
             className="w-full rounded-2xl border border-white/10 bg-[#141414] py-3 pl-11 pr-4 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
           />
         </div>
-        <div className="flex gap-3">
-          <div className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#141414] px-4 py-3 text-[#888] lg:flex-none">
-            <Filter className="h-4 w-4" />
-            Showing {filteredMeals.length}
-          </div>
+        <div className="flex justify-end">
           <input
             type="date"
             value={selectedDate}
             onChange={(event) => setSelectedDate(event.target.value)}
-            className="flex-1 w-full rounded-2xl border border-white/10 bg-[#141414] px-4 py-3 font-mono text-[#888] outline-none focus:border-[#e4ff00] lg:flex-none lg:w-auto"
+            className="w-full max-w-[152px] rounded-2xl border border-white/10 bg-[#141414] px-3 py-3 text-right font-mono text-sm text-[#888] outline-none focus:border-[#e4ff00] sm:max-w-none sm:px-4 sm:text-base"
           />
         </div>
       </div>
 
       <SectionCard className="overflow-hidden p-0">
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {mealsQuery.isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-5 w-5 animate-spin text-[#e4ff00]" />
@@ -97,125 +93,117 @@ export function MealsSection() {
                 return (
                   <div
                     key={meal.id}
-                    className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-5"
+                    className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#141414] transition-all hover:border-[#e4ff00]/20"
                   >
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-full border border-[#e4ff00]/30 bg-[#e4ff00]/10 px-3 py-1 text-xs uppercase tracking-wide text-[#e4ff00]">
+                    <div className="border-b border-white/[0.05] bg-[#1a1a1a]/50 px-4 py-4 sm:px-5">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                          <div className="rounded-lg bg-[#e4ff00] px-2 py-1 text-[10px] font-black uppercase tracking-tighter text-black">
                             {meal.mealType}
                           </div>
-                          {(meal.source === 'ai' || meal.source === 'telegram') ? (
-                            <div className="flex items-center gap-1 rounded-full border border-white/10 bg-[#141414] px-3 py-1 text-[11px] uppercase tracking-wide text-[#cfcfcf]">
-                              <Bot className="h-3.5 w-3.5 text-[#e4ff00]" />
-                              AI Generated
-                            </div>
-                          ) : null}
-                          <div className="text-xs uppercase tracking-wide text-[#666]">
+                          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#555]">
+                            <Clock className="h-3 w-3" />
                             {new Intl.DateTimeFormat('en-US', {
-                              month: 'short',
-                              day: 'numeric',
                               hour: 'numeric',
                               minute: '2-digit',
                             }).format(new Date(meal.loggedAt))}
                           </div>
+                          {meal.source === 'ai' || meal.source === 'telegram' ? (
+                            <div className="flex items-center gap-1 rounded-full border border-white/5 bg-white/5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#777]">
+                              <Bot className="h-2.5 w-2.5 text-[#e4ff00]/50" />
+                              AI
+                            </div>
+                          ) : null}
                         </div>
-                        <div className="text-sm text-[#f5f5f5]">
-                          {meal.items.map((item) => item.foodNameSnapshot).join(', ')}
-                        </div>
-                        {meal.notes ? (
-                          <div className="text-sm text-[#777]">{meal.notes}</div>
-                        ) : null}
-                      </div>
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                          <MetricPill label="Calories" value={`${calories}`} />
-                          <MetricPill label="Protein" value={`${protein.toFixed(1)}g`} />
-                          <MetricPill label="Carbs" value={`${carbs.toFixed(1)}g`} />
-                          <MetricPill label="Fat" value={`${fat.toFixed(1)}g`} />
-                        </div>
-                        <div className="flex justify-end">
-                          <button
-                            type="button"
-                            disabled={deleteMealMutation.isPending}
-                            onClick={async () => {
-                              try {
-                                await deleteMealMutation.mutateAsync(meal.id)
-                                toast.success('Meal deleted')
-                              } catch (error) {
-                                toast.error(getApiErrorMessage(error, 'Could not delete meal'))
-                              }
-                            }}
-                            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#111111] px-2.5 py-1.5 text-[11px] uppercase tracking-wide text-[#666] transition-colors hover:border-red-400/30 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {deleteMealMutation.isPending ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-3 w-3" />
-                            )}
-                            Delete
-                          </button>
+
+                        <div className="flex items-baseline gap-1 self-start sm:self-auto">
+                          <span className="font-mono text-xl font-black tracking-tighter text-[#e4ff00]">
+                            {calories}
+                          </span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#444]">
+                            kcal
+                          </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="mt-4 space-y-2 border-t border-white/10 pt-4">
+                    <div className="space-y-3 px-4 py-4 sm:px-5">
                       {meal.items.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center justify-between gap-4 text-sm"
+                          className="flex items-start justify-between gap-4 text-sm"
                         >
-                          <div className="text-[#888]">
-                            {item.foodNameSnapshot}
-                            {item.quantity ? ` • ${item.quantity}` : ''}
-                            {item.unit ? ` ${item.unit}` : ''}
+                          <div className="min-w-0 flex-1">
+                            <span className="block break-words font-medium leading-snug text-[#f5f5f5]">
+                              {item.foodNameSnapshot}
+                            </span>
+                            <span className="mt-1 block break-words text-[11px] leading-snug text-[#555]">
+                              {item.quantity ? `${item.quantity} ` : ''}
+                              {item.unit ? `${item.unit}` : ''}
+                            </span>
                           </div>
-                          <div className="font-mono text-[#f5f5f5]">{item.calories} cal</div>
+                          <div className="shrink-0 font-mono text-xs font-bold text-[#888]">
+                            {item.calories}
+                          </div>
                         </div>
                       ))}
+                      {meal.notes ? (
+                        <div className="mt-2 rounded-xl border border-dashed border-white/5 bg-white/[0.02] p-3 text-xs italic text-[#666]">
+                          {meal.notes}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="flex flex-col gap-3 border-t border-white/[0.05] bg-[#1a1a1a]/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                      <MacroStrip protein={protein} carbs={carbs} fat={fat} />
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          type="button"
+                          disabled={deleteMealMutation.isPending}
+                          onClick={async () => {
+                            if (!window.confirm('Delete this meal entry?')) return
+                            try {
+                              await deleteMealMutation.mutateAsync(meal.id)
+                              toast.success('Meal deleted')
+                            } catch (error) {
+                              toast.error(getApiErrorMessage(error, 'Could not delete meal'))
+                            }
+                          }}
+                          className="text-[#333] transition-colors hover:text-red-500/80"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
 
                     {(meal.source === 'ai' || meal.source === 'telegram') && !meal.aiFeedback ? (
-                      <div className="mt-4 flex flex-col gap-3 border-t border-white/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="text-xs text-[#777]">
-                          Help me improve AI meal estimates for calories and macros.
-                        </div>
-                        <div className="flex gap-2">
-                          <FeedbackButton
-                            label="Accurate"
-                            active={meal.aiFeedback === 'accurate'}
-                            tone="positive"
-                            disabled={updateFeedbackMutation.isPending}
-                            onClick={async () => {
-                              try {
-                                await updateFeedbackMutation.mutateAsync({
-                                  mealId: meal.id,
-                                  aiFeedback: meal.aiFeedback === 'accurate' ? null : 'accurate',
-                                })
-                                toast.success('Feedback saved')
-                              } catch (error) {
-                                toast.error(getApiErrorMessage(error, 'Could not save feedback'))
-                              }
-                            }}
-                          />
-                          <FeedbackButton
-                            label="Needs work"
-                            active={meal.aiFeedback === 'inaccurate'}
-                            tone="negative"
-                            disabled={updateFeedbackMutation.isPending}
-                            onClick={async () => {
-                              try {
-                                await updateFeedbackMutation.mutateAsync({
-                                  mealId: meal.id,
-                                  aiFeedback:
-                                    meal.aiFeedback === 'inaccurate' ? null : 'inaccurate',
-                                })
-                                toast.success('Feedback saved')
-                              } catch (error) {
-                                toast.error(getApiErrorMessage(error, 'Could not save feedback'))
-                              }
-                            }}
-                          />
+                      <div className="flex flex-col gap-3 bg-[#e4ff00]/[0.02] px-4 py-3 text-[10px] sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                        <span className="font-bold uppercase tracking-widest text-[#444]">
+                          Accuracy Feedback?
+                        </span>
+                        <div className="flex gap-4">
+                          <button
+                            onClick={() =>
+                              updateFeedbackMutation.mutateAsync({
+                                mealId: meal.id,
+                                aiFeedback: 'accurate',
+                              })
+                            }
+                            className="font-black uppercase tracking-tighter text-[#666] transition-colors hover:text-[#e4ff00]"
+                          >
+                            Correct
+                          </button>
+                          <button
+                            onClick={() =>
+                              updateFeedbackMutation.mutateAsync({
+                                mealId: meal.id,
+                                aiFeedback: 'inaccurate',
+                              })
+                            }
+                            className="font-black uppercase tracking-tighter text-[#666] transition-colors hover:text-red-500/50"
+                          >
+                            Wrong
+                          </button>
                         </div>
                       </div>
                     ) : null}
@@ -230,45 +218,29 @@ export function MealsSection() {
   )
 }
 
-function MetricPill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-[#111111] px-3 py-2 text-center">
-      <div className="text-[11px] uppercase tracking-wide text-[#666]">{label}</div>
-      <div className="mt-1 font-mono text-sm text-[#f5f5f5]">{value}</div>
-    </div>
-  )
-}
-
-function FeedbackButton({
-  label,
-  active,
-  tone,
-  disabled,
-  onClick,
+function MacroStrip({
+  protein,
+  carbs,
+  fat,
 }: {
-  label: string
-  active: boolean
-  tone: 'positive' | 'negative'
-  disabled: boolean
-  onClick: () => void | Promise<void>
+  protein: number
+  carbs: number
+  fat: number
 }) {
   return (
-    <button
-      type="button"
-      onClick={() => void onClick()}
-      disabled={disabled}
-      className={[
-        'rounded-full border px-3 py-2 text-xs uppercase tracking-wide transition-colors disabled:cursor-not-allowed disabled:opacity-60',
-        active
-          ? tone === 'positive'
-            ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
-            : 'border-red-400 bg-red-500/10 text-red-200'
-          : tone === 'positive'
-            ? 'border-white/10 bg-[#141414] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]'
-            : 'border-white/10 bg-[#141414] text-[#888] hover:border-red-400/50 hover:text-red-200',
-      ].join(' ')}
-    >
-      {label}
-    </button>
+    <div className="flex gap-4">
+      <div className="flex flex-col">
+        <span className="text-[9px] font-bold uppercase tracking-widest text-[#444]">Protein</span>
+        <span className="text-xs font-bold text-[#aaa]">{protein.toFixed(1)}<span className="ml-0.5 text-[10px] text-[#555]">g</span></span>
+      </div>
+      <div className="flex flex-col">
+        <span className="text-[9px] font-bold uppercase tracking-widest text-[#444]">Carbs</span>
+        <span className="text-xs font-bold text-[#aaa]">{carbs.toFixed(1)}<span className="ml-0.5 text-[10px] text-[#555]">g</span></span>
+      </div>
+      <div className="flex flex-col">
+        <span className="text-[9px] font-bold uppercase tracking-widest text-[#444]">Fat</span>
+        <span className="text-xs font-bold text-[#aaa]">{fat.toFixed(1)}<span className="ml-0.5 text-[10px] text-[#555]">g</span></span>
+      </div>
+    </div>
   )
 }

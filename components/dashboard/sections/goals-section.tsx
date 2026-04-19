@@ -1,7 +1,7 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Calculator, Check, Loader2, Send } from 'lucide-react'
+import { Calculator, Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -13,7 +13,6 @@ import {
   useDashboardSummaryQuery,
   useGoalsQuery,
   useSaveGoalsMutation,
-  useTelegramIntegrationQuery,
 } from '@/lib/hooks/use-dashboard-api'
 import {
   goalsFormSchema,
@@ -64,7 +63,6 @@ export function GoalsSection() {
   const [lastCalculatedTdee, setLastCalculatedTdee] = useState<number | null>(null)
   const goalsQuery = useGoalsQuery()
   const summaryQuery = useDashboardSummaryQuery()
-  const telegramQuery = useTelegramIntegrationQuery()
   const saveGoalsMutation = useSaveGoalsMutation()
   const {
     register,
@@ -160,8 +158,7 @@ export function GoalsSection() {
   }
 
   const currentTotals = summaryQuery.data?.totals
-  const telegramStatus = telegramQuery.data?.connection
-
+  const isMetricsLoading = goalsQuery.isLoading || summaryQuery.isLoading
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div>
@@ -169,32 +166,36 @@ export function GoalsSection() {
         <p className="text-sm text-[#777]">Set your daily targets and keep them grounded in real intake data.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <GoalMetric
-          label="Goal Calories"
-          value={dailyCalories ? `${dailyCalories}` : 'Unset'}
-          helper="daily target"
-        />
-        <GoalMetric
-          label="Protein Target"
-          value={proteinGrams ? `${proteinGrams}g` : 'Unset'}
-          helper="per day"
-        />
-        <GoalMetric
-          label="Consumed Today"
-          value={currentTotals ? `${currentTotals.calories}` : '0'}
-          helper="logged so far"
-        />
-        <GoalMetric
-          label="Remaining"
-          value={
-            currentTotals && dailyCalories
-              ? `${Number(dailyCalories) - currentTotals.calories}`
-              : 'Set target'
-          }
-          helper="vs today"
-        />
-      </div>
+      {isMetricsLoading ? (
+        <GoalsMetricsSkeleton />
+      ) : (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+          <GoalMetric
+            label="Goal Calories"
+            value={dailyCalories ? `${dailyCalories}` : 'Unset'}
+            helper="daily target"
+          />
+          <GoalMetric
+            label="Protein Target"
+            value={proteinGrams ? `${proteinGrams}g` : 'Unset'}
+            helper="per day"
+          />
+          <GoalMetric
+            label="Consumed Today"
+            value={currentTotals ? `${currentTotals.calories}` : '0'}
+            helper="logged so far"
+          />
+          <GoalMetric
+            label="Remaining"
+            value={
+              currentTotals && dailyCalories
+                ? `${Number(dailyCalories) - currentTotals.calories}`
+                : 'Set target'
+            }
+            helper="vs today"
+          />
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid gap-4 md:grid-cols-3">
@@ -269,6 +270,8 @@ export function GoalsSection() {
                 />
                 <input
                   type="number"
+                  step="0.1"
+                  min="0"
                   placeholder="Weight (kg)"
                   {...tdeeForm.register('weightKg')}
                   className="rounded-2xl border border-white/10 bg-[#141414] px-4 py-3 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
@@ -340,45 +343,7 @@ export function GoalsSection() {
           </div>
         </SectionCard>
 
-        <SectionCard>
-          <h3 className="mb-4 text-lg text-[#f5f5f5]">Delivery</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#0a0a0a] p-4">
-              <div className="flex items-center gap-3">
-                <span className="rounded-full bg-[#e4ff00]/10 p-2">
-                  {telegramStatus?.status === 'connected' ? (
-                    <Check className="h-5 w-5 text-[#e4ff00]" />
-                  ) : (
-                    <Send className="h-5 w-5 text-[#e4ff00]" />
-                  )}
-                </span>
-                <div>
-                  <div className="text-[#f5f5f5]">Telegram reminders</div>
-                  <div className="text-sm text-[#777]">
-                    {telegramStatus?.status === 'connected'
-                      ? telegramStatus.username
-                        ? `Connected as @${telegramStatus.username}`
-                        : 'Connected and ready for Telegram meal logging'
-                      : 'Connect Telegram in Settings to log meals and receive future reminders'}
-                  </div>
-                </div>
-              </div>
-              <div
-                className={cn(
-                  'rounded-full border px-3 py-1 text-xs uppercase tracking-wide',
-                  telegramStatus?.status === 'connected'
-                    ? 'border-[#e4ff00]/30 bg-[#e4ff00]/10 text-[#e4ff00]'
-                    : 'border-white/10 bg-[#141414] text-[#888]',
-                )}
-              >
-                {telegramStatus?.status ?? 'disconnected'}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-dashed border-white/10 bg-[#0a0a0a] p-4 text-sm text-[#777]">
-              Daily report delivery time is not persisted yet, so this page now focuses on real nutrition targets instead of fake notification controls.
-            </div>
-          </div>
-        </SectionCard>
+      
 
         <button
           type="submit"
@@ -399,6 +364,20 @@ export function GoalsSection() {
   )
 }
 
+function GoalsMetricsSkeleton() {
+  return (
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+      {Array.from({ length: 4 }, (_, index) => (
+        <SectionCard key={index} className="space-y-3">
+          <div className="h-3 w-20 animate-pulse rounded-full bg-white/8 sm:h-4" />
+          <div className="h-8 w-24 animate-pulse rounded-xl bg-white/10 sm:h-10" />
+          <div className="h-3 w-16 animate-pulse rounded-full bg-white/6" />
+        </SectionCard>
+      ))}
+    </div>
+  )
+}
+
 function GoalMetric({
   label,
   value,
@@ -410,8 +389,8 @@ function GoalMetric({
 }) {
   return (
     <SectionCard>
-      <div className="text-sm text-[#777]">{label}</div>
-      <div className="mt-3 font-mono text-3xl text-[#f5f5f5]">{value}</div>
+      <div className="text-xs text-[#777] sm:text-sm">{label}</div>
+      <div className="mt-3 font-mono text-2xl text-[#f5f5f5] sm:text-3xl">{value}</div>
       <div className="mt-2 text-xs uppercase tracking-wide text-[#666]">{helper}</div>
     </SectionCard>
   )

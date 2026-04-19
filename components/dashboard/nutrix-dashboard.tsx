@@ -1,4 +1,5 @@
 'use client'
+import { useState, useEffect } from 'react'
 
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
@@ -61,6 +62,24 @@ export function NutrixDashboard({
 }) {
   const summaryQuery = useDashboardSummaryQuery()
   const onboarded = summaryQuery.data?.onBoarded ?? true
+
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.visualViewport) {
+        // If visual viewport is notably smaller than innerHeight, keyboard is likely active
+        const isVisible = window.visualViewport.height < window.innerHeight * 0.85
+        setIsKeyboardVisible(isVisible)
+      }
+    }
+
+    const viewport = window.visualViewport
+    if (viewport) {
+      viewport.addEventListener('resize', handleResize)
+      return () => viewport.removeEventListener('resize', handleResize)
+    }
+  }, [])
 
   const today = new Intl.DateTimeFormat('en-US', {
     weekday: 'short',
@@ -163,7 +182,7 @@ export function NutrixDashboard({
         </div>
       </div>
 
-      {!onboarded ? null : (
+      {!onboarded || isKeyboardVisible ? null : (
         <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#111111]/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden">
           <div className="grid grid-cols-5 items-end gap-2">
             <MobileNavItem
@@ -182,7 +201,7 @@ export function NutrixDashboard({
               <Link
                 href="/dashboard/log"
                 aria-label="Log meal"
-                className="flex h-16 w-16 -translate-y-5 items-center justify-center rounded-full border-4 border-[#0a0a0a] bg-[#e4ff00] text-black shadow-[0_10px_30px_rgba(228,255,0,0.28)] transition-transform hover:scale-105"
+                className="flex h-16 w-16 -translate-y-5 items-center justify-center rounded-full bg-[#e4ff00] text-black shadow-[0_10px_30px_rgba(228,255,0,0.4)] transition-transform active:scale-95"
               >
                 <Plus className="h-7 w-7" />
               </Link>

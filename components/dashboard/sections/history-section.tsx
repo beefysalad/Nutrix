@@ -26,27 +26,32 @@ export function HistorySection({
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h2 className="text-2xl text-[#f5f5f5]">History</h2>
+        <div className="px-1 md:px-0">
+          <h2 className="text-2xl font-bold tracking-tight text-[#f5f5f5]">History</h2>
           <p className="mt-1 text-sm text-[#777]">
-            Meals, calendar, and report views now live under one roof.
+            Monitor your caloric trajectory and daily nutrition reports.
           </p>
         </div>
-        <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2 scrollbar-hide md:mx-0 md:px-0">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveView(tab.key)}
-              className={cn(
-                'whitespace-nowrap rounded-full border px-4 py-2 text-sm transition-colors',
-                activeView === tab.key
-                  ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
-                  : 'border-white/10 bg-[#141414] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="-mx-1 flex w-[calc(100%+0.5rem)] overflow-x-auto pb-2 scrollbar-hide md:mx-0 md:w-auto md:pb-0">
+          <div className="flex min-w-max gap-2 rounded-2xl bg-[#141414] p-1">
+            {tabs.map((tab) => {
+              const isActive = activeView === tab.key
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveView(tab.key)}
+                  className={cn(
+                    'shrink-0 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-bold transition-all md:px-6',
+                    isActive
+                      ? 'bg-[#e4ff00] text-[#0a0a0a] shadow-[0_2px_10px_rgba(228,255,0,0.2)]'
+                      : 'text-[#666] hover:text-[#aaa]',
+                  )}
+                >
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 

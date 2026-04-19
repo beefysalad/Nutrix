@@ -385,12 +385,16 @@ function OnboardingInput({
   register: UseFormRegisterReturn
   error?: string
 }) {
+  const isWeightField = label.toLowerCase().includes('weight')
+
   return (
     <div className="space-y-2">
       <label className="text-xs font-bold uppercase tracking-widest text-[#555]">{label}</label>
       <input
         {...register}
         type="number"
+        step={isWeightField ? '0.1' : '1'}
+        min="0"
         className={cn(
           'w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-6 py-4 font-mono text-white outline-none transition-all focus:border-[#e4ff00]',
           error && 'border-red-500/50 text-red-100'
