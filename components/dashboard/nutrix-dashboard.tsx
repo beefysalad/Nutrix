@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
-import { History, Home, Plus, PlusCircle, Settings as SettingsIcon, Target } from 'lucide-react'
+import { History, Home, Plus, PlusCircle, Settings as SettingsIcon, Sparkles, Target } from 'lucide-react'
 
 import { navItems } from '@/components/dashboard/data'
 import { DashboardHomeSection } from '@/components/dashboard/sections/dashboard-home-section'
@@ -11,6 +11,7 @@ import { GoalsSection } from '@/components/dashboard/sections/goals-section'
 import { HistorySection } from '@/components/dashboard/sections/history-section'
 import { LogMealSection } from '@/components/dashboard/sections/log-meal-section'
 import { SettingsSection } from '@/components/dashboard/sections/settings-section'
+import { SuggestionsSection } from './sections/suggestions-section'
 import { OnboardingWizard } from '@/components/dashboard/onboarding/onboarding-wizard'
 import {
   DashboardSectionKey,
@@ -25,6 +26,7 @@ const iconMap = {
   log: PlusCircle,
   history: History,
   goals: Target,
+  suggestions: Sparkles,
   settings: SettingsIcon,
 } satisfies Record<DashboardSectionKey, React.ComponentType<{ className?: string }>>
 
@@ -44,6 +46,8 @@ function renderSection(
       return <HistorySection initialView={options?.historyView} />
     case 'goals':
       return <GoalsSection />
+    case 'suggestions':
+      return <SuggestionsSection />
     case 'settings':
       return <SettingsSection />
     default:
@@ -183,8 +187,8 @@ export function NutrixDashboard({
       </div>
 
       {!onboarded || isKeyboardVisible ? null : (
-        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#111111]/95 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden">
-          <div className="grid grid-cols-5 items-end gap-2">
+        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#111111]/95 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden">
+          <div className="grid grid-cols-5 items-end gap-1">
             <MobileNavItem
               href="/dashboard"
               label="Home"

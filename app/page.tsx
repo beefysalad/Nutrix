@@ -70,8 +70,8 @@ export default async function Home() {
               <div className="mt-8 grid gap-3 sm:grid-cols-3">
                 <FeaturePill
                   icon={<Bot className="h-4 w-4" />}
-                  title="Telegram logging"
-                  description="Send meals like a message"
+                  title="Telegram flow"
+                  description="Log meals and check quick summaries in chat"
                 />
                 <FeaturePill
                   icon={<Target className="h-4 w-4" />}
@@ -148,14 +148,14 @@ export default async function Home() {
                       description="Chicken rice + iced coffee parsed into calories and macros."
                     />
                     <PreviewCard
+                      kicker="Telegram Summary"
+                      title="History follows you into chat"
+                      description="Ask for a quick recap and review recent intake without opening the dashboard."
+                    />
+                    <PreviewCard
                       kicker="Daily Review"
                       title="Reflection stays lightweight"
                       description="Log a quick star rating and note so consistency is easier to maintain."
-                    />
-                    <PreviewCard
-                      kicker="Weekly Summary"
-                      title="Patterns become obvious"
-                      description="Review trends without digging through cluttered screens."
                     />
                   </div>
 

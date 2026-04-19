@@ -3,6 +3,7 @@ export type DashboardSectionKey =
   | 'log'
   | 'history'
   | 'goals'
+  | 'suggestions'
   | 'settings'
 
 export type DashboardSubview = 'overview' | 'trends' | 'insights'

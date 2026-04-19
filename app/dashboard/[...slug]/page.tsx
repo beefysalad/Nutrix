@@ -27,6 +27,8 @@ function resolveSection(slug: string[]): DashboardSectionKey {
       return 'dashboard'
     case 'goals':
       return 'goals'
+    case 'suggestions':
+      return 'suggestions'
     case 'settings':
       return 'settings'
     default:
