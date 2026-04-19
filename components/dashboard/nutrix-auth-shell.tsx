@@ -15,7 +15,7 @@ export function NutrixAuthShell({ mode }: { mode: AuthMode }) {
       <div className="relative w-full max-w-md rounded-[28px] border border-white/10 bg-[#141414]/90 p-8 shadow-2xl backdrop-blur">
         <div className="mb-8 text-center">
           <h1 className="font-mono text-4xl text-[#f5f5f5]">
-            Nut<span className="text-[#4ade80]">rix</span>
+            Nut<span className="text-[#e4ff00]">rix</span>
           </h1>
           <p className="mt-3 text-sm text-[#777]">{title}</p>
         </div>
@@ -28,12 +28,12 @@ export function NutrixAuthShell({ mode }: { mode: AuthMode }) {
               <input
                 type="email"
                 placeholder="you@example.com"
-                className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] py-3 pl-11 pr-4 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#4ade80]"
+                className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] py-3 pl-11 pr-4 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
               />
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#4ade80]/20 bg-[#4ade80]/10 p-4 text-sm text-[#b2efc5]">
+          <div className="rounded-2xl border border-[#e4ff00]/20 bg-[#e4ff00]/8 p-4 text-sm text-[#f3ff8a]">
             Clerk will open its modal automatically, and you can also launch it manually below.
           </div>
 
@@ -54,7 +54,7 @@ export function NutrixAuthShell({ mode }: { mode: AuthMode }) {
             <div className="h-px flex-1 bg-white/10" />
           </div>
 
-          <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#4ade80]/40 hover:bg-white/[0.02]">
+          <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/40 hover:bg-white/[0.02]">
             <Mail className="h-4 w-4" />
             {cta}
           </button>

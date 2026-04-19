@@ -13,14 +13,157 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UnitSystem {
+  metric
+  imperial
+}
+
+enum GoalMode {
+  cutting
+  maintenance
+  bulking
+  custom
+}
+
+enum MealType {
+  breakfast
+  lunch
+  dinner
+  snack
+  other
+}
+
+enum EntrySource {
+  manual
+  search
+  ai
+  telegram
+}
+
+enum IntegrationProvider {
+  telegram
+}
+
+enum IntegrationStatus {
+  disconnected
+  connected
+  error
+}
+
 model User {
-  id             String    @id @default(cuid())
-  clerkId        String?   @unique
-  name           String?
-  email          String    @unique
-  emailVerified  DateTime?
-  image          String?
-  hashedPassword String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id                     String                  @id @default(cuid())
+  clerkId                String?                 @unique
+  name                   String?
+  email                  String                  @unique
+  emailVerified          DateTime?
+  image                  String?
+  hashedPassword         String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  foods                  Food[]
+  goals                  Goal[]
+  integrationConnections IntegrationConnection[]
+  mealEntries            MealEntry[]
+  profile                UserProfile?
+}
+
+model UserProfile {
+  id            String     @id @default(cuid())
+  userId        String     @unique
+  unitSystem    UnitSystem @default(metric)
+  timezone      String?
+  heightCm      Int?
+  weightKg      Decimal?   @db.Decimal(6, 2)
+  activityLevel String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Goal {
+  id            String    @id @default(cuid())
+  userId        String
+  mode          GoalMode  @default(custom)
+  dailyCalories Int?
+  proteinGrams  Int?
+  carbsGrams    Int?
+  fatGrams      Int?
+  isActive      Boolean   @default(true)
+  startsAt      DateTime?
+  endsAt        DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+}
+
+model Food {
+  id           String     @id @default(cuid())
+  userId       String?
+  name         String
+  brand        String?
+  servingLabel String?
+  calories     Int
+  proteinGrams Decimal?   @db.Decimal(6, 2)
+  carbsGrams   Decimal?   @db.Decimal(6, 2)
+  fatGrams     Decimal?   @db.Decimal(6, 2)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  mealItems    MealItem[]
+  user         User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([name])
+}
+
+model MealEntry {
+  id        String      @id @default(cuid())
+  userId    String
+  loggedAt  DateTime
+  mealType  MealType
+  notes     String?
+  source    EntrySource @default(manual)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  items     MealItem[]
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, loggedAt])
+}
+
+model MealItem {
+  id               String    @id @default(cuid())
+  mealEntryId      String
+  foodId           String?
+  foodNameSnapshot String
+  quantity         Decimal?  @db.Decimal(8, 2)
+  unit             String?
+  calories         Int
+  proteinGrams     Decimal?  @db.Decimal(6, 2)
+  carbsGrams       Decimal?  @db.Decimal(6, 2)
+  fatGrams         Decimal?  @db.Decimal(6, 2)
+  createdAt        DateTime  @default(now())
+  food             Food?     @relation(fields: [foodId], references: [id], onDelete: SetNull)
+  mealEntry        MealEntry @relation(fields: [mealEntryId], references: [id], onDelete: Cascade)
+
+  @@index([mealEntryId])
+  @@index([foodId])
+}
+
+model IntegrationConnection {
+  id             String              @id @default(cuid())
+  userId         String
+  provider       IntegrationProvider
+  status         IntegrationStatus   @default(disconnected)
+  externalUserId String?
+  username       String?
+  metadata       Json?
+  connectedAt    DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([provider, status])
 }

@@ -1,6 +1,6 @@
 export function MiniBarChart({
   data,
-  color = '#4ade80',
+  color = '#e4ff00',
 }: {
   data: Array<{ label: string; value: number }>
   color?: string
@@ -23,7 +23,7 @@ export function MiniBarChart({
               />
             </div>
             <div className="text-center">
-              <div className="font-mono text-sm text-[#4ade80]">{item.value}</div>
+              <div className="font-mono text-sm text-[#e4ff00]">{item.value}</div>
               <div className="text-xs text-[#888]">{item.label}</div>
             </div>
           </div>
@@ -75,7 +75,7 @@ export function MiniDonut({
           ))}
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className="font-mono text-4xl text-[#4ade80]">{totalLabel}</div>
+          <div className="font-mono text-4xl text-[#e4ff00]">{totalLabel}</div>
           <div className="text-xs uppercase tracking-[0.2em] text-[#666]">today</div>
         </div>
       </div>
@@ -129,14 +129,14 @@ export function MiniLineChart({
             />
           ))}
           <path d={goalPath} fill="none" stroke="#767676" strokeDasharray="6 8" strokeWidth="3" />
-          <path d={caloriesPath} fill="none" stroke="#4ade80" strokeWidth="4" />
+          <path d={caloriesPath} fill="none" stroke="#e4ff00" strokeWidth="4" />
           {data.map((item, index) => (
             <circle
               key={item.label}
               cx={index * stepX}
               cy={toY(item.calories)}
               r="5"
-              fill="#4ade80"
+              fill="#e4ff00"
             />
           ))}
         </svg>
@@ -170,11 +170,11 @@ export function StackedBars({
                 <div className="flex w-full flex-col overflow-hidden rounded-t-xl">
                   <div
                     style={{ height: `${(item.protein / total) * totalHeight}%` }}
-                    className="w-full bg-[#4ade80]"
+                    className="w-full bg-[#e4ff00]"
                   />
                   <div
                     style={{ height: `${(item.carbs / total) * totalHeight}%` }}
-                    className="w-full bg-[#22c55e]"
+                    className="w-full bg-[#c9df00]"
                   />
                   <div
                     style={{ height: `${(item.fat / total) * totalHeight}%` }}
@@ -189,11 +189,11 @@ export function StackedBars({
       </div>
       <div className="flex items-center gap-4 text-xs text-[#888]">
         <span className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-full bg-[#4ade80]" />
+          <span className="h-3 w-3 rounded-full bg-[#e4ff00]" />
           Protein
         </span>
         <span className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-full bg-[#22c55e]" />
+          <span className="h-3 w-3 rounded-full bg-[#c9df00]" />
           Carbs
         </span>
         <span className="flex items-center gap-2">

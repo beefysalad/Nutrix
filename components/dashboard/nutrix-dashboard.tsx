@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
 import {
@@ -13,6 +14,8 @@ import {
   Target,
   TrendingUp,
   Utensils,
+  Menu,
+  X,
 } from 'lucide-react'
 
 import { navItems } from '@/components/dashboard/data'
@@ -69,6 +72,8 @@ function renderSection(section: DashboardSectionKey) {
 }
 
 export function NutrixDashboard({ section = 'overview' }: { section?: DashboardSectionKey }) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
   const today = new Intl.DateTimeFormat('en-US', {
     weekday: 'short',
     month: 'short',
@@ -79,14 +84,30 @@ export function NutrixDashboard({ section = 'overview' }: { section?: DashboardS
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       <div className="flex min-h-screen flex-col lg:flex-row">
-        <aside className="border-b border-white/10 bg-[#111111] lg:w-64 lg:border-b-0 lg:border-r">
-          <div className="border-b border-white/10 px-6 py-6">
-            <h1 className="font-mono text-2xl text-[#f5f5f5]">
-              Nut<span className="text-[#4ade80]">rix</span>
-            </h1>
-            <p className="mt-2 text-sm text-[#666]">Nutrition cockpit</p>
+        {/* Sidebar */}
+        <aside
+          className={cn(
+            'bg-[#111111] lg:relative lg:block lg:w-64 lg:border-r lg:border-white/10 flex-shrink-0',
+            isMobileMenuOpen ? 'fixed inset-0 z-50 flex flex-col' : 'hidden md:hidden lg:flex lg:flex-col'
+          )}
+        >
+          <div className="flex items-center justify-between border-b border-white/10 px-6 py-6">
+            <div>
+              <h1 className="font-mono text-2xl text-[#f5f5f5] uppercase font-black tracking-tighter">
+                NUTR<span className="text-[#e4ff00]">IX</span>
+              </h1>
+              <p className="mt-2 text-xs uppercase tracking-widest text-[#666]">Nutrition cockpit</p>
+            </div>
+            {isMobileMenuOpen && (
+              <button
+                className="lg:hidden p-2 text-white/50 hover:text-white"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <X className="h-6 w-6" />
+              </button>
+            )}
           </div>
-          <nav className="grid gap-1 p-4">
+          <nav className="flex-1 overflow-y-auto overflow-x-hidden p-4 grid gap-1 content-start">
             {navItems.map((item) => {
               const Icon = iconMap[item.key]
               const isActive = item.key === section
@@ -95,13 +116,18 @@ export function NutrixDashboard({ section = 'overview' }: { section?: DashboardS
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
-                    'relative flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition-colors',
-                    isActive ? 'bg-white/5 text-[#f5f5f5]' : 'text-[#888] hover:bg-white/[0.03] hover:text-[#f5f5f5]',
+                    'relative flex items-center gap-3 rounded-none px-4 py-3 text-sm transition-colors border border-transparent',
+                    isActive
+                      ? 'bg-white/5 text-[#f5f5f5] border-white/10'
+                      : 'text-[#888] hover:bg-white/[0.03] hover:text-[#f5f5f5] hover:border-white/5'
                   )}
                 >
-                  {isActive ? <span className="absolute bottom-2 left-0 top-2 w-1 rounded-full bg-[#4ade80]" /> : null}
-                  <Icon className="h-4 w-4" />
+                  {isActive ? (
+                    <span className="absolute bottom-2 left-0 top-2 w-[2px] bg-[#e4ff00] shadow-[0_0_8px_#e4ff00]" />
+                  ) : null}
+                  <Icon className={cn('h-4 w-4', isActive ? 'text-[#e4ff00]' : '')} />
                   {item.label}
                 </Link>
               )
@@ -109,29 +135,39 @@ export function NutrixDashboard({ section = 'overview' }: { section?: DashboardS
           </nav>
         </aside>
 
+        {/* Main Content Pane */}
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="border-b border-white/10 bg-[#0a0a0a]/90 px-6 py-4 backdrop-blur">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <span className="text-sm text-[#777]">{today}</span>
+          <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0a0a0a]/90 px-4 py-4 backdrop-blur md:px-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <button
+                  className="lg:hidden p-2 -ml-2 text-white/70 hover:text-white"
+                  onClick={() => setIsMobileMenuOpen(true)}
+                >
+                  <Menu className="h-6 w-6" />
+                </button>
+                <span className="hidden sm:inline text-sm text-[#777]">{today}</span>
+              </div>
+              
               <div className="flex items-center gap-4">
                 <Link
                   href="/dashboard/log"
-                  className="rounded-full bg-[#4ade80] px-5 py-2.5 text-sm font-medium text-[#0a0a0a] transition-colors hover:bg-[#38c56c]"
+                  className="flex items-center justify-center rounded-full bg-[#e4ff00] px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-black transition-all hover:bg-[#e4ff00]/90"
                 >
-                  + Log Meal
+                  <span className="mr-2">+</span> Log Meal
                 </Link>
-                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-[#141414]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#141414]">
                   <UserButton
-                    afterSignOutUrl="/login"
+                
                     appearance={{
                       elements: {
-                        userButtonAvatarBox: 'h-10 w-10',
+                        userButtonAvatarBox: 'h-10 w-10 rounded-full',
                         userButtonTrigger:
                           'h-10 w-10 rounded-full border-0 shadow-none focus:shadow-none focus:ring-0',
                         userButtonPopoverCard:
-                          'border border-white/10 bg-[#141414] text-white shadow-2xl',
+                          'border border-white/10 bg-[#141414] rounded-2xl text-white shadow-2xl',
                         userButtonPopoverActionButton:
-                          'text-white hover:bg-white/5',
+                          'text-white hover:bg-white/5 rounded-xl',
                         userButtonPopoverActionButtonText: 'text-white',
                         userButtonPopoverFooter: 'hidden',
                       },

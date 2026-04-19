@@ -20,3 +20,18 @@ export function SectionCard({
     </div>
   )
 }
+
+export function EmptyState({
+  title,
+  description,
+}: {
+  title: string
+  description: string
+}) {
+  return (
+    <div className="rounded-2xl border border-dashed border-white/10 bg-[#0a0a0a] px-6 py-10 text-center">
+      <h3 className="text-lg text-[#f5f5f5]">{title}</h3>
+      <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-[#777]">{description}</p>
+    </div>
+  )
+}

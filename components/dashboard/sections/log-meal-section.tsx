@@ -3,25 +3,24 @@
 import { useState } from 'react'
 import { PlusCircle, Search, Sparkles } from 'lucide-react'
 
-import { mealTags, mealsData } from '@/components/dashboard/data'
-import { SectionCard, cn } from '@/components/dashboard/ui'
+import { EmptyState, SectionCard, cn } from '@/components/dashboard/ui'
 
 export function LogMealSection() {
   const [activeTab, setActiveTab] = useState<'search' | 'custom' | 'ai'>('search')
-  const [selectedMealTag, setSelectedMealTag] = useState('Lunch')
+  const [selectedMealTag, setSelectedMealTag] = useState('breakfast')
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex flex-wrap gap-2">
-        {mealTags.map((tag) => (
+        {['breakfast', 'lunch', 'snack', 'dinner'].map((tag) => (
           <button
             key={tag}
             onClick={() => setSelectedMealTag(tag)}
             className={cn(
               'rounded-full border px-4 py-2 text-sm transition-colors',
               selectedMealTag === tag
-                ? 'border-[#4ade80] bg-[#4ade80] text-[#0a0a0a]'
-                : 'border-white/10 bg-[#141414] text-[#888] hover:border-[#4ade80]/50 hover:text-[#f5f5f5]',
+                ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
+                : 'border-white/10 bg-[#141414] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]',
             )}
           >
             {tag}
@@ -45,7 +44,7 @@ export function LogMealSection() {
                 onClick={() => setActiveTab(tab.id as 'search' | 'custom' | 'ai')}
                 className={cn(
                   'flex items-center justify-center gap-2 px-4 py-4 text-sm transition-colors',
-                  selected ? 'border-b-2 border-[#4ade80] text-[#4ade80]' : 'text-[#888] hover:text-[#f5f5f5]',
+                  selected ? 'border-b-2 border-[#e4ff00] text-[#e4ff00]' : 'text-[#888] hover:text-[#f5f5f5]',
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -61,34 +60,12 @@ export function LogMealSection() {
               <input
                 type="text"
                 placeholder="Search for food..."
-                className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#4ade80]"
+                className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
               />
-              <div className="space-y-3">
-                {mealsData.slice(0, 3).map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-[#0a0a0a] p-4 lg:flex-row lg:items-center lg:justify-between"
-                  >
-                    <div>
-                      <div className="text-[#f5f5f5]">{item.name}</div>
-                      <div className="text-sm text-[#777]">
-                        100g - P: {item.protein}g C: {item.carbs}g F: {item.fat}g
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-[#4ade80]">{item.calories}</span>
-                      <input
-                        type="number"
-                        defaultValue="1"
-                        className="w-16 rounded-xl border border-white/10 bg-[#141414] px-2 py-2 text-center font-mono text-[#f5f5f5] outline-none focus:border-[#4ade80]"
-                      />
-                      <button className="rounded-xl bg-[#4ade80] px-4 py-2 text-sm font-medium text-[#0a0a0a] transition-colors hover:bg-[#38c56c]">
-                        Add
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <EmptyState
+                title="Food search is not connected yet"
+                description="The hardcoded search results are gone. Once we add a food repository or external food API, search results can feed real MealItem records."
+              />
             </div>
           ) : null}
 
@@ -97,7 +74,7 @@ export function LogMealSection() {
               <input
                 type="text"
                 placeholder="Food name"
-                className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#4ade80]"
+                className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
               />
               <div className="grid gap-4 md:grid-cols-2">
                 {['Calories', 'Protein (g)', 'Carbs (g)', 'Fat (g)'].map((field) => (
@@ -105,16 +82,16 @@ export function LogMealSection() {
                     key={field}
                     type="number"
                     placeholder={field}
-                    className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 font-mono text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#4ade80]"
+                    className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 font-mono text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
                   />
                 ))}
               </div>
               <input
                 type="text"
                 placeholder="Serving size"
-                className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#4ade80]"
+                className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
               />
-              <button className="w-full rounded-2xl bg-[#4ade80] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#38c56c]">
+              <button className="w-full rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d]">
                 Add Custom Food
               </button>
             </div>
@@ -125,34 +102,16 @@ export function LogMealSection() {
               <textarea
                 rows={6}
                 placeholder="Paste what you ate... e.g. 2 eggs, toast, orange juice"
-                className="w-full resize-none rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#4ade80]"
+                className="w-full resize-none rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
               />
-              <button className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#4ade80] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#38c56c]">
+              <button className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d]">
                 <Sparkles className="h-4 w-4" />
                 Parse with AI
               </button>
-              <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4">
-                <div className="mb-4 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-[#4ade80]" />
-                  <span className="text-sm text-[#888]">Detected foods</span>
-                </div>
-                <div className="space-y-2">
-                  {[
-                    ['2 scrambled eggs', '140 cal'],
-                    ['1 slice toast with butter', '150 cal'],
-                    ['Orange juice (1 cup)', '110 cal'],
-                  ].map(([name, cals]) => (
-                    <div key={name} className="flex items-center justify-between text-sm">
-                      <span className="text-[#f5f5f5]">{name}</span>
-                      <span className="font-mono text-[#4ade80]">{cals}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-4">
-                  <span className="text-sm text-[#888]">Total</span>
-                  <span className="font-mono text-lg text-[#4ade80]">400 cal</span>
-                </div>
-              </div>
+              <EmptyState
+                title="AI meal parsing has no backend yet"
+                description="This tab is ready for an AI integration, but it no longer shows fake detected foods. When we add parsing, the output should write directly into MealEntry and MealItem."
+              />
             </div>
           ) : null}
         </div>
