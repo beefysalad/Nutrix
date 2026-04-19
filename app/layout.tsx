@@ -19,9 +19,8 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Nexion - Fullstack Template',
-  description:
-    'Nexion is a full-stack Next.js template with auth, database, and type safety. Created by Patrick',
+  title: 'Nutrix',
+  description: 'Nutrix is a nutrition tracking app for calories, meals, macros, and reports.',
 }
 
 export default function RootLayout({
