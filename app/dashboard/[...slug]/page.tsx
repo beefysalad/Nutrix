@@ -14,8 +14,6 @@ function resolveSection(slug: string[]): DashboardSectionKey {
   const joined = slug.join('/')
 
   switch (joined) {
-    case 'log':
-      return 'log'
     case 'history':
     case 'meals':
     case 'calendar':

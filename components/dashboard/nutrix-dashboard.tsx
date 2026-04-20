@@ -68,6 +68,7 @@ export function NutrixDashboard({
   const onboarded = summaryQuery.data?.onBoarded ?? true
 
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
+  const [isLogMealSheetOpen, setIsLogMealSheetOpen] = useState(false)
 
   useEffect(() => {
     const handleResize = () => {
@@ -149,12 +150,13 @@ export function NutrixDashboard({
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <Link
-                    href="/dashboard/log"
+                  <button
+                    type="button"
+                    onClick={() => setIsLogMealSheetOpen(true)}
                     className="hidden items-center justify-center rounded-full bg-[#e4ff00] px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-black transition-all hover:bg-[#e4ff00]/90 md:flex"
                   >
                     <span className="mr-2">+</span> Log Meal
-                  </Link>
+                  </button>
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#141414]">
                     <UserButton
                       appearance={{
@@ -202,13 +204,14 @@ export function NutrixDashboard({
               icon={History}
             />
             <div className="flex justify-center">
-              <Link
-                href="/dashboard/log"
+              <button
+                type="button"
+                onClick={() => setIsLogMealSheetOpen(true)}
                 aria-label="Log meal"
                 className="flex h-16 w-16 -translate-y-5 items-center justify-center rounded-full bg-[#e4ff00] text-black shadow-[0_10px_30px_rgba(228,255,0,0.4)] transition-transform active:scale-95"
               >
                 <Plus className="h-7 w-7" />
-              </Link>
+              </button>
             </div>
             <MobileNavItem
               href="/dashboard/goals"
@@ -225,6 +228,25 @@ export function NutrixDashboard({
           </div>
         </nav>
       )}
+
+      {isLogMealSheetOpen ? (
+        <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 backdrop-blur-sm">
+          <button
+            type="button"
+            aria-label="Close log meal sheet"
+            className="absolute inset-0 cursor-default"
+            onClick={() => setIsLogMealSheetOpen(false)}
+          />
+          <div className="relative z-10 h-[90vh] w-full max-w-4xl overflow-hidden rounded-t-[2rem] border border-white/10 bg-[#111111] lg:mb-8 lg:h-auto lg:max-h-[88vh] lg:rounded-[2rem]">
+            <div className="flex justify-center pt-3 lg:hidden">
+              <div className="h-1.5 w-14 rounded-full bg-white/10" />
+            </div>
+            <div className="max-h-full overflow-y-auto px-4 pb-6 pt-4 md:px-6">
+              <LogMealSection presentation="sheet" onClose={() => setIsLogMealSheetOpen(false)} />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

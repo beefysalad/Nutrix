@@ -30,7 +30,13 @@ type MealInputMode = 'search' | 'custom' | 'ai'
 
 const mealTags: MealType[] = ['breakfast', 'lunch', 'snack', 'dinner']
 
-export function LogMealSection() {
+export function LogMealSection({
+  presentation = 'page',
+  onClose,
+}: {
+  presentation?: 'page' | 'sheet'
+  onClose?: () => void
+}) {
   const [activeTab, setActiveTab] = useState<MealInputMode>('search')
   const [selectedMealTag, setSelectedMealTag] = useState<MealType>('breakfast')
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false)
@@ -72,9 +78,10 @@ export function LogMealSection() {
     { id: 'custom', label: 'Custom', description: 'Add manually', icon: PlusCircle },
     { id: 'ai', label: 'AI Parsing', description: 'Paste meal text', icon: Bot },
   ] as const
+  const isSheetPresentation = presentation === 'sheet'
 
   useEffect(() => {
-    if (!isActionSheetOpen) {
+    if (!isActionSheetOpen || isSheetPresentation) {
       return
     }
 
@@ -84,7 +91,7 @@ export function LogMealSection() {
     return () => {
       document.body.style.overflow = previousOverflow
     }
-  }, [isActionSheetOpen])
+  }, [isActionSheetOpen, isSheetPresentation])
 
   function openActionSheet() {
     setMobileStep('mode')
@@ -92,8 +99,13 @@ export function LogMealSection() {
   }
 
   function closeActionSheet() {
-    setIsActionSheetOpen(false)
     setMobileStep('mode')
+    if (isSheetPresentation) {
+      onClose?.()
+      return
+    }
+
+    setIsActionSheetOpen(false)
   }
 
   async function handleAiParse(values: AiMealParseFormValues) {
@@ -196,6 +208,174 @@ export function LogMealSection() {
   }
 
   const currentMode = tabs.find((tab) => tab.id === activeTab)
+
+  if (isSheetPresentation) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-3">
+            {mobileStep !== 'mode' ? (
+              <button
+                type="button"
+                onClick={() => setMobileStep(mobileStep === 'form' ? 'meal' : 'mode')}
+                className="mt-0.5 rounded-full border border-white/10 bg-[#161616] p-2 text-[#888]"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            ) : null}
+            <div>
+              <div className="text-xs font-black uppercase tracking-[0.2em] text-[#666]">
+                Meal Actions
+              </div>
+              <div className="mt-2 text-xl font-semibold text-[#f5f5f5]">
+                {mobileStep === 'mode'
+                  ? 'Choose input mode'
+                  : mobileStep === 'meal'
+                    ? 'Choose meal type'
+                    : 'Finish logging'}
+              </div>
+              <div className="mt-1 text-sm text-[#777]">
+                {mobileStep === 'mode'
+                  ? 'Start with how you want to add this meal.'
+                  : mobileStep === 'meal'
+                    ? 'Now choose where this meal belongs in your day.'
+                    : 'Complete the meal entry form below.'}
+              </div>
+            </div>
+          </div>
+          {onClose ? (
+            <button
+              type="button"
+              onClick={closeActionSheet}
+              className="rounded-full border border-white/10 bg-[#161616] p-2 text-[#888]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          ) : null}
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          {(['mode', 'meal', 'form'] as MobileStep[]).map((step, index) => {
+            const currentIndex = ['mode', 'meal', 'form'].indexOf(mobileStep)
+
+            return (
+              <div
+                key={step}
+                className={cn(
+                  'rounded-full px-3 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em]',
+                  mobileStep === step
+                    ? 'bg-[#e4ff00] text-[#0a0a0a]'
+                    : index < currentIndex
+                      ? 'bg-[#e4ff00]/12 text-[#e4ff00]'
+                      : 'bg-[#161616] text-[#666]',
+                )}
+              >
+                {step}
+              </div>
+            )
+          })}
+        </div>
+
+        {mobileStep === 'mode' ? (
+          <div className="grid gap-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon
+              const selected = activeTab === tab.id
+
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(tab.id)
+                    setMobileStep('meal')
+                  }}
+                  className={cn(
+                    'flex items-start gap-3 rounded-2xl border px-4 py-4 text-left transition-colors',
+                    selected
+                      ? 'border-[#e4ff00] bg-[#e4ff00]/8 text-[#f5f5f5]'
+                      : 'border-white/10 bg-[#0f0f0f] text-[#888] hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]',
+                  )}
+                >
+                  <div
+                    className={cn(
+                      'mt-0.5 rounded-xl border p-2',
+                      selected
+                        ? 'border-[#e4ff00]/30 bg-[#e4ff00] text-[#0a0a0a]'
+                        : 'border-white/10 bg-[#141414] text-[#888]',
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className={cn('text-sm font-medium', selected ? 'text-white' : 'text-[#d0d0d0]')}>
+                      {tab.label}
+                    </div>
+                    <div className="mt-1 text-xs text-[#777]">{tab.description}</div>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        ) : null}
+
+        {mobileStep === 'meal' ? (
+          <div className="grid grid-cols-2 gap-2">
+            {mealTags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => {
+                  setSelectedMealTag(tag)
+                  setMobileStep('form')
+                }}
+                className={cn(
+                  'rounded-2xl border px-4 py-4 text-sm font-medium capitalize transition-colors',
+                  selectedMealTag === tag
+                    ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
+                    : 'border-white/10 bg-[#141414] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]',
+                )}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {mobileStep === 'form' ? (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-white/10 bg-[#0d0d0d] px-4 py-3">
+              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#666]">
+                Selected Flow
+              </div>
+              <div className="mt-2 text-sm text-[#f5f5f5]">
+                {currentMode?.label} for {selectedMealTag}
+              </div>
+            </div>
+            <MealActionContent
+              activeTab={activeTab}
+              selectedMealTag={selectedMealTag}
+              resolvedPreferredModel={resolvedPreferredModel}
+              aiForm={aiForm}
+              manualForm={manualForm}
+              createMealMutation={createMealMutation}
+              parseMealMutation={parseMealMutation}
+              aiError={aiError}
+              aiResult={aiResult}
+              usedModel={usedModel}
+              fallbackFrom={fallbackFrom}
+              aiFeedback={aiFeedback}
+              setAiFeedback={setAiFeedback}
+              handleAiParse={handleAiParse}
+              handleManualSubmit={handleManualSubmit}
+              saveParsedMeal={saveParsedMeal}
+              mobile
+            />
+          </div>
+        ) : null}
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">

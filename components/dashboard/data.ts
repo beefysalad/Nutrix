@@ -2,7 +2,6 @@ import type { DashboardSectionKey } from '@/components/dashboard/types'
 
 export const navItems: Array<{ key: DashboardSectionKey; href: string; label: string }> = [
   { key: 'dashboard', href: '/dashboard', label: 'Dashboard' },
-  { key: 'log', href: '/dashboard/log', label: 'Log Meal' },
   { key: 'history', href: '/dashboard/history', label: 'History' },
   { key: 'goals', href: '/dashboard/goals', label: 'Goals' },
   { key: 'settings', href: '/dashboard/settings', label: 'Settings' },
