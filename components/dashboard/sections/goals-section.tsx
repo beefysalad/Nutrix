@@ -174,16 +174,25 @@ export function GoalsSection() {
             label="Goal Calories"
             value={dailyCalories ? `${dailyCalories}` : 'Unset'}
             helper="daily target"
+            accentText="text-[#e4ff00]"
+            accentBorder="border-t-[#e4ff00]"
+            accentGlow="shadow-[0_-2px_12px_rgba(228,255,0,0.15)]"
           />
           <GoalMetric
             label="Protein Target"
             value={proteinGrams ? `${proteinGrams}g` : 'Unset'}
             helper="per day"
+            accentText="text-[#00ff88]"
+            accentBorder="border-t-[#00ff88]"
+            accentGlow="shadow-[0_-2px_12px_rgba(0,255,136,0.15)]"
           />
           <GoalMetric
             label="Consumed Today"
             value={currentTotals ? `${currentTotals.calories}` : '0'}
             helper="logged so far"
+            accentText="text-[#38bdf8]"
+            accentBorder="border-t-[#38bdf8]"
+            accentGlow="shadow-[0_-2px_12px_rgba(56,189,248,0.15)]"
           />
           <GoalMetric
             label="Remaining"
@@ -193,33 +202,37 @@ export function GoalsSection() {
                 : 'Set target'
             }
             helper="vs today"
+            accentText="text-[#ff6b35]"
+            accentBorder="border-t-[#ff6b35]"
+            accentGlow="shadow-[0_-2px_12px_rgba(255,107,53,0.15)]"
           />
         </div>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-3">
+        {/* Diet mode — 2-col grid on mobile, 3-col on sm+ */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {dietModes.map((mode) => (
             <button
               key={mode.id}
               type="button"
               onClick={() => setValue('mode', mode.id as GoalsFormValues['mode'], { shouldDirty: true })}
               className={cn(
-                'rounded-2xl border-2 p-5 text-left transition-all',
+                'rounded-2xl border-2 p-4 text-left transition-all',
                 selectedMode === mode.id
                   ? 'border-[#e4ff00] bg-[#e4ff00]/5'
                   : 'border-white/10 bg-[#141414] hover:border-[#e4ff00]/30',
               )}
             >
-              <div className="mb-2 flex items-start justify-between">
-                <h3 className="text-[#f5f5f5]">{mode.label}</h3>
+              <div className="mb-1.5 flex items-start justify-between">
+                <h3 className="text-sm font-semibold text-[#f5f5f5] sm:text-base">{mode.label}</h3>
                 {selectedMode === mode.id ? (
-                  <span className="rounded-full bg-[#e4ff00] p-1 text-[10px] font-bold text-[#0a0a0a]">
-                    OK
+                  <span className="rounded-full bg-[#e4ff00] px-1.5 py-0.5 text-[9px] font-black text-[#0a0a0a]">
+                    ✓
                   </span>
                 ) : null}
               </div>
-              <p className="text-sm text-[#777]">{mode.description}</p>
+              <p className="text-xs leading-snug text-[#666] sm:text-sm sm:text-[#777]">{mode.description}</p>
             </button>
           ))}
         </div>
@@ -297,7 +310,7 @@ export function GoalsSection() {
                 <button
                   type="button"
                   onClick={() => void tdeeForm.handleSubmit(handleTdeeApply)()}
-                  className="rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d]"
+                  className="w-full rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] sm:w-auto"
                 >
                   Calculate & Apply
                 </button>
@@ -312,24 +325,24 @@ export function GoalsSection() {
               {...register('dailyCalories')}
               className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 font-mono text-[#f5f5f5] outline-none focus:border-[#e4ff00]"
             />
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid grid-cols-3 gap-4">
               <input
                 type="number"
                 placeholder="Protein (g)"
                 {...register('proteinGrams')}
-                className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 font-mono text-[#f5f5f5] outline-none focus:border-[#e4ff00]"
+                className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-3 py-3 font-mono text-[#f5f5f5] outline-none focus:border-[#e4ff00]"
               />
               <input
                 type="number"
                 placeholder="Carbs (g)"
                 {...register('carbsGrams')}
-                className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 font-mono text-[#f5f5f5] outline-none focus:border-[#e4ff00]"
+                className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-3 py-3 font-mono text-[#f5f5f5] outline-none focus:border-[#e4ff00]"
               />
               <input
                 type="number"
                 placeholder="Fat (g)"
                 {...register('fatGrams')}
-                className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 font-mono text-[#f5f5f5] outline-none focus:border-[#e4ff00]"
+                className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-3 py-3 font-mono text-[#f5f5f5] outline-none focus:border-[#e4ff00]"
               />
             </div>
             {errors.dailyCalories || errors.proteinGrams || errors.carbsGrams || errors.fatGrams ? (
@@ -382,16 +395,22 @@ function GoalMetric({
   label,
   value,
   helper,
+  accentText = 'text-[#e4ff00]',
+  accentBorder = 'border-t-[#e4ff00]',
+  accentGlow = 'shadow-[0_-2px_12px_rgba(228,255,0,0.15)]',
 }: {
   label: string
   value: string
   helper: string
+  accentText?: string
+  accentBorder?: string
+  accentGlow?: string
 }) {
   return (
-    <SectionCard>
+    <div className={`rounded-2xl border border-white/10 border-t-2 ${accentBorder} ${accentGlow} bg-[#141414] p-4 sm:p-5`}>
       <div className="text-xs text-[#777] sm:text-sm">{label}</div>
-      <div className="mt-3 font-mono text-2xl text-[#f5f5f5] sm:text-3xl">{value}</div>
+      <div className={`mt-3 font-mono text-2xl font-black sm:text-3xl ${accentText}`}>{value}</div>
       <div className="mt-2 text-xs uppercase tracking-wide text-[#666]">{helper}</div>
-    </SectionCard>
+    </div>
   )
 }

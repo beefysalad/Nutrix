@@ -179,7 +179,7 @@ export function SettingsSection() {
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                   <TelegramStatusTile
                     title="Chat Connection"
                     status={isTelegramConnected ? 'Connected' : 'Not connected'}

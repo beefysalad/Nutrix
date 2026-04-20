@@ -75,7 +75,7 @@ export function SuggestionsSection() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 pb-10">
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#141414] p-8 sm:p-12">
+      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#141414] p-6 sm:p-12">
         <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
@@ -87,7 +87,7 @@ export function SuggestionsSection() {
                 Coming Soon
               </div>
             </div>
-            <h2 className="font-mono text-4xl font-black uppercase tracking-tighter text-[#f5f5f5] sm:text-5xl">
+            <h2 className="font-mono text-2xl font-black uppercase tracking-tighter text-[#f5f5f5] sm:text-4xl">
               Smart <span className="text-[#e4ff00]">Suggestions</span>
             </h2>
             <p className="max-w-md text-sm leading-relaxed text-[#777]">
@@ -95,13 +95,13 @@ export function SuggestionsSection() {
               The live AI recommendation flow is still being built.
             </p>
           </div>
-          <div className="flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-4 text-sm font-bold uppercase tracking-widest text-[#888]">
+          <div className="mt-2 flex items-center justify-center gap-3 self-start rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-bold uppercase tracking-widest text-[#888] md:mt-0 md:self-auto">
             <RotateCcw className="h-4 w-4" />
             Preview Only
           </div>
         </div>
 
-        <div className="relative z-10 mt-8 grid gap-3 sm:grid-cols-3">
+        <div className="relative z-10 mt-6 grid gap-3 sm:grid-cols-3">
           <SuggestionTopCard
             icon={<Target className="h-4 w-4" />}
             label="Matched to goals"

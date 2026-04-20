@@ -7,6 +7,67 @@ import { MiniDonut } from '@/components/dashboard/charts'
 import { EmptyState, SectionCard } from '@/components/dashboard/ui'
 import { useDashboardSummaryQuery } from '@/lib/hooks/use-dashboard-api'
 
+// Neon accent palette — one color per stat / macro
+const NEON = {
+  yellow: {
+    text: 'text-[#e4ff00]',
+    borderTop: 'border-t-[#e4ff00]',
+    glow: 'shadow-[0_-2px_12px_rgba(228,255,0,0.15)]',
+    hex: '#e4ff00',
+  },
+  green: {
+    text: 'text-[#00ff88]',
+    borderTop: 'border-t-[#00ff88]',
+    glow: 'shadow-[0_-2px_12px_rgba(0,255,136,0.15)]',
+    hex: '#00ff88',
+  },
+  blue: {
+    text: 'text-[#38bdf8]',
+    borderTop: 'border-t-[#38bdf8]',
+    glow: 'shadow-[0_-2px_12px_rgba(56,189,248,0.15)]',
+    hex: '#38bdf8',
+  },
+  orange: {
+    text: 'text-[#ff6b35]',
+    borderTop: 'border-t-[#ff6b35]',
+    glow: 'shadow-[0_-2px_12px_rgba(255,107,53,0.15)]',
+    hex: '#ff6b35',
+  },
+  purple: {
+    text: 'text-[#bf5af2]',
+    borderTop: 'border-t-[#bf5af2]',
+    glow: 'shadow-[0_-2px_12px_rgba(191,90,242,0.15)]',
+    hex: '#bf5af2',
+  },
+}
+
+const MEAL_TYPE_COLORS: Record<string, { badge: string; calText: string }> = {
+  breakfast: {
+    badge: 'bg-[#ff6b35]/15 border border-[#ff6b35]/40 text-[#ff6b35]',
+    calText: 'text-[#ff6b35]',
+  },
+  lunch: {
+    badge: 'bg-[#00ff88]/12 border border-[#00ff88]/40 text-[#00ff88]',
+    calText: 'text-[#00ff88]',
+  },
+  dinner: {
+    badge: 'bg-[#38bdf8]/12 border border-[#38bdf8]/40 text-[#38bdf8]',
+    calText: 'text-[#38bdf8]',
+  },
+  snack: {
+    badge: 'bg-[#bf5af2]/12 border border-[#bf5af2]/40 text-[#bf5af2]',
+    calText: 'text-[#bf5af2]',
+  },
+  other: {
+    badge: 'bg-[#e4ff00]/10 border border-[#e4ff00]/30 text-[#e4ff00]',
+    calText: 'text-[#e4ff00]',
+  },
+}
+
+function getMealColor(type: string) {
+  return MEAL_TYPE_COLORS[type.toLowerCase()] ?? MEAL_TYPE_COLORS.other
+}
+
 export function OverviewSection() {
   const summaryQuery = useDashboardSummaryQuery()
 
@@ -26,7 +87,7 @@ export function OverviewSection() {
         <SectionCard>
           <EmptyState
             title="Your dashboard will populate once meals are logged"
-            description="Start with Log Meal or Telegram, then Nutrix will compute today’s calories, macros, and goal progress here."
+            description="Start with Log Meal or Telegram, then Nutrix will compute today's calories, macros, and goal progress here."
           />
         </SectionCard>
       </div>
@@ -34,47 +95,84 @@ export function OverviewSection() {
   }
 
   const summaryCards = [
-    { label: 'Calories', value: `${data.totals.calories}`, helper: 'today' },
-    { label: 'Protein', value: `${data.totals.proteinGrams.toFixed(1)}g`, helper: 'today' },
-    { label: 'Meals', value: `${data.totals.mealCount}`, helper: 'logged today' },
+    {
+      label: 'Calories',
+      value: `${data.totals.calories}`,
+      helper: 'today',
+      accent: NEON.yellow,
+    },
+    {
+      label: 'Protein',
+      value: `${data.totals.proteinGrams.toFixed(1)}g`,
+      helper: 'today',
+      accent: NEON.green,
+    },
+    {
+      label: 'Meals',
+      value: `${data.totals.mealCount}`,
+      helper: 'logged today',
+      accent: NEON.blue,
+    },
     {
       label: 'Remaining',
-      value: data.remainingCalories != null ? `${data.remainingCalories}` : 'No goal',
+      value:
+        data.remainingCalories != null
+          ? `${data.remainingCalories}`
+          : 'No goal',
       helper: data.goal ? 'vs goal' : 'set a calorie goal',
+      accent: NEON.orange,
     },
   ]
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/* Stat cards — each gets its own neon accent color */}
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         {summaryCards.map((card) => (
-          <SectionCard key={card.label}>
-            <div className="text-sm text-[#777]">{card.label}</div>
-            <div className="mt-3 font-mono text-3xl text-[#f5f5f5]">{card.value}</div>
-            <div className="mt-2 text-xs uppercase tracking-wide text-[#666]">{card.helper}</div>
-          </SectionCard>
+          <div
+            key={card.label}
+            className={`rounded-2xl border border-t-2 border-white/10 ${card.accent.borderTop} ${card.accent.glow} bg-[#141414] px-4 py-4`}
+          >
+            <div className="text-xs text-[#777] sm:text-sm">{card.label}</div>
+            <div
+              className={`mt-2 font-mono text-2xl font-black sm:text-3xl ${card.accent.text}`}
+            >
+              {card.value}
+            </div>
+            <div className="mt-1.5 text-xs tracking-wide text-[#666] uppercase">
+              {card.helper}
+            </div>
+          </div>
         ))}
       </div>
 
-      <Link 
+      <Link
         href="/dashboard/suggestions"
-        className="group relative z-10 block overflow-hidden rounded-[2rem] border border-[#e4ff00]/20 bg-[#e4ff00]/5 p-6 transition-all hover:border-[#e4ff00]/40 hover:bg-[#e4ff00]/10"
+        className="group relative z-10 block overflow-hidden rounded-[2rem] border border-[#e4ff00]/20 bg-[#e4ff00]/5 p-5 transition-all hover:border-[#e4ff00]/40 hover:bg-[#e4ff00]/10 sm:p-6"
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e4ff00] text-black shadow-[0_0_20px_rgba(228,255,0,0.3)]">
-              <Sparkles className="h-6 w-6" />
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#e4ff00] text-black shadow-[0_0_20px_rgba(228,255,0,0.3)] sm:h-12 sm:w-12">
+              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-black uppercase tracking-widest text-[#e4ff00]">AI Nutrix</span>
-                <span className="rounded-full bg-[#e4ff00] px-1.5 py-0.5 text-[9px] font-bold uppercase text-black">New</span>
+                <span className="text-sm font-black tracking-widest text-[#e4ff00] uppercase">
+                  AI Nutrix
+                </span>
+                <span className="rounded-full bg-[#e4ff00] px-1.5 py-0.5 text-[9px] font-bold text-black uppercase">
+                  New
+                </span>
               </div>
-              <h4 className="text-lg font-bold text-[#f5f5f5]">Get personalized meal suggestions</h4>
-              <p className="text-xs text-[#777]">Based on your current macros and goals.</p>
+              <h4 className="truncate text-base font-bold text-[#f5f5f5] sm:text-lg">
+                Get personalized meal suggestions
+              </h4>
+              <p className="text-xs text-[#777]">
+                Based on your current macros and goals.
+              </p>
             </div>
           </div>
-          <ChevronRight className="h-5 w-5 text-[#444] transition-transform group-hover:translate-x-1 group-hover:text-[#e4ff00]" />
+          <ChevronRight className="h-5 w-5 shrink-0 text-[#444] transition-transform group-hover:translate-x-1 group-hover:text-[#e4ff00]" />
         </div>
       </Link>
 
@@ -82,13 +180,19 @@ export function OverviewSection() {
         <SectionCard>
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h3 className="text-lg text-[#f5f5f5]">Today’s meals</h3>
-              <p className="mt-1 text-sm text-[#777]">What you’ve logged so far today.</p>
+              <h3 className="text-lg text-[#f5f5f5]">Today&apos;s meals</h3>
+              <p className="mt-1 text-sm text-[#777]">
+                What you&apos;ve logged so far today.
+              </p>
             </div>
           </div>
           <div className="space-y-3">
             {data.meals.map((meal) => {
-              const calories = meal.items.reduce((sum, item) => sum + item.calories, 0)
+              const calories = meal.items.reduce(
+                (sum, item) => sum + item.calories,
+                0
+              )
+              const color = getMealColor(meal.mealType)
 
               return (
                 <div
@@ -97,16 +201,24 @@ export function OverviewSection() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <div className="text-sm font-medium capitalize text-[#f5f5f5]">
+                      <span
+                        className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[10px] font-black tracking-tighter uppercase ${color.badge}`}
+                      >
                         {meal.mealType}
-                      </div>
-                      <div className="mt-1 text-xs text-[#777]">
-                        {meal.items.map((item) => item.foodNameSnapshot).join(', ')}
+                      </span>
+                      <div className="mt-1.5 text-xs text-[#777]">
+                        {meal.items
+                          .map((item) => item.foodNameSnapshot)
+                          .join(', ')}
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-mono text-sm text-[#f5f5f5]">{calories} cal</div>
-                      <div className="mt-1 text-xs uppercase tracking-wide text-[#666]">
+                      <div
+                        className={`font-mono text-sm font-black ${color.calText}`}
+                      >
+                        {calories} cal
+                      </div>
+                      <div className="mt-1 text-xs tracking-wide text-[#666] uppercase">
                         {new Intl.DateTimeFormat('en-US', {
                           hour: 'numeric',
                           minute: '2-digit',
@@ -120,10 +232,12 @@ export function OverviewSection() {
           </div>
         </SectionCard>
 
-        <SectionCard>
+        <SectionCard className="sm:min-h-[200px]">
           <div className="mb-5">
             <h3 className="text-lg text-[#f5f5f5]">Macro split</h3>
-            <p className="mt-1 text-sm text-[#777]">A quick look at today’s macro balance.</p>
+            <p className="mt-1 text-sm text-[#777]">
+              A quick look at today&apos;s macro balance.
+            </p>
           </div>
           <MiniDonut
             totalLabel={`${data.totals.calories}`}
@@ -131,17 +245,17 @@ export function OverviewSection() {
               {
                 name: 'Protein',
                 value: Math.max(0, data.totals.proteinGrams),
-                color: '#e4ff00',
+                color: NEON.green.hex,
               },
               {
                 name: 'Carbs',
                 value: Math.max(0, data.totals.carbsGrams),
-                color: '#b5cc00',
+                color: NEON.blue.hex,
               },
               {
                 name: 'Fat',
                 value: Math.max(0, data.totals.fatGrams),
-                color: '#7c7c7c',
+                color: NEON.orange.hex,
               },
             ]}
           />

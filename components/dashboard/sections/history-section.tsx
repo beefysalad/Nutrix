@@ -32,41 +32,39 @@ export function HistorySection({
             Monitor your caloric trajectory and daily nutrition reports.
           </p>
         </div>
-        <div className="-mx-1 flex w-[calc(100%+0.5rem)] overflow-x-auto pb-2 scrollbar-hide md:mx-0 md:w-auto md:pb-0">
-          <div className="flex min-w-max gap-2 rounded-2xl bg-[#141414] p-1">
-            {tabs.map((tab) => {
-              const isActive = activeView === tab.key
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveView(tab.key)}
-                  className={cn(
-                    'shrink-0 rounded-xl px-4 py-2.5 text-sm font-bold transition-all md:px-6',
-                    isActive
-                      ? 'bg-[#e4ff00] text-[#0a0a0a] shadow-[0_2px_10px_rgba(228,255,0,0.2)]'
-                      : 'text-[#666] hover:text-[#aaa]',
-                  )}
-                >
-                  <span className="flex items-center gap-2 whitespace-nowrap">
-                    <span>{tab.label}</span>
-                    {tab.isBeta ? (
-                      <span
-                        className={cn(
-                          'rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.18em]',
-                          isActive
-                            ? 'border-black/10 bg-black/10 text-[#0a0a0a]'
-                            : 'border-[#e4ff00]/20 bg-[#e4ff00]/10 text-[#e4ff00]',
-                        )}
-                      >
-                        Beta
-                      </span>
-                    ) : null}
+        {/* Mobile: 2×2 grid wrap so all tabs are visible. Desktop: single-row pill strip */}
+        <div className="grid grid-cols-2 gap-2 md:flex md:gap-0 md:rounded-2xl md:bg-[#141414] md:p-1">
+          {tabs.map((tab) => {
+            const isActive = activeView === tab.key
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveView(tab.key)}
+                className={cn(
+                  'flex items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-bold transition-all md:shrink-0 md:rounded-xl md:px-6',
+                  isActive
+                    ? 'bg-[#e4ff00] text-[#0a0a0a] shadow-[0_2px_10px_rgba(228,255,0,0.2)]'
+                    : 'bg-[#141414] text-[#666] hover:text-[#aaa] md:bg-transparent',
+                )}
+              >
+                <span className="truncate">{tab.label}</span>
+                {tab.isBeta ? (
+                  <span
+                    className={cn(
+                      'hidden rounded-full border px-1.5 py-0.5 text-[9px] font-black uppercase tracking-[0.18em] sm:inline',
+                      isActive
+                        ? 'border-black/10 bg-black/10 text-[#0a0a0a]'
+                        : 'border-[#e4ff00]/20 bg-[#e4ff00]/10 text-[#e4ff00]',
+                    )}
+                  >
+                    Beta
                   </span>
-                </button>
-              )
-            })}
-          </div>
+                ) : null}
+              </button>
+            )
+          })}
         </div>
+
       </div>
 
       {activeView === 'meals' ? <MealsSection /> : null}

@@ -12,6 +12,17 @@ import {
   useUpdateMealAiFeedbackMutation,
 } from '@/lib/hooks/use-dashboard-api'
 
+const MEAL_TYPE_COLORS: Record<string, { badge: string; cal: string }> = {
+  breakfast: { badge: 'bg-[#ff6b35]/15 border border-[#ff6b35]/40 text-[#ff6b35]', cal: 'text-[#ff6b35]' },
+  lunch:     { badge: 'bg-[#00ff88]/12 border border-[#00ff88]/40 text-[#00ff88]', cal: 'text-[#00ff88]' },
+  dinner:    { badge: 'bg-[#38bdf8]/12 border border-[#38bdf8]/40 text-[#38bdf8]', cal: 'text-[#38bdf8]' },
+  snack:     { badge: 'bg-[#bf5af2]/12 border border-[#bf5af2]/40 text-[#bf5af2]', cal: 'text-[#bf5af2]' },
+  other:     { badge: 'bg-[#e4ff00]/10 border border-[#e4ff00]/30 text-[#e4ff00]', cal: 'text-[#e4ff00]' },
+}
+function getMealColor(type: string) {
+  return MEAL_TYPE_COLORS[type.toLowerCase()] ?? MEAL_TYPE_COLORS.other
+}
+
 export function MealsSection() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10))
@@ -60,7 +71,7 @@ export function MealsSection() {
             type="date"
             value={selectedDate}
             onChange={(event) => setSelectedDate(event.target.value)}
-            className="w-full max-w-[152px] rounded-2xl border border-white/10 bg-[#141414] px-3 py-3 text-right font-mono text-sm text-[#888] outline-none focus:border-[#e4ff00] sm:max-w-none sm:px-4 sm:text-base"
+            className="w-full rounded-2xl border border-white/10 bg-[#141414] px-3 py-3 text-right font-mono text-sm text-[#888] outline-none focus:border-[#e4ff00] sm:max-w-[152px] sm:px-4 sm:text-base"
           />
         </div>
       </div>
@@ -93,14 +104,14 @@ export function MealsSection() {
                 return (
                   <div
                     key={meal.id}
-                    className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#141414] transition-all hover:border-[#e4ff00]/20"
+                    className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#141414] transition-all hover:border-white/20"
                   >
                     <div className="border-b border-white/[0.05] bg-[#1a1a1a]/50 px-4 py-4 sm:px-5">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                          <div className="rounded-lg bg-[#e4ff00] px-2 py-1 text-[10px] font-black uppercase tracking-tighter text-black">
+                          <span className={`rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-tighter ${getMealColor(meal.mealType).badge}`}>
                             {meal.mealType}
-                          </div>
+                          </span>
                           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#555]">
                             <Clock className="h-3 w-3" />
                             {new Intl.DateTimeFormat('en-US', {
@@ -117,7 +128,7 @@ export function MealsSection() {
                         </div>
 
                         <div className="flex items-baseline gap-1 self-start sm:self-auto">
-                          <span className="font-mono text-xl font-black tracking-tighter text-[#e4ff00]">
+                          <span className={`font-mono text-xl font-black tracking-tighter ${getMealColor(meal.mealType).cal}`}>
                             {calories}
                           </span>
                           <span className="text-[10px] font-bold uppercase tracking-wider text-[#444]">
@@ -231,15 +242,15 @@ function MacroStrip({
     <div className="flex gap-4">
       <div className="flex flex-col">
         <span className="text-[9px] font-bold uppercase tracking-widest text-[#444]">Protein</span>
-        <span className="text-xs font-bold text-[#aaa]">{protein.toFixed(1)}<span className="ml-0.5 text-[10px] text-[#555]">g</span></span>
+        <span className="text-xs font-bold text-[#00ff88]">{protein.toFixed(1)}<span className="ml-0.5 text-[10px] text-[#00ff88]/50">g</span></span>
       </div>
       <div className="flex flex-col">
         <span className="text-[9px] font-bold uppercase tracking-widest text-[#444]">Carbs</span>
-        <span className="text-xs font-bold text-[#aaa]">{carbs.toFixed(1)}<span className="ml-0.5 text-[10px] text-[#555]">g</span></span>
+        <span className="text-xs font-bold text-[#38bdf8]">{carbs.toFixed(1)}<span className="ml-0.5 text-[10px] text-[#38bdf8]/50">g</span></span>
       </div>
       <div className="flex flex-col">
         <span className="text-[9px] font-bold uppercase tracking-widest text-[#444]">Fat</span>
-        <span className="text-xs font-bold text-[#aaa]">{fat.toFixed(1)}<span className="ml-0.5 text-[10px] text-[#555]">g</span></span>
+        <span className="text-xs font-bold text-[#ff6b35]">{fat.toFixed(1)}<span className="ml-0.5 text-[10px] text-[#ff6b35]/50">g</span></span>
       </div>
     </div>
   )

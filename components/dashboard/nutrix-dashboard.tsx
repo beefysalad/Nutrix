@@ -176,7 +176,7 @@ export function NutrixDashboard({
             </header>
           )}
 
-          <main className="flex-1 px-4 py-6 pb-28 md:px-6 md:pb-6">
+          <main className="flex-1 px-4 py-6 pb-32 md:px-6 md:pb-6">
             {!onboarded ? (
               <OnboardingWizard />
             ) : (
@@ -187,7 +187,7 @@ export function NutrixDashboard({
       </div>
 
       {!onboarded || isKeyboardVisible ? null : (
-        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#111111]/95 px-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden">
+        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#111111]/95 px-2 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden">
           <div className="grid grid-cols-5 items-end gap-1">
             <MobileNavItem
               href="/dashboard"
@@ -244,11 +244,11 @@ function MobileNavItem({
     <Link
       href={href}
       className={cn(
-        'flex flex-col items-center justify-center gap-1 px-2 py-2 text-[11px] transition-colors',
+        'flex flex-col items-center justify-center gap-1 px-2 py-2 text-[11px] transition-all active:scale-95',
         active ? 'text-[#e4ff00]' : 'text-[#777]',
       )}
     >
-      <Icon className={cn('h-5 w-5', active ? 'text-[#e4ff00]' : 'text-[#999]')} />
+      <Icon className={cn('h-5 w-5 transition-transform', active ? 'text-[#e4ff00]' : 'text-[#999]')} />
       <span>{label}</span>
     </Link>
   )

@@ -122,4 +122,28 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Prevent iOS auto-zoom when tapping inputs */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+  /* Eliminate 300ms tap delay on mobile */
+  button,
+  input,
+  select,
+  textarea,
+  a {
+    touch-action: manipulation;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
