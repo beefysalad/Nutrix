@@ -2,8 +2,18 @@
 
 import { Loader2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import {
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
-import { MiniLineChart, StackedBars } from '@/components/dashboard/charts'
 import { EmptyState, SectionCard, cn } from '@/components/dashboard/ui'
 import { useDashboardTrendsQuery } from '@/lib/hooks/use-dashboard-api'
 
@@ -90,7 +100,55 @@ export function TrendsSection() {
               <h3 className="text-lg text-[#f5f5f5]">Calories vs goal</h3>
               <p className="mt-1 text-sm text-[#777]">Your rolling calorie trend across the selected range.</p>
             </div>
-            <MiniLineChart data={trendData.line} />
+            <div className="overflow-hidden rounded-2xl border border-white/5 bg-[#0a0a0a] p-4">
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={trendData.line} margin={{ top: 12, right: 8, left: -20, bottom: 4 }}>
+                    <CartesianGrid stroke="#242424" strokeDasharray="4 8" vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fill: '#777', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: '#777', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={42}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#101010',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '16px',
+                        color: '#f5f5f5',
+                      }}
+                      labelStyle={{ color: '#f5f5f5', fontWeight: 600 }}
+                    />
+                    <Legend wrapperStyle={{ color: '#888', fontSize: '12px' }} />
+                    <Line
+                      type="monotone"
+                      dataKey="goal"
+                      name="Goal"
+                      stroke="#767676"
+                      strokeWidth={2}
+                      dot={false}
+                      strokeDasharray="6 6"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="calories"
+                      name="Calories"
+                      stroke="#e4ff00"
+                      strokeWidth={3}
+                      dot={{ r: 3, fill: '#e4ff00', stroke: '#e4ff00' }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </SectionCard>
 
           <SectionCard>
@@ -98,7 +156,40 @@ export function TrendsSection() {
               <h3 className="text-lg text-[#f5f5f5]">Macro distribution</h3>
               <p className="mt-1 text-sm text-[#777]">Protein, carbs, and fat over time.</p>
             </div>
-            <StackedBars data={trendData.bars} />
+            <div className="overflow-hidden rounded-2xl border border-white/5 bg-[#0a0a0a] p-4">
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={trendData.bars} margin={{ top: 12, right: 8, left: -20, bottom: 4 }}>
+                    <CartesianGrid stroke="#242424" strokeDasharray="4 8" vertical={false} />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fill: '#777', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: '#777', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={42}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#101010',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '16px',
+                        color: '#f5f5f5',
+                      }}
+                      labelStyle={{ color: '#f5f5f5', fontWeight: 600 }}
+                    />
+                    <Legend wrapperStyle={{ color: '#888', fontSize: '12px' }} />
+                    <Bar dataKey="protein" name="Protein" stackId="macros" fill="#e4ff00" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="carbs" name="Carbs" stackId="macros" fill="#38bdf8" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="fat" name="Fat" stackId="macros" fill="#ff6b35" radius={[6, 6, 0, 0]} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </SectionCard>
         </>
       )}

@@ -16,7 +16,7 @@ export async function GET() {
   const endOfDay = new Date(now)
   endOfDay.setHours(23, 59, 59, 999)
 
-  const [activeGoal, todayMeals] = await Promise.all([
+  const [activeGoal, todayMeals, totalMealHistoryCount, recentMeals] = await Promise.all([
     prisma.goal.findFirst({
       where: {
         userId: user.id,
@@ -37,6 +37,23 @@ export async function GET() {
       include: {
         items: true,
       },
+    }),
+    prisma.mealEntry.count({
+      where: {
+        userId: user.id,
+      },
+    }),
+    prisma.mealEntry.findMany({
+      where: {
+        userId: user.id,
+      },
+      include: {
+        items: true,
+      },
+      orderBy: {
+        loggedAt: 'desc',
+      },
+      take: 5,
     }),
   ])
 
@@ -63,6 +80,7 @@ export async function GET() {
   return NextResponse.json({
     onBoarded: user.onBoarded,
     date: startOfDay.toISOString(),
+    hasAnyMealHistory: totalMealHistoryCount > 0,
     goal: activeGoal,
     totals,
     remainingCalories:
@@ -70,5 +88,6 @@ export async function GET() {
         ? activeGoal.dailyCalories - totals.calories
         : null,
     meals: todayMeals,
+    recentMeals,
   })
 }

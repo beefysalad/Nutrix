@@ -112,6 +112,7 @@ export type MealsResponse = {
 export type DashboardSummaryResponse = {
   onBoarded: boolean
   date: string
+  hasAnyMealHistory: boolean
   goal: {
     id: string
     dailyCalories: number | null
@@ -129,6 +130,7 @@ export type DashboardSummaryResponse = {
   }
   remainingCalories: number | null
   meals: MealResponse[]
+  recentMeals: MealResponse[]
 }
 
 export type DashboardTrendsResponse = {
@@ -152,6 +154,16 @@ export type DashboardInsightsResponse = {
     mostCommonMealType: string | null
     averageCalories: number
     remainingCalories: number | null
+    averageProteinPerMeal: number
+    averageCarbsPerMeal: number
+    averageFatPerMeal: number
+    topFoods: Array<{
+      name: string
+      count: number
+    }>
+    primaryInsight: string
+    secondaryInsight: string | null
+    actionInsight: string | null
   } | null
 }
 

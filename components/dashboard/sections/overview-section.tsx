@@ -81,7 +81,7 @@ export function OverviewSection() {
 
   const data = summaryQuery.data
 
-  if (!data || data.totals.mealCount === 0) {
+  if (!data || !data.hasAnyMealHistory) {
     return (
       <div className="mx-auto max-w-7xl space-y-6">
         <SectionCard>
@@ -93,6 +93,17 @@ export function OverviewSection() {
       </div>
     )
   }
+
+  const displayMeals = data.totals.mealCount > 0 ? data.meals : data.recentMeals
+  const mealsHeading = data.totals.mealCount > 0 ? "Today's meals" : 'Recent meals'
+  const mealsDescription =
+    data.totals.mealCount > 0
+      ? "What you've logged so far today."
+      : 'Your latest logged meals while today is still empty.'
+  const macroDescription =
+    data.totals.mealCount > 0
+      ? "A quick look at today's macro balance."
+      : 'Today is still empty, so this is waiting for your first meal log.'
 
   const summaryCards = [
     {
@@ -121,8 +132,8 @@ export function OverviewSection() {
           : 'No goal',
       helper: data.goal ? 'vs goal' : 'set a calorie goal',
       accent: NEON.orange,
-    },
-  ]
+        },
+      ]
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -180,14 +191,12 @@ export function OverviewSection() {
         <SectionCard>
           <div className="mb-5 flex items-center justify-between">
             <div>
-              <h3 className="text-lg text-[#f5f5f5]">Today&apos;s meals</h3>
-              <p className="mt-1 text-sm text-[#777]">
-                What you&apos;ve logged so far today.
-              </p>
+              <h3 className="text-lg text-[#f5f5f5]">{mealsHeading}</h3>
+              <p className="mt-1 text-sm text-[#777]">{mealsDescription}</p>
             </div>
           </div>
           <div className="space-y-3">
-            {data.meals.map((meal) => {
+            {displayMeals.map((meal) => {
               const calories = meal.items.reduce(
                 (sum, item) => sum + item.calories,
                 0
@@ -235,9 +244,7 @@ export function OverviewSection() {
         <SectionCard className="sm:min-h-[200px]">
           <div className="mb-5">
             <h3 className="text-lg text-[#f5f5f5]">Macro split</h3>
-            <p className="mt-1 text-sm text-[#777]">
-              A quick look at today&apos;s macro balance.
-            </p>
+            <p className="mt-1 text-sm text-[#777]">{macroDescription}</p>
           </div>
           <MiniDonut
             totalLabel={`${data.totals.calories}`}
