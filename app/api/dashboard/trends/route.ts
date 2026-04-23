@@ -5,6 +5,13 @@ import prisma from '@/lib/prisma'
 
 const TREND_RANGE_DAYS = 7
 
+function toLocalIsoDate(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 function getRangeStart(days: number) {
   const start = new Date()
   start.setDate(start.getDate() - (days - 1))
@@ -77,7 +84,7 @@ export async function GET(request: Request) {
   for (let offset = 0; offset < days; offset += 1) {
     const date = new Date(start)
     date.setDate(start.getDate() + offset)
-    const key = date.toISOString().slice(0, 10)
+    const key = toLocalIsoDate(date)
     byDay.set(key, {
       date: key,
       label: new Intl.DateTimeFormat('en-US', {
@@ -93,7 +100,7 @@ export async function GET(request: Request) {
   }
 
   for (const meal of meals) {
-    const key = meal.loggedAt.toISOString().slice(0, 10)
+    const key = toLocalIsoDate(meal.loggedAt)
     const bucket = byDay.get(key)
 
     if (!bucket) {

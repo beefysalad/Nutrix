@@ -88,7 +88,8 @@ export function OverviewSection() {
     fatGrams: 0,
     mealCount: 0,
   }
-  const displayMeals = totals.mealCount > 0 ? data?.meals ?? [] : data?.recentMeals ?? []
+  const displayMeals =
+    totals.mealCount > 0 ? (data?.meals ?? []) : (data?.recentMeals ?? [])
   const hasAnyMealHistory = Boolean(data?.hasAnyMealHistory)
   const isShowingRecentMeals = totals.mealCount === 0 && displayMeals.length > 0
   const mealsHeading = totals.mealCount > 0 ? "Today's meals" : 'Recent meals'
@@ -125,17 +126,14 @@ export function OverviewSection() {
     {
       label: 'Remaining',
       value:
-        data?.remainingCalories != null
-          ? `${data.remainingCalories}`
-          : '0',
+        data?.remainingCalories != null ? `${data.remainingCalories}` : '0',
       helper: data?.goal ? 'vs goal' : 'set a calorie goal',
       accent: NEON.orange,
-        },
-      ]
+    },
+  ]
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      {/* Stat cards — each gets its own neon accent color */}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         {summaryCards.map((card) => (
           <div
@@ -170,7 +168,7 @@ export function OverviewSection() {
                   AI Nutrix
                 </span>
                 <span className="rounded-full bg-[#e4ff00] px-1.5 py-0.5 text-[9px] font-bold text-black uppercase">
-                  New
+                  Beta
                 </span>
               </div>
               <h4 className="truncate text-base font-bold text-[#f5f5f5] sm:text-lg">
@@ -194,68 +192,76 @@ export function OverviewSection() {
             </div>
           </div>
           <div className="space-y-3">
-            {displayMeals.length > 0 ? displayMeals.map((meal) => {
-              const calories = meal.items.reduce(
-                (sum, item) => sum + item.calories,
-                0
-              )
-              const color = getMealColor(meal.mealType)
-              const loggedAt = new Date(meal.loggedAt)
-              const loggedAtLabel = isShowingRecentMeals
-                ? new Intl.DateTimeFormat('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  }).format(loggedAt)
-                : new Intl.DateTimeFormat('en-US', {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                  }).format(loggedAt)
+            {displayMeals.length > 0 ? (
+              displayMeals.map((meal) => {
+                const calories = meal.items.reduce(
+                  (sum, item) => sum + item.calories,
+                  0
+                )
+                const color = getMealColor(meal.mealType)
+                const loggedAt = new Date(meal.loggedAt)
+                const loggedAtLabel = isShowingRecentMeals
+                  ? new Intl.DateTimeFormat('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    }).format(loggedAt)
+                  : new Intl.DateTimeFormat('en-US', {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    }).format(loggedAt)
 
-              return (
-                <div
-                  key={meal.id}
-                  className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <span
-                        className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[10px] font-black tracking-tighter uppercase ${color.badge}`}
-                      >
-                        {meal.mealType}
-                      </span>
-                      <div className="mt-1.5 text-xs text-[#777]">
-                        {meal.items
-                          .map((item) => item.foodNameSnapshot)
-                          .join(', ')}
+                return (
+                  <div
+                    key={meal.id}
+                    className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <span
+                          className={`inline-flex items-center rounded-lg px-2 py-0.5 text-[10px] font-black tracking-tighter uppercase ${color.badge}`}
+                        >
+                          {meal.mealType}
+                        </span>
+                        <div className="mt-1.5 text-xs text-[#777]">
+                          {meal.items
+                            .map((item) => item.foodNameSnapshot)
+                            .join(', ')}
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div
-                        className={`font-mono text-sm font-black ${color.calText}`}
-                      >
-                        {calories} cal
-                      </div>
-                      <div className="mt-1 text-xs tracking-wide text-[#666] uppercase">
-                        {loggedAtLabel}
+                      <div className="text-right">
+                        <div
+                          className={`font-mono text-sm font-black ${color.calText}`}
+                        >
+                          {calories} cal
+                        </div>
+                        <div className="mt-1 text-xs tracking-wide text-[#666] uppercase">
+                          {loggedAtLabel}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )
-            }) : (
+                )
+              })
+            ) : (
               <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <span className="inline-flex items-center rounded-lg border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[10px] font-black tracking-tighter text-[#777] uppercase">
                       0 meals
                     </span>
-                    <div className="mt-1.5 text-xs text-[#777]">No food logged yet</div>
+                    <div className="mt-1.5 text-xs text-[#777]">
+                      No food logged yet
+                    </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-mono text-sm font-black text-[#e4ff00]">0 cal</div>
-                    <div className="mt-1 text-xs tracking-wide text-[#666] uppercase">today</div>
+                    <div className="font-mono text-sm font-black text-[#e4ff00]">
+                      0 cal
+                    </div>
+                    <div className="mt-1 text-xs tracking-wide text-[#666] uppercase">
+                      today
+                    </div>
                   </div>
                 </div>
               </div>

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 
 import { CalendarSection } from '@/components/dashboard/sections/calendar-section'
-import { DailyReportSection } from '@/components/dashboard/sections/daily-report-section'
 import { MealsSection } from '@/components/dashboard/sections/meals-section'
 import { WeeklySummarySection } from '@/components/dashboard/sections/weekly-summary-section'
 import type { HistorySubview } from '@/components/dashboard/types'
@@ -12,7 +11,6 @@ import { cn } from '@/components/dashboard/ui'
 const tabs: Array<{ key: HistorySubview; label: string; isBeta?: boolean }> = [
   { key: 'meals', label: 'Meals' },
   { key: 'calendar', label: 'Calendar', isBeta: true },
-  { key: 'daily-report', label: 'Daily Report', isBeta: true },
   { key: 'weekly-summary', label: 'Weekly Summary', isBeta: true },
 ]
 
@@ -73,7 +71,6 @@ export function HistorySection({
 
       {activeView === 'meals' ? <MealsSection /> : null}
       {activeView === 'calendar' ? <CalendarSection /> : null}
-      {activeView === 'daily-report' ? <DailyReportSection /> : null}
       {activeView === 'weekly-summary' ? <WeeklySummarySection /> : null}
     </div>
   )

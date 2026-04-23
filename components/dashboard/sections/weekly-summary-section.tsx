@@ -2,8 +2,16 @@
 
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
-import { MiniBarChart } from '@/components/dashboard/charts'
 import { EmptyState, SectionCard } from '@/components/dashboard/ui'
 import { useMealsQuery } from '@/lib/hooks/use-dashboard-api'
 
@@ -125,12 +133,66 @@ export function WeeklySummarySection() {
           </div>
 
           <SectionCard>
-            <MiniBarChart
-              data={summary.days.map((day) => ({
-                label: day.label,
-                value: day.calories,
-              }))}
-            />
+            <div className="mb-5">
+              <h3 className="text-lg text-[#f5f5f5]">Daily calories</h3>
+              <p className="mt-1 text-sm text-[#777]">
+                Your logged calories across the week.
+              </p>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-white/5 bg-[#0a0a0a] p-4">
+              <div className="h-72 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={summary.days.map((day) => ({
+                      label: day.label,
+                      calories: day.calories,
+                      meals: day.meals,
+                    }))}
+                    margin={{ top: 12, right: 8, left: -20, bottom: 4 }}
+                  >
+                    <CartesianGrid
+                      stroke="#242424"
+                      strokeDasharray="4 8"
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fill: '#777', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: '#777', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={42}
+                    />
+                    <Tooltip
+                      cursor={{ fill: 'transparent' }}
+                      formatter={(value, name, item) => {
+                        if (name === 'calories') {
+                          return [`${value} cal`, 'Calories']
+                        }
+
+                        return [`${item.payload.meals} meals`, 'Meals']
+                      }}
+                      contentStyle={{
+                        backgroundColor: '#101010',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '16px',
+                        color: '#f5f5f5',
+                      }}
+                      labelStyle={{ color: '#f5f5f5', fontWeight: 600 }}
+                    />
+                    <Bar
+                      dataKey="calories"
+                      fill="#e4ff00"
+                      radius={[10, 10, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </SectionCard>
         </>
       )}

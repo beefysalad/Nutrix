@@ -425,7 +425,7 @@ function buildReasoning(input: {
   const parts: string[] = []
   const { recipe, suggestionStyle, goalMode, mealTypeFocus, recentFoodTokens } = input
 
-  parts.push(`This is a real source-backed ${formatStyleLabel(suggestionStyle)} pick`)
+  parts.push(`This is a real ${formatStyleLabel(suggestionStyle)} recipe`)
 
   if (mealTypeFocus && recipe.mealTypes.includes(mealTypeFocus)) {
     parts.push(`that lines up with your usual ${mealTypeFocus} logging`)

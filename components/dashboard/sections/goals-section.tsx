@@ -169,7 +169,7 @@ export function GoalsSection() {
       {isMetricsLoading ? (
         <GoalsMetricsSkeleton />
       ) : (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:gap-4">
           <GoalMetric
             label="Goal Calories"
             value={dailyCalories ? `${dailyCalories}` : 'Unset'}
@@ -210,8 +210,7 @@ export function GoalsSection() {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Diet mode — 2-col grid on mobile, 3-col on sm+ */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {dietModes.map((mode) => (
             <button
               key={mode.id}
@@ -238,7 +237,7 @@ export function GoalsSection() {
         </div>
 
         <SectionCard>
-          <div className="mb-4 flex items-center justify-between">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-lg text-[#f5f5f5]">Daily Targets</h3>
               <p className="mt-1 text-sm text-[#777]">Save the calories and macros Nutrix should optimize around.</p>
@@ -246,7 +245,7 @@ export function GoalsSection() {
             <button
               type="button"
               onClick={() => setShowTdee((value) => !value)}
-              className="rounded-full border border-white/10 bg-[#0a0a0a] px-3 py-1.5 text-sm text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-[#e4ff00]"
+              className="self-start rounded-full border border-white/10 bg-[#0a0a0a] px-3 py-1.5 text-sm text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-[#e4ff00]"
             >
               {showTdee ? 'Hide TDEE' : 'Open TDEE'}
             </button>
@@ -325,7 +324,7 @@ export function GoalsSection() {
               {...register('dailyCalories')}
               className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 font-mono text-[#f5f5f5] outline-none focus:border-[#e4ff00]"
             />
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
               <input
                 type="number"
                 placeholder="Protein (g)"
@@ -379,7 +378,7 @@ export function GoalsSection() {
 
 function GoalsMetricsSkeleton() {
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:gap-4">
       {Array.from({ length: 4 }, (_, index) => (
         <SectionCard key={index} className="space-y-3">
           <div className="h-3 w-20 animate-pulse rounded-full bg-white/8 sm:h-4" />
@@ -409,7 +408,7 @@ function GoalMetric({
   return (
     <div className={`rounded-2xl border border-white/10 border-t-2 ${accentBorder} ${accentGlow} bg-[#141414] p-4 sm:p-5`}>
       <div className="text-xs text-[#777] sm:text-sm">{label}</div>
-      <div className={`mt-3 font-mono text-2xl font-black sm:text-3xl ${accentText}`}>{value}</div>
+      <div className={`mt-2 font-mono text-2xl font-black sm:mt-3 sm:text-3xl ${accentText}`}>{value}</div>
       <div className="mt-2 text-xs uppercase tracking-wide text-[#666]">{helper}</div>
     </div>
   )

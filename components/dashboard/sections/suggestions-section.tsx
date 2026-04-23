@@ -307,7 +307,7 @@ function GenerateSuggestionsSection() {
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <div className="text-[10px] font-black tracking-[0.22em] text-[#666] uppercase">
-                          Tap for recipe
+                          Open recipe
                         </div>
                         <h3 className="mt-3 text-xl leading-tight font-bold text-[#f5f5f5] transition-colors group-hover:text-[#e4ff00]">
                           {item.name}
@@ -358,7 +358,7 @@ function GenerateSuggestionsSection() {
                       <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#e4ff00]/70" />
                       <div>
                         <div className="text-[10px] font-black tracking-[0.18em] text-[#777] uppercase">
-                          Why Nutrix picked this
+                          Why this might work for you
                         </div>
                         <p className="mt-2 text-xs leading-relaxed text-[#8b8b8b]">
                           {item.reasoning}
@@ -367,8 +367,8 @@ function GenerateSuggestionsSection() {
                     </div>
 
                     <div className="mt-4 flex items-center justify-between text-xs tracking-[0.2em] text-[#666] uppercase">
-                      <span>{item.sourceLabel}</span>
-                      <span>Source-backed</span>
+                      <span>Recipe from {item.sourceLabel}</span>
+                      <span>Real recipe</span>
                     </div>
                   </div>
                 </button>
@@ -686,7 +686,7 @@ function RecipeSheet({
             <SectionCard className="space-y-4 bg-[#131313]">
               <div>
                 <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
-                  Why Nutrix picked this
+                  Why this might work for you
                 </div>
                 <div className="mt-2 text-sm text-[#777]">
                   This is the personalization layer. The cooking itself comes

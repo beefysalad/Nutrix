@@ -27,7 +27,7 @@ export function DashboardHomeSection({
         <div>
           <h2 className="text-2xl text-[#f5f5f5]">Dashboard</h2>
           <p className="mt-1 text-sm text-[#777]">
-            Overview, trends, and insights now live together.
+            Your overview, trends, and insights in one place.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

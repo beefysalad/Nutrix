@@ -1,3 +1,5 @@
+import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
+
 export function MiniBarChart({
   data,
   color = '#e4ff00',
@@ -45,40 +47,40 @@ export function MiniDonut({
     value: Number.isFinite(item.value) ? Math.max(0, item.value) : 0,
   }))
   const total = safeData.reduce((sum, item) => sum + item.value, 0)
-  const segments = data.reduce<Array<(typeof data)[number] & { length: number; offset: number }>>(
-    (all, item) => {
-      const value = Number.isFinite(item.value) ? Math.max(0, item.value) : 0
-      const fraction = total > 0 ? value / total : 0
-      const length = fraction * 339.292
-      const offset =
-        all.length === 0 ? 0 : all[all.length - 1].offset + all[all.length - 1].length
-
-      all.push({ ...item, length, offset })
-      return all
-    },
-    [],
-  )
+  const chartData =
+    total > 0
+      ? safeData
+      : safeData.map((item) => ({
+          ...item,
+          value: 1,
+          color: '#242424',
+        }))
 
   return (
     <div className="space-y-5">
       <div className="relative mx-auto h-52 w-52">
-        <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
-          <circle cx="60" cy="60" r="54" fill="none" stroke="#242424" strokeWidth="12" />
-          {segments.map((segment) => (
-            <circle
-              key={segment.name}
-              cx="60"
-              cy="60"
-              r="54"
-              fill="none"
-              stroke={segment.color}
-              strokeWidth="12"
-              strokeDasharray={`${segment.length} 339.292`}
-              strokeDashoffset={-segment.offset}
-              strokeLinecap="round"
-            />
-          ))}
-        </svg>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={chartData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={74}
+              outerRadius={92}
+              startAngle={90}
+              endAngle={-270}
+              stroke="none"
+              paddingAngle={total > 0 ? 2 : 0}
+              isAnimationActive={false}
+            >
+              {chartData.map((item) => (
+                <Cell key={item.name} fill={item.color} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <div className="font-mono text-4xl text-[#e4ff00]">{totalLabel}</div>
           <div className="text-xs uppercase tracking-[0.2em] text-[#666]">today</div>
