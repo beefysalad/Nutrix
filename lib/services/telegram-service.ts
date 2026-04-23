@@ -257,13 +257,24 @@ async function handleMealMessage(message: TelegramMessage) {
   })
 
   const totalCalories = meal.items.reduce((sum, item) => sum + item.calories, 0)
+  const mealTypeLabel = meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)
+  const confidence = parsed.parsed.confidence ?? 0.75
+  const shouldReview = parsed.parsed.needsReview || confidence < 0.7
+  const assumptions = parsed.parsed.assumptions?.slice(0, 2) ?? []
 
   await sendTelegramMessage({
     chatId,
     text: [
-      `Logged ${meal.mealType} with ${parsed.model}.`,
-      ...meal.items.map((item) => `- ${item.foodNameSnapshot}: ${item.calories} cal`),
+      `Logged ${mealTypeLabel.toLowerCase()} in Nutrix.`,
+      '',
+      ...meal.items.map((item) => {
+        const quantity = item.quantity ? `${Number(item.quantity)}${item.unit ? ` ${item.unit}` : ''} ` : ''
+        return `• ${quantity}${item.foodNameSnapshot} — ${item.calories} cal`
+      }),
+      '',
       `Total: ${totalCalories} cal`,
+      shouldReview ? 'Estimate looks a bit uncertain, so review it in Nutrix if needed.' : null,
+      assumptions.length > 0 ? `Assumed: ${assumptions.join('; ')}` : null,
     ].join('\n'),
   })
 }

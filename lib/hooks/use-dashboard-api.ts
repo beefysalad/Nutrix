@@ -68,8 +68,12 @@ export type GoalResponse = {
 export type ParsedMeal = {
   mealType: MealType
   notes?: string | null
+  confidence?: number
+  assumptions?: string[]
+  needsReview?: boolean
   items: Array<{
     foodName: string
+    canonicalFoodName?: string
     quantity?: number | null
     unit?: string | null
     calories: number

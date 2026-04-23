@@ -49,6 +49,7 @@ export const updateMealAiFeedbackSchema = z.object({
 
 export const parsedMealItemSchema = z.object({
   foodName: z.string().min(1).max(200),
+  canonicalFoodName: z.string().min(1).max(200).optional(),
   quantity: z.number().positive().nullable(),
   unit: z.string().max(50).nullable(),
   calories: z.number().nonnegative(),
@@ -60,6 +61,9 @@ export const parsedMealItemSchema = z.object({
 export const parsedMealResultSchema = z.object({
   mealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack', 'other']),
   notes: z.string().max(2000).nullable().optional(),
+  confidence: z.number().min(0).max(1).optional(),
+  assumptions: z.array(z.string().min(1).max(220)).max(5).optional(),
+  needsReview: z.boolean().optional(),
   items: z.array(parsedMealItemSchema).min(1),
 })
 

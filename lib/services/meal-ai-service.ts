@@ -12,13 +12,18 @@ import type { z } from 'zod'
 const systemPrompt = `
 You are a nutrition meal parser for Nutrix.
 Convert the user's free-text meal description into a JSON object only.
+Nutrix users often log Filipino foods, fast-food meals, and short shorthand messages.
 Return valid JSON with this exact shape:
 {
   "mealType": "breakfast" | "lunch" | "dinner" | "snack" | "other",
   "notes": string | null,
+  "confidence": number,
+  "assumptions": string[],
+  "needsReview": boolean,
   "items": [
     {
       "foodName": string,
+      "canonicalFoodName": string,
       "quantity": number | null,
       "unit": string | null,
       "calories": number,
@@ -34,7 +39,17 @@ Rules:
 - Always provide best-effort estimates for calories, protein, carbs, and fat for every item.
 - Prefer whole numbers for calories and up to 1 decimal place for macros.
 - If quantity or unit is unclear, use null.
+- foodName should preserve what the user meant; canonicalFoodName should be normalized for clean logs.
+- Prefer common Filipino/local names when relevant: pork siomai, cooked white rice, chicken adobo, pork sinigang, tinola, pancit canton, lumpia, tapsilog, chicken inasal.
+- Use assumptions for unclear serving sizes, cooking style, flavor, or brand.
+- Set confidence from 0 to 1. Use needsReview=true when serving size, food identity, or calories are uncertain.
 - Always return at least one item.
+Examples:
+- "2 eggs and rice" -> boiled egg, cooked white rice. Assume 1 cup rice if not specified.
+- "4 siomai" -> pork siomai, quantity 4, unit pieces.
+- "jollibee chickenjoy with rice" -> Chickenjoy fried chicken and steamed rice as separate items.
+- "mango float one big cup" -> mango float, quantity 1, unit large cup, needsReview true.
+- "Del Monte Four Season Juice" -> Del Monte Four Seasons Juice, quantity 1, unit serving/can if amount is unclear.
 `.trim()
 
 const geminiResponseSchema = {
@@ -48,12 +63,25 @@ const geminiResponseSchema = {
       type: 'STRING',
       nullable: true,
     },
+    confidence: {
+      type: 'NUMBER',
+    },
+    assumptions: {
+      type: 'ARRAY',
+      items: {
+        type: 'STRING',
+      },
+    },
+    needsReview: {
+      type: 'BOOLEAN',
+    },
     items: {
       type: 'ARRAY',
       items: {
         type: 'OBJECT',
         properties: {
           foodName: { type: 'STRING' },
+          canonicalFoodName: { type: 'STRING' },
           quantity: { type: 'NUMBER', nullable: true },
           unit: { type: 'STRING', nullable: true },
           calories: { type: 'NUMBER' },
@@ -61,11 +89,20 @@ const geminiResponseSchema = {
           carbsGrams: { type: 'NUMBER' },
           fatGrams: { type: 'NUMBER' },
         },
-        required: ['foodName', 'quantity', 'unit', 'calories', 'proteinGrams', 'carbsGrams', 'fatGrams'],
+        required: [
+          'foodName',
+          'canonicalFoodName',
+          'quantity',
+          'unit',
+          'calories',
+          'proteinGrams',
+          'carbsGrams',
+          'fatGrams',
+        ],
       },
     },
   },
-  required: ['mealType', 'items'],
+  required: ['mealType', 'confidence', 'assumptions', 'needsReview', 'items'],
 } as const
 
 type GeminiModel = z.infer<typeof aiModelSchema>
@@ -89,6 +126,28 @@ function normalizeJsonText(text: string) {
   return trimmed
 }
 
+function canonicalizeFoodName(foodName: string) {
+  const normalized = foodName.trim().replace(/\s+/g, ' ')
+  const key = normalized.toLowerCase()
+
+  const aliases: Array<[RegExp, string]> = [
+    [/\bsiomai\b/, 'Pork siomai'],
+    [/\bwhite rice\b|\brice\b|\bkanin\b/, 'Cooked white rice'],
+    [/\bboiled egg\b|\begg\b|\bitlog\b/, 'Boiled egg'],
+    [/\badobo\b/, 'Chicken adobo'],
+    [/\bsinigang\b/, 'Pork sinigang'],
+    [/\btinola\b/, 'Chicken tinola'],
+    [/\bpancit canton\b/, 'Pancit canton'],
+    [/\blumpia\b|\bspring roll\b/, 'Lumpia'],
+    [/\btapsilog\b/, 'Tapsilog'],
+    [/\bchicken inasal\b|\binasal\b/, 'Chicken inasal'],
+    [/\bmango float\b/, 'Mango float'],
+    [/\bfour season/, 'Del Monte Four Seasons Juice'],
+  ]
+
+  return aliases.find(([pattern]) => pattern.test(key))?.[1] ?? normalized
+}
+
 function normalizeParsedMeal(payload: unknown) {
   const parsed = parsedMealResultSchema.safeParse(payload)
 
@@ -99,8 +158,11 @@ function normalizeParsedMeal(payload: unknown) {
   return {
     mealType: parsed.data.mealType,
     notes: parsed.data.notes ?? null,
+    confidence: parsed.data.confidence ?? 0.75,
+    assumptions: parsed.data.assumptions ?? [],
+    needsReview: parsed.data.needsReview ?? false,
     items: parsed.data.items.map((item) => ({
-      foodName: item.foodName.trim(),
+      foodName: canonicalizeFoodName(item.canonicalFoodName ?? item.foodName),
       quantity: item.quantity ?? null,
       unit: item.unit?.trim() || null,
       calories: Math.round(item.calories),
