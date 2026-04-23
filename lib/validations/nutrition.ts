@@ -62,3 +62,29 @@ export const parsedMealResultSchema = z.object({
   notes: z.string().max(2000).nullable().optional(),
   items: z.array(parsedMealItemSchema).min(1),
 })
+
+export const mealSuggestionSchema = z.object({
+  id: z.string().min(1).max(100),
+  name: z.string().min(1).max(200),
+  description: z.string().min(1).max(400),
+  calories: z.number().nonnegative(),
+  protein: z.number().nonnegative(),
+  carbs: z.number().nonnegative(),
+  fat: z.number().nonnegative(),
+  tags: z.array(z.string().min(1).max(50)).min(1).max(4),
+  reasoning: z.string().min(1).max(400),
+  prepTime: z.string().min(1).max(50),
+  difficulty: z.enum(['easy', 'medium']),
+  sourceLabel: z.string().min(1).max(120),
+  sourceUrl: z.url().max(500),
+})
+
+export const mealSuggestionsResultSchema = z.object({
+  basedOn: z.object({
+    goalMode: z.enum(['cutting', 'maintenance', 'bulking', 'custom']).nullable(),
+    recentFoods: z.array(z.string()).max(8),
+    generatedForMealType: z.enum(['breakfast', 'lunch', 'dinner', 'snack', 'other']).nullable(),
+    suggestionStyle: z.enum(['quick', 'lutong-bahay', 'budget', 'high-protein']).nullable(),
+  }),
+  suggestions: z.array(mealSuggestionSchema).min(1).max(4),
+})

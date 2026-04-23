@@ -1,236 +1,539 @@
 'use client'
 
-import { 
-  Sparkles, 
-  RotateCcw, 
-  Clock,
+import {
   AlertCircle,
   ChefHat,
+  Clock,
+  ExternalLink,
+  Loader2,
+  Lock,
+  RotateCcw,
+  Salad,
+  Sparkles,
   Target,
-  Salad
+  X,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { toast } from 'sonner'
 
-import { SectionCard, cn } from '@/components/dashboard/ui'
+import { EmptyState, SectionCard, cn } from '@/components/dashboard/ui'
+import {
+  getApiErrorMessage,
+  useGenerateMealSuggestionsMutation,
+  useMealSuggestionsQuery,
+  type MealSuggestionResponse,
+} from '@/lib/hooks/use-dashboard-api'
 
-interface Suggestion {
-  id: string
-  name: string
-  description: string
-  calories: number
-  protein: number
-  carbs: number
-  fat: number
-  tags: string[]
-  reasoning: string
-  prepTime: string
-}
-
-const MOCK_SUGGESTIONS: Suggestion[] = [
+const suggestionStyleOptions = [
   {
-    id: '1',
-    name: 'Chicken Inasal with Garlic Rice',
-    description: 'Juicy grilled chicken inasal served with garlic rice, pickled papaya, and a side of cucumber.',
-    calories: 560,
-    protein: 41,
-    carbs: 48,
-    fat: 18,
-    tags: ['High Protein', 'Pinoy Favorite'],
-    reasoning: 'A strong high-protein Filipino staple that fits well when you want something satisfying without going too heavy.',
-    prepTime: '20 min'
+    id: 'quick',
+    label: 'Quick',
+    description: 'Fast and easy meals for daily logging',
   },
   {
-    id: '2',
-    name: 'Bangus Sisig Lettuce Bowl',
-    description: 'Flaked milkfish sisig served over crisp lettuce with onions, calamansi, and a light chili finish.',
-    calories: 340,
-    protein: 32,
-    carbs: 10,
-    fat: 19,
-    tags: ['Low Carb', 'Seafood'],
-    reasoning: 'This keeps the bold sisig flavor profile while staying lower in carbs and easier to fit into a cut.',
-    prepTime: '15 min'
+    id: 'lutong-bahay',
+    label: 'Lutong Bahay',
+    description: 'Comforting home-style Filipino dishes',
   },
   {
-    id: '3',
-    name: 'Ginisang Monggo with Malunggay',
-    description: 'Hearty sauteed mung beans with malunggay, tomatoes, and soft vegetables for a lighter plant-forward option.',
-    calories: 420,
-    protein: 24,
-    carbs: 38,
-    fat: 14,
-    tags: ['Plant-Based', 'Fiber'],
-    reasoning: 'A comforting Filipino dish with good fiber and steady energy, useful for a more balanced meal suggestion.',
-    prepTime: '15 min'
-  }
-]
+    id: 'budget',
+    label: 'Budget',
+    description: 'More affordable everyday meal ideas',
+  },
+  {
+    id: 'high-protein',
+    label: 'High Protein',
+    description: 'Protein-forward meals that still feel local',
+  },
+] as const
+
+type SuggestionStyle = (typeof suggestionStyleOptions)[number]['id']
+type SuggestionCard = NonNullable<
+  MealSuggestionResponse['payload']
+>['suggestions'][number]
 
 export function SuggestionsSection() {
   const [activeCategory, setActiveCategory] = useState('All')
+  const [selectedStyle, setSelectedStyle] = useState<SuggestionStyle>('quick')
+  const [selectedSuggestionId, setSelectedSuggestionId] = useState<
+    string | null
+  >(null)
+
+  const suggestionsQuery = useMealSuggestionsQuery({ style: selectedStyle })
+  const generateSuggestionsMutation = useGenerateMealSuggestionsMutation()
+
+  const usage = suggestionsQuery.data?.usage
+  const payload = suggestionsQuery.data?.payload ?? null
+  const suggestions = useMemo(
+    () => payload?.suggestions ?? [],
+    [payload?.suggestions]
+  )
+
+  const categories = useMemo(() => {
+    const dynamicTags = Array.from(
+      new Set(suggestions.flatMap((item) => item.tags))
+    )
+    return ['All', ...dynamicTags]
+  }, [suggestions])
+
   const filteredSuggestions =
     activeCategory === 'All'
-      ? MOCK_SUGGESTIONS
-      : MOCK_SUGGESTIONS.filter((item) => item.tags.includes(activeCategory))
+      ? suggestions
+      : suggestions.filter((item) => item.tags.includes(activeCategory))
+
+  const selectedSuggestion = useMemo(
+    () => suggestions.find((item) => item.id === selectedSuggestionId) ?? null,
+    [selectedSuggestionId, suggestions]
+  )
+
+  const canGenerate = (usage?.remainingToday ?? 0) > 0
+
+  async function handleGenerateSuggestions() {
+    try {
+      await generateSuggestionsMutation.mutateAsync({ style: selectedStyle })
+      toast.success('Smart suggestions generated')
+    } catch (error) {
+      toast.error(
+        getApiErrorMessage(error, 'Could not generate smart suggestions')
+      )
+    }
+  }
+
+  if (suggestionsQuery.isLoading) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-8 pb-10">
+        <SectionCard className="flex items-center justify-center py-16">
+          <Loader2 className="h-5 w-5 animate-spin text-[#e4ff00]" />
+        </SectionCard>
+      </div>
+    )
+  }
+
+  if (suggestionsQuery.isError) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-8 pb-10">
+        <SectionCard>
+          <EmptyState
+            title="Suggestions could not be loaded"
+            description="Nutrix hit an issue while loading your smart suggestion state. Try refreshing in a moment."
+          />
+        </SectionCard>
+      </div>
+    )
+  }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 pb-10">
-      <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#141414] p-6 sm:p-12">
-        <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#e4ff00]">
-                <Sparkles className="h-3 w-3" />
-                AI Powered Insights
+    <>
+      <div className="mx-auto max-w-5xl space-y-8 pb-10">
+        <div className="rounded-[2rem] border border-white/10 bg-[#141414] p-6 sm:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-2 rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-3 py-1 text-[10px] font-black tracking-[0.2em] text-[#e4ff00] uppercase">
+                  Nutrix AI
+                </div>
+                <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black tracking-[0.2em] text-[#d7d7d7] uppercase">
+                  Beta
+                </div>
               </div>
-              <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-[#d7d7d7]">
-                Coming Soon
-              </div>
+              <h2 className="font-mono text-2xl font-black tracking-tighter text-[#f5f5f5] uppercase sm:text-4xl">
+                Smart <span className="text-[#e4ff00]">Suggestions</span>
+              </h2>
+              <p className="max-w-2xl text-sm leading-relaxed text-[#777]">
+                Pick the type of food you want first, then tap generate only
+                when you want a fresh smart suggestion set.
+              </p>
             </div>
-            <h2 className="font-mono text-2xl font-black uppercase tracking-tighter text-[#f5f5f5] sm:text-4xl">
-              Smart <span className="text-[#e4ff00]">Suggestions</span>
-            </h2>
-            <p className="max-w-md text-sm leading-relaxed text-[#777]">
-              This is a sneak peek of the personalized meal suggestions experience.
-              The live AI recommendation flow is still being built.
-            </p>
+
+            <button
+              type="button"
+              onClick={() => void handleGenerateSuggestions()}
+              disabled={generateSuggestionsMutation.isPending || !canGenerate}
+              className="flex items-center justify-center gap-3 self-start rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-bold tracking-widest text-[#d7d7d7] uppercase transition-colors hover:border-[#e4ff00]/30 hover:text-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {generateSuggestionsMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : canGenerate ? (
+                <Sparkles className="h-4 w-4" />
+              ) : (
+                <Lock className="h-4 w-4" />
+              )}
+              {canGenerate ? 'Get Suggestions' : 'Daily Limit Reached'}
+            </button>
           </div>
-          <div className="mt-2 flex items-center justify-center gap-3 self-start rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-bold uppercase tracking-widest text-[#888] md:mt-0 md:self-auto">
-            <RotateCcw className="h-4 w-4" />
-            Preview Only
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <SuggestionTopCard
+              icon={<Target className="h-4 w-4" />}
+              label="Goal mode"
+              value={payload?.basedOn.goalMode ?? 'Custom'}
+              helper="Suggestions are tuned around your active goal"
+            />
+            <SuggestionTopCard
+              icon={<ChefHat className="h-4 w-4" />}
+              label="Meal focus"
+              value={payload?.basedOn.generatedForMealType ?? 'Mixed'}
+              helper="Nutrix uses what you usually log most often"
+            />
+            <SuggestionTopCard
+              icon={<Salad className="h-4 w-4" />}
+              label="Daily usage"
+              value={`${usage?.remainingToday ?? 0} left`}
+              helper={`You can generate up to ${usage?.dailyLimit ?? 3} times before ${usage?.resetAtLabel ?? '12:00 AM'}`}
+            />
           </div>
         </div>
 
-        <div className="relative z-10 mt-6 grid gap-3 sm:grid-cols-3">
-          <SuggestionTopCard
-            icon={<Target className="h-4 w-4" />}
-            label="Matched to goals"
-            value="Planned"
-            helper="Final AI suggestions will adapt to your goals and macro targets"
-          />
-          <SuggestionTopCard
-            icon={<ChefHat className="h-4 w-4" />}
-            label="Preview mode"
-            value="Sample meals"
-            helper="Current cards are a visual sneak peek, not live generated results"
-          />
-          <SuggestionTopCard
-            icon={<Salad className="h-4 w-4" />}
-            label="What is shown"
-            value={`${filteredSuggestions.length} examples`}
-            helper="Use the filters to explore the mock recommendation styles"
-          />
-        </div>
-      </div>
-
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        {['All', 'High Protein', 'Low Carb', 'Plant-Based', 'Quick Fix', 'Budget Friendly'].map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className={cn(
-              'whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition-all',
-              activeCategory === cat
-                ? 'border border-[#e4ff00]/20 bg-[#e4ff00] text-black'
-                : 'border border-white/5 bg-[#141414] text-[#666] hover:border-white/10 hover:text-[#999]'
-            )}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {filteredSuggestions.map((item) => (
-          <div 
-            key={item.id}
-            className="group flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/8 bg-[#111111] transition-all hover:-translate-y-0.5 hover:border-[#e4ff00]/30 hover:shadow-[0_20px_50px_rgba(0,0,0,0.45)]"
-          >
-            <div className="relative overflow-hidden border-b border-white/5 bg-[#151515] p-5">
-              <div className="absolute right-4 top-4 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-md">
-                <Clock className="mr-1 inline-flex h-3 w-3 align-text-bottom" />
-                {item.prepTime}
+        <SectionCard className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
+                Suggestion style
               </div>
-
-              <div className="flex min-h-32 flex-col justify-between">
-                <div className="flex items-start justify-between gap-3 pr-20">
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.22em] text-[#666]">
-                      Sneak peek card
-                    </div>
-                    <h3 className="mt-3 text-xl font-bold leading-tight text-[#f5f5f5] transition-colors group-hover:text-[#e4ff00]">
-                      {item.name}
-                    </h3>
-                  </div>
-                </div>
-
-                <p className="mt-4 text-sm leading-relaxed text-[#737373]">{item.description}</p>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {item.tags.map(tag => (
-                  <span key={tag} className="rounded-full border border-white/10 bg-black/35 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-white backdrop-blur-md">
-                    {tag}
-                  </span>
-                ))}
+              <div className="mt-2 text-sm text-[#7a7a7a]">
+                Choose what kind of meals you want Nutrix to generate when you
+                spend one of your daily uses.
               </div>
             </div>
+            <div className="hidden rounded-full border border-white/10 bg-[#111] px-3 py-1 text-[10px] font-black tracking-[0.2em] text-[#e4ff00] uppercase sm:inline-flex">
+              {formatStyleLabel(
+                payload?.basedOn.suggestionStyle ?? selectedStyle
+              )}
+            </div>
+          </div>
 
-            <div className="flex flex-1 flex-col p-5 sm:p-6">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-3 text-center">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-[#444]">Cals</div>
-                  <div className="mt-1 font-mono text-sm font-black text-[#aaa]">{item.calories}</div>
-                </div>
-                <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-3 text-center">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-[#444]">Prot</div>
-                  <div className="mt-1 font-mono text-sm font-black text-[#aaa]">{item.protein}g</div>
-                </div>
-                <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-3 text-center">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-[#444]">Carb</div>
-                  <div className="mt-1 font-mono text-sm font-black text-[#aaa]">{item.carbs}g</div>
-                </div>
-                <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-3 text-center">
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-[#444]">Fat</div>
-                  <div className="mt-1 font-mono text-sm font-black text-[#aaa]">{item.fat}g</div>
-                </div>
-              </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {suggestionStyleOptions.map((option) => {
+              const isActive = option.id === selectedStyle
 
-              <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[#e4ff00]/10 bg-[#e4ff00]/[0.04] p-4">
-                <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#e4ff00]/70" />
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[#777]">
-                    Preview reasoning
-                  </div>
-                  <p className="mt-2 text-xs leading-relaxed text-[#686868]">
-                    {item.reasoning}
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <button className="rounded-xl border border-white/10 py-3 text-[10px] font-black uppercase tracking-widest text-[#888] transition-all hover:bg-white/5 hover:text-white">
-                  Learn More
-                </button>
+              return (
                 <button
-                  disabled
-                  className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#1a1a1a] py-3 text-[10px] font-black uppercase tracking-widest text-[#666] opacity-70"
+                  key={option.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedStyle(option.id)
+                    setActiveCategory('All')
+                    setSelectedSuggestionId(null)
+                  }}
+                  className={cn(
+                    'rounded-[1.5rem] border p-4 text-left transition-colors',
+                    isActive
+                      ? 'border-[#e4ff00] bg-[#1e2307]'
+                      : 'border-white/10 bg-[#111111] hover:border-white/20'
+                  )}
                 >
-                  Coming Soon
+                  <div className="text-sm font-bold tracking-wide text-[#f5f5f5] uppercase">
+                    {option.label}
+                  </div>
+                  <div className="mt-2 text-sm leading-relaxed text-[#777]">
+                    {option.description}
+                  </div>
                 </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {filteredSuggestions.length === 0 ? (
-        <SectionCard className="text-center">
-          <div className="text-sm text-[#777]">
-            No suggestions match this filter yet. Try switching back to <span className="text-[#f5f5f5]">All</span>.
+              )
+            })}
           </div>
         </SectionCard>
+
+        <SectionCard className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
+              Daily limit
+            </div>
+            <div className="mt-2 text-sm text-[#cfcfcf]">
+              {suggestions.length > 0
+                ? `These are your current ${formatStyleLabel(selectedStyle)} suggestions from this session. Generating again will use another one of your daily attempts.`
+                : `You have ${usage?.remainingToday ?? 0} of ${usage?.dailyLimit ?? 3} suggestion attempts left today.`}
+            </div>
+            <div className="mt-1 text-xs text-[#6f6f6f]">
+              Used today: {usage?.usedToday ?? 0} / {usage?.dailyLimit ?? 3}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => void suggestionsQuery.refetch()}
+            disabled={suggestionsQuery.isFetching}
+            className="flex items-center justify-center gap-3 self-start rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-bold tracking-widest text-[#d7d7d7] uppercase transition-colors hover:border-[#e4ff00]/30 hover:text-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {suggestionsQuery.isFetching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RotateCcw className="h-4 w-4" />
+            )}
+            Refresh Usage
+          </button>
+        </SectionCard>
+
+        {suggestions.length > 0 ? (
+          <>
+            <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveCategory(cat)}
+                  className={cn(
+                    'rounded-xl px-4 py-2.5 text-xs font-bold tracking-wider whitespace-nowrap uppercase transition-all',
+                    activeCategory === cat
+                      ? 'border border-[#e4ff00]/20 bg-[#e4ff00] text-black'
+                      : 'border border-white/5 bg-[#141414] text-[#666] hover:border-white/10 hover:text-[#999]'
+                  )}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {filteredSuggestions.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setSelectedSuggestionId(item.id)}
+                  className="group flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/8 bg-[#111111] text-left transition-all hover:border-[#e4ff00]/30"
+                >
+                  <div className="border-b border-white/5 bg-[#151515] p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-[10px] font-black tracking-[0.22em] text-[#666] uppercase">
+                          Tap for recipe
+                        </div>
+                        <h3 className="mt-3 text-xl leading-tight font-bold text-[#f5f5f5] transition-colors group-hover:text-[#e4ff00]">
+                          {item.name}
+                        </h3>
+                      </div>
+                      <div className="rounded-full border border-white/10 bg-black/40 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white uppercase">
+                        {item.prepTime}
+                      </div>
+                    </div>
+
+                    <p className="mt-4 text-sm leading-relaxed text-[#737373]">
+                      {item.description}
+                    </p>
+
+                    <div className="mt-4 flex flex-wrap gap-1.5">
+                      <span className="rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-2.5 py-1 text-[9px] font-black tracking-wider text-[#e4ff00] uppercase">
+                        {item.difficulty}
+                      </span>
+                      {item.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full border border-white/10 bg-black/35 px-2.5 py-1 text-[9px] font-black tracking-wider text-white uppercase"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-1 flex-col p-5 sm:p-6">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <SuggestionMacroStat
+                        label="Cals"
+                        value={`${item.calories}`}
+                      />
+                      <SuggestionMacroStat
+                        label="Prot"
+                        value={`${item.protein}g`}
+                      />
+                      <SuggestionMacroStat
+                        label="Carb"
+                        value={`${item.carbs}g`}
+                      />
+                      <SuggestionMacroStat label="Fat" value={`${item.fat}g`} />
+                    </div>
+
+                    <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[#e4ff00]/10 bg-[#171a0a] p-4">
+                      <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#e4ff00]/70" />
+                      <div>
+                        <div className="text-[10px] font-black tracking-[0.18em] text-[#777] uppercase">
+                          Why Nutrix picked this
+                        </div>
+                        <p className="mt-2 text-xs leading-relaxed text-[#8b8b8b]">
+                          {item.reasoning}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between text-xs tracking-[0.2em] text-[#666] uppercase">
+                      <span>{item.sourceLabel}</span>
+                      <span>Source-backed</span>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {filteredSuggestions.length === 0 ? (
+              <SectionCard className="text-center">
+                <div className="text-sm text-[#777]">
+                  No suggestions match this filter yet. Try switching back to{' '}
+                  <span className="text-[#f5f5f5]">All</span>.
+                </div>
+              </SectionCard>
+            ) : null}
+          </>
+        ) : (
+          <SectionCard>
+            <EmptyState
+              title="No suggestions generated yet"
+              description="Opening this page does not spend a daily use anymore. Pick a style, then tap Generate Suggestions when you want a fresh set."
+            />
+          </SectionCard>
+        )}
+      </div>
+
+      {selectedSuggestion ? (
+        <RecipeSheet
+          suggestion={selectedSuggestion}
+          onClose={() => setSelectedSuggestionId(null)}
+        />
       ) : null}
+    </>
+  )
+}
+
+function RecipeSheet({
+  suggestion,
+  onClose,
+}: {
+  suggestion: SuggestionCard
+  onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/65 backdrop-blur-sm">
+      <button
+        type="button"
+        aria-label="Close recipe"
+        className="absolute inset-0 cursor-default"
+        onClick={onClose}
+      />
+      <div className="relative z-10 flex h-[88vh] min-h-0 w-full max-w-3xl flex-col overflow-hidden rounded-t-[2rem] border border-white/10 bg-[#111111] lg:mb-8 lg:h-auto lg:max-h-[86vh] lg:rounded-[2rem]">
+        <div className="flex justify-center pt-3 lg:hidden">
+          <div className="h-1.5 w-14 rounded-full bg-white/10" />
+        </div>
+
+        <div className="flex items-start justify-between gap-4 border-b border-white/10 px-5 pt-4 pb-4 sm:px-6">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-2.5 py-1 text-[10px] font-black tracking-[0.2em] text-[#e4ff00] uppercase">
+                Recipe
+              </span>
+              <span className="rounded-full border border-white/10 bg-[#161616] px-2.5 py-1 text-[10px] font-black tracking-[0.2em] text-[#cfcfcf] uppercase">
+                {suggestion.difficulty}
+              </span>
+            </div>
+            <h3 className="mt-3 text-2xl font-bold text-[#f5f5f5]">
+              {suggestion.name}
+            </h3>
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#7a7a7a]">
+              {suggestion.description}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#151515] text-[#999] transition-colors hover:text-white"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-5 pb-6 sm:px-6">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <RecipeMetaCard
+              icon={<Clock className="h-4 w-4" />}
+              label="Prep"
+              value={suggestion.prepTime}
+            />
+            <RecipeMetaCard
+              icon={<Target className="h-4 w-4" />}
+              label="Calories"
+              value={`${suggestion.calories}`}
+            />
+            <RecipeMetaCard
+              icon={<Salad className="h-4 w-4" />}
+              label="Protein"
+              value={`${suggestion.protein}g`}
+            />
+            <RecipeMetaCard
+              icon={<ChefHat className="h-4 w-4" />}
+              label="Carbs"
+              value={`${suggestion.carbs}g`}
+            />
+            <RecipeMetaCard
+              icon={<Sparkles className="h-4 w-4" />}
+              label="Fat"
+              value={`${suggestion.fat}g`}
+            />
+          </div>
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+            <SectionCard className="space-y-4 bg-[#131313]">
+              <div>
+                <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
+                  Recipe source
+                </div>
+                <div className="mt-2 text-sm text-[#777]">
+                  Nutrix selected this from a real recipe source so you can
+                  follow the actual cooking guide.
+                </div>
+              </div>
+              <a
+                href={suggestion.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between gap-3 rounded-2xl border border-[#e4ff00]/20 bg-[#171a0a] px-4 py-4 text-sm text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/40 hover:text-[#e4ff00]"
+              >
+                <div>
+                  <div className="font-semibold">{suggestion.sourceLabel}</div>
+                  <div className="mt-1 text-xs text-[#7d7d7d]">
+                    Open the full recipe and cooking steps
+                  </div>
+                </div>
+                <ExternalLink className="h-4 w-4 shrink-0" />
+              </a>
+              <div className="rounded-2xl border border-white/8 bg-[#0f0f0f] px-4 py-4 text-sm leading-relaxed text-[#cfcfcf]">
+                {suggestion.description}
+              </div>
+            </SectionCard>
+
+            <SectionCard className="space-y-4 bg-[#131313]">
+              <div>
+                <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
+                  Why Nutrix picked this
+                </div>
+                <div className="mt-2 text-sm text-[#777]">
+                  This is the personalization layer. The cooking itself comes
+                  from the linked recipe source.
+                </div>
+              </div>
+              <div className="rounded-2xl border border-white/8 bg-[#0f0f0f] px-4 py-4 text-sm leading-relaxed text-[#e7e7e7]">
+                {suggestion.reasoning}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/8 bg-[#0f0f0f] px-4 py-4">
+                  <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
+                    Difficulty
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-[#f5f5f5] capitalize">
+                    {suggestion.difficulty}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-white/8 bg-[#0f0f0f] px-4 py-4">
+                  <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
+                    Source
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-[#f5f5f5]">
+                    {suggestion.sourceLabel}
+                  </div>
+                </div>
+              </div>
+            </SectionCard>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -247,13 +550,71 @@ function SuggestionTopCard({
   helper: string
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-4 backdrop-blur-sm">
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
       <div className="flex items-center gap-2 text-[#e4ff00]">
         {icon}
-        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[#777]">{label}</div>
+        <div className="text-[10px] font-black tracking-[0.2em] text-[#777] uppercase">
+          {label}
+        </div>
       </div>
-      <div className="mt-3 text-lg font-semibold text-[#f5f5f5]">{value}</div>
-      <div className="mt-1 text-xs leading-relaxed text-[#6f6f6f]">{helper}</div>
+      <div className="mt-3 text-lg font-semibold text-[#f5f5f5] capitalize">
+        {value}
+      </div>
+      <div className="mt-1 text-xs leading-relaxed text-[#6f6f6f]">
+        {helper}
+      </div>
     </div>
   )
+}
+
+function SuggestionMacroStat({
+  label,
+  value,
+}: {
+  label: string
+  value: string
+}) {
+  return (
+    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-3 text-center">
+      <div className="text-[10px] font-bold tracking-widest text-[#444] uppercase">
+        {label}
+      </div>
+      <div className="mt-1 font-mono text-sm font-black text-[#aaa]">
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function RecipeMetaCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-[#151515] p-4">
+      <div className="flex items-center gap-2 text-[#e4ff00]">
+        {icon}
+        <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
+          {label}
+        </div>
+      </div>
+      <div className="mt-3 text-lg font-semibold text-[#f5f5f5]">{value}</div>
+    </div>
+  )
+}
+
+function formatStyleLabel(style: SuggestionStyle) {
+  switch (style) {
+    case 'lutong-bahay':
+      return 'Lutong Bahay'
+    case 'high-protein':
+      return 'High Protein'
+    default:
+      return style.charAt(0).toUpperCase() + style.slice(1)
+  }
 }

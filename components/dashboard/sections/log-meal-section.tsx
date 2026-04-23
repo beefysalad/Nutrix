@@ -29,6 +29,16 @@ type MobileStep = 'mode' | 'meal' | 'form'
 type MealInputMode = 'search' | 'custom' | 'ai'
 
 const mealTags: MealType[] = ['breakfast', 'lunch', 'snack', 'dinner']
+const LAST_USED_MODE_STORAGE_KEY = 'nutrix-last-meal-input-mode'
+
+function getDefaultMealTypeForCurrentTime(): MealType {
+  const hour = new Date().getHours()
+
+  if (hour < 11) return 'breakfast'
+  if (hour < 15) return 'lunch'
+  if (hour < 18) return 'snack'
+  return 'dinner'
+}
 
 export function LogMealSection({
   presentation = 'page',
@@ -37,8 +47,13 @@ export function LogMealSection({
   presentation?: 'page' | 'sheet'
   onClose?: () => void
 }) {
-  const [activeTab, setActiveTab] = useState<MealInputMode>('search')
-  const [selectedMealTag, setSelectedMealTag] = useState<MealType>('breakfast')
+  const [activeTab, setActiveTab] = useState<MealInputMode>(() => {
+    if (typeof window === 'undefined') return 'search'
+    const stored = window.localStorage.getItem(LAST_USED_MODE_STORAGE_KEY)
+    if (stored === 'search' || stored === 'custom' || stored === 'ai') return stored
+    return 'search'
+  })
+  const [selectedMealTag, setSelectedMealTag] = useState<MealType>(getDefaultMealTypeForCurrentTime)
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false)
   const [mobileStep, setMobileStep] = useState<MobileStep>('mode')
   const [aiResult, setAiResult] = useState<ParsedMeal | null>(null)
@@ -81,6 +96,14 @@ export function LogMealSection({
   const isSheetPresentation = presentation === 'sheet'
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    window.localStorage.setItem(LAST_USED_MODE_STORAGE_KEY, activeTab)
+  }, [activeTab])
+
+  useEffect(() => {
     if (!isActionSheetOpen || isSheetPresentation) {
       return
     }
@@ -94,7 +117,8 @@ export function LogMealSection({
   }, [isActionSheetOpen, isSheetPresentation])
 
   function openActionSheet() {
-    setMobileStep('mode')
+    setSelectedMealTag(getDefaultMealTypeForCurrentTime())
+    setMobileStep('form')
     setIsActionSheetOpen(true)
   }
 
@@ -232,17 +256,17 @@ export function LogMealSection({
                   ? 'Choose input mode'
                   : mobileStep === 'meal'
                     ? 'Choose meal type'
-                    : 'Finish logging'}
+                    : 'Log your meal'}
               </div>
               <div className="mt-1 text-sm text-[#777]">
                 {mobileStep === 'mode'
                   ? 'Start with how you want to add this meal.'
                   : mobileStep === 'meal'
                     ? 'Now choose where this meal belongs in your day.'
-                    : 'Complete the meal entry form below.'}
+                    : 'Start logging right away and change the mode or meal type only if needed.'}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
           {onClose ? (
             <button
               type="button"
@@ -344,12 +368,25 @@ export function LogMealSection({
 
         {mobileStep === 'form' ? (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-white/10 bg-[#0d0d0d] px-4 py-3">
+            <div className="rounded-2xl border border-white/10 bg-[#0d0d0d] p-4">
               <div className="text-xs font-black uppercase tracking-[0.18em] text-[#666]">
-                Selected Flow
+                Quick setup
               </div>
-              <div className="mt-2 text-sm text-[#f5f5f5]">
-                {currentMode?.label} for {selectedMealTag}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMobileStep('mode')}
+                  className="rounded-full border border-white/10 bg-[#141414] px-3 py-1.5 text-sm text-[#f5f5f5]"
+                >
+                  {currentMode?.label}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileStep('meal')}
+                  className="rounded-full border border-white/10 bg-[#141414] px-3 py-1.5 text-sm capitalize text-[#f5f5f5]"
+                >
+                  {selectedMealTag}
+                </button>
               </div>
             </div>
             <MealActionContent

@@ -237,11 +237,11 @@ export function NutrixDashboard({
             className="absolute inset-0 cursor-default"
             onClick={() => setIsLogMealSheetOpen(false)}
           />
-          <div className="relative z-10 h-[90vh] w-full max-w-4xl overflow-hidden rounded-t-[2rem] border border-white/10 bg-[#111111] lg:mb-8 lg:h-auto lg:max-h-[88vh] lg:rounded-[2rem]">
+          <div className="relative z-10 flex h-[90vh] w-full max-w-4xl min-h-0 flex-col overflow-hidden rounded-t-[2rem] border border-white/10 bg-[#111111] lg:mb-8 lg:h-auto lg:max-h-[88vh] lg:rounded-[2rem]">
             <div className="flex justify-center pt-3 lg:hidden">
               <div className="h-1.5 w-14 rounded-full bg-white/10" />
             </div>
-            <div className="max-h-full overflow-y-auto px-4 pb-6 pt-4 md:px-6">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 pt-4 md:px-6">
               <LogMealSection presentation="sheet" onClose={() => setIsLogMealSheetOpen(false)} />
             </div>
           </div>

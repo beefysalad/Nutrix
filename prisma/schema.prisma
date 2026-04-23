@@ -66,6 +66,7 @@ model User {
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
   onBoarded              Boolean                 @default(false)
+  foodSuggestionLimit    Int                     @default(0)
   foods                  Food[]
   goals                  Goal[]
   integrationConnections IntegrationConnection[]

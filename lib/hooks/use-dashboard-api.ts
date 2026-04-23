@@ -10,6 +10,7 @@ type UnitSystem = 'metric' | 'imperial'
 type AiModel = 'gemini-2.5-flash-lite' | 'gemini-2.5-flash'
 type GoalMode = 'cutting' | 'maintenance' | 'bulking' | 'custom'
 type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other'
+type SuggestionStyle = 'quick' | 'lutong-bahay' | 'budget' | 'high-protein'
 type EntrySource = 'manual' | 'search' | 'ai' | 'telegram'
 type AiMealFeedback = 'accurate' | 'inaccurate'
 
@@ -82,6 +83,40 @@ export type ParseMealResponse = {
   model: string
   fallbackFrom?: string
   parsed: ParsedMeal
+}
+
+export type MealSuggestionResponse = {
+  usage: {
+    dailyLimit: number
+    usedToday: number
+    remainingToday: number
+    resetAtLabel: string
+    suggestionDate: string
+  }
+  payload: {
+    model: string
+    basedOn: {
+      goalMode: GoalMode | null
+      recentFoods: string[]
+      generatedForMealType: MealType | null
+      suggestionStyle: SuggestionStyle | null
+    }
+    suggestions: Array<{
+      id: string
+      name: string
+      description: string
+      calories: number
+      protein: number
+      carbs: number
+      fat: number
+      tags: string[]
+      reasoning: string
+      prepTime: string
+      difficulty: 'easy' | 'medium'
+      sourceLabel: string
+      sourceUrl: string
+    }>
+  } | null
 }
 
 export type MealItemResponse = {
@@ -323,6 +358,7 @@ export function useSaveGoalsMutation() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(['active-goal'], data)
+      void queryClient.invalidateQueries({ queryKey: ['meal-suggestions'] })
     },
   })
 }
@@ -332,6 +368,36 @@ export function useParseMealMutation() {
     mutationFn: async (input: { text: string; mealType?: MealType }) => {
       const response = await api.post<ParseMealResponse>('/ai/parse-meal', input)
       return response.data
+    },
+  })
+}
+
+export function useMealSuggestionsQuery(input?: { style?: SuggestionStyle }) {
+  return useQuery({
+    queryKey: ['meal-suggestions', input?.style ?? 'quick'],
+    queryFn: async () => {
+      const response = await api.get<MealSuggestionResponse>('/ai/meal-suggestions', {
+        params: {
+          ...(input?.style ? { style: input.style } : {}),
+        },
+      })
+      return response.data
+    },
+  })
+}
+
+export function useGenerateMealSuggestionsMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input?: { style?: SuggestionStyle }) => {
+      const response = await api.post<MealSuggestionResponse>('/ai/meal-suggestions', {
+        ...(input?.style ? { style: input.style } : {}),
+      })
+      return response.data
+    },
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(['meal-suggestions', variables?.style ?? 'quick'], data)
     },
   })
 }
@@ -364,6 +430,7 @@ export function useCreateMealMutation() {
         queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard-trends'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard-insights'] }),
+        queryClient.invalidateQueries({ queryKey: ['meal-suggestions'] }),
       ])
     },
   })
@@ -388,6 +455,7 @@ export function useUpdateMealAiFeedbackMutation() {
         queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard-trends'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard-insights'] }),
+        queryClient.invalidateQueries({ queryKey: ['meal-suggestions'] }),
       ])
     },
   })
@@ -408,6 +476,7 @@ export function useDeleteMealMutation() {
         queryClient.invalidateQueries({ queryKey: ['daily-report'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard-trends'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard-insights'] }),
+        queryClient.invalidateQueries({ queryKey: ['meal-suggestions'] }),
       ])
     },
   })
@@ -451,7 +520,10 @@ export function useOnboardingMutation() {
       return response.data
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] }),
+        queryClient.invalidateQueries({ queryKey: ['meal-suggestions'] }),
+      ])
     },
   })
 }
