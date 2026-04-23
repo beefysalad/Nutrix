@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-import { UserButton } from '@clerk/nextjs'
+import { UserButton, useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 import {
   History,
@@ -79,6 +79,7 @@ export function NutrixDashboard({
   suggestionsView?: SuggestionsSubview
 }) {
   const summaryQuery = useDashboardSummaryQuery()
+  const { user } = useUser()
   const onboarded = summaryQuery.data?.onBoarded ?? true
 
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
@@ -107,6 +108,15 @@ export function NutrixDashboard({
     day: 'numeric',
     year: 'numeric',
   }).format(new Date())
+  const userDisplayName =
+    user?.fullName ??
+    [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() ??
+    user?.username ??
+    'Account'
+  const userEmail =
+    user?.primaryEmailAddress?.emailAddress ??
+    user?.emailAddresses[0]?.emailAddress ??
+    'Profile and sign out'
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
@@ -167,6 +177,32 @@ export function NutrixDashboard({
               )
             })}
           </nav>
+          <div
+            className={cn(
+              'border-t border-white/10 p-4',
+              isSidebarCollapsed && 'flex justify-center px-3',
+            )}
+          >
+            <div
+              className={cn(
+                'relative flex items-center gap-3 px-1 py-2',
+                isSidebarCollapsed && 'justify-center p-0',
+              )}
+            >
+              {!isSidebarCollapsed ? (
+                <DashboardUserButton className="absolute inset-0 z-10 h-full w-full opacity-0 [&_*]:h-full [&_*]:w-full" />
+              ) : null}
+              <div className={cn(!isSidebarCollapsed && 'pointer-events-none')}>
+                <DashboardUserButton />
+              </div>
+              <div className={cn('min-w-0', isSidebarCollapsed && 'sr-only')}>
+                <div className="truncate text-sm font-semibold text-[#f5f5f5]">
+                  {userDisplayName}
+                </div>
+                <div className="truncate text-xs text-[#777]">{userEmail}</div>
+              </div>
+            </div>
+          </div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -202,21 +238,8 @@ export function NutrixDashboard({
                   >
                     <span className="mr-2">+</span> Log Meal
                   </button>
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#141414]">
-                    <UserButton
-                      appearance={{
-                        elements: {
-                          userButtonAvatarBox: 'h-10 w-10 rounded-full',
-                          userButtonTrigger:
-                            'h-10 w-10 rounded-full border-0 shadow-none focus:shadow-none focus:ring-0',
-                          userButtonPopoverCard:
-                            'border border-white/10 bg-[#141414] rounded-2xl text-white shadow-2xl',
-                          userButtonPopoverActionButton: 'text-white hover:bg-white/5 rounded-xl',
-                          userButtonPopoverActionButtonText: 'text-white',
-                          userButtonPopoverFooter: 'hidden',
-                        },
-                      }}
-                    />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#141414] lg:hidden">
+                    <DashboardUserButton />
                   </div>
                 </div>
               </div>
@@ -318,5 +341,26 @@ function MobileNavItem({
       <Icon className={cn('h-5 w-5 transition-transform', active ? 'text-[#e4ff00]' : 'text-[#999]')} />
       <span>{label}</span>
     </Link>
+  )
+}
+
+function DashboardUserButton({ className }: { className?: string }) {
+  return (
+    <div className={className}>
+      <UserButton
+        appearance={{
+          elements: {
+            userButtonAvatarBox: 'h-10 w-10 rounded-full',
+            userButtonTrigger:
+              'h-10 w-10 rounded-full border-0 shadow-none focus:shadow-none focus:ring-0',
+            userButtonPopoverCard:
+              'border border-white/10 bg-[#141414] rounded-2xl text-white shadow-2xl',
+            userButtonPopoverActionButton: 'text-white hover:bg-white/5 rounded-xl',
+            userButtonPopoverActionButtonText: 'text-white',
+            userButtonPopoverFooter: 'hidden',
+          },
+        }}
+      />
+    </div>
   )
 }
