@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import { EmptyState, SectionCard, cn } from '@/components/dashboard/ui'
+import { SectionCard, cn } from '@/components/dashboard/ui'
 import { useMealsQuery } from '@/lib/hooks/use-dashboard-api'
 
 function startOfMonth(date: Date) {
@@ -89,11 +89,6 @@ export function CalendarSection() {
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-5 w-5 animate-spin text-[#e4ff00]" />
           </div>
-        ) : days.every((day) => !day.meals) ? (
-          <EmptyState
-            title="No meals logged in this month"
-            description="As you log food, each day will show meal count and total calories right in the calendar."
-          />
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-[10px] font-bold uppercase tracking-widest text-[#555]">
@@ -128,17 +123,22 @@ export function CalendarSection() {
                           {day.label}
                         </div>
                         
-                        {day.meals > 0 ? (
-                          <div className="mt-auto flex flex-col items-center gap-1 pb-1">
-                            <div className="hidden sm:block text-[10px] text-[#777]">
-                              {day.meals} {day.meals === 1 ? 'meal' : 'meals'}
-                            </div>
-                            <div className="font-mono text-[9px] sm:text-xs font-bold text-[#e4ff00]">
-                              {day.calories}<span className="hidden sm:inline ml-0.5 opacity-60">cal</span>
-                            </div>
-                            <div className="h-1 w-1 rounded-full bg-[#e4ff00] sm:hidden" />
+                        <div className="mt-auto flex flex-col items-center gap-1 pb-1">
+                          <div className="hidden text-[10px] text-[#777] sm:block">
+                            {day.meals} {day.meals === 1 ? 'meal' : 'meals'}
                           </div>
-                        ) : null}
+                          <div
+                            className={cn(
+                              'font-mono text-[9px] font-bold sm:text-xs',
+                              day.meals > 0 ? 'text-[#e4ff00]' : 'text-[#555]',
+                            )}
+                          >
+                            {day.calories}<span className="hidden sm:inline ml-0.5 opacity-60">cal</span>
+                          </div>
+                          {day.meals > 0 ? (
+                            <div className="h-1 w-1 rounded-full bg-[#e4ff00] sm:hidden" />
+                          ) : null}
+                        </div>
                       </>
                     ) : null}
                   </div>

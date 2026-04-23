@@ -4,7 +4,7 @@ import { Bot, Loader2, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
 import { MiniDonut } from '@/components/dashboard/charts'
-import { EmptyState, SectionCard } from '@/components/dashboard/ui'
+import { SectionCard } from '@/components/dashboard/ui'
 import { useDashboardSummaryQuery } from '@/lib/hooks/use-dashboard-api'
 
 // Neon accent palette — one color per stat / macro
@@ -81,57 +81,54 @@ export function OverviewSection() {
 
   const data = summaryQuery.data
 
-  if (!data || !data.hasAnyMealHistory) {
-    return (
-      <div className="mx-auto max-w-7xl space-y-6">
-        <SectionCard>
-          <EmptyState
-            title="Your dashboard will populate once meals are logged"
-            description="Start with Log Meal or Telegram, then Nutrix will compute today's calories, macros, and goal progress here."
-          />
-        </SectionCard>
-      </div>
-    )
+  const totals = data?.totals ?? {
+    calories: 0,
+    proteinGrams: 0,
+    carbsGrams: 0,
+    fatGrams: 0,
+    mealCount: 0,
   }
-
-  const displayMeals = data.totals.mealCount > 0 ? data.meals : data.recentMeals
-  const isShowingRecentMeals = data.totals.mealCount === 0
-  const mealsHeading = data.totals.mealCount > 0 ? "Today's meals" : 'Recent meals'
+  const displayMeals = totals.mealCount > 0 ? data?.meals ?? [] : data?.recentMeals ?? []
+  const hasAnyMealHistory = Boolean(data?.hasAnyMealHistory)
+  const isShowingRecentMeals = totals.mealCount === 0 && displayMeals.length > 0
+  const mealsHeading = totals.mealCount > 0 ? "Today's meals" : 'Recent meals'
   const mealsDescription =
-    data.totals.mealCount > 0
+    totals.mealCount > 0
       ? "What you've logged so far today."
-      : 'Your latest logged meals while today is still empty.'
+      : hasAnyMealHistory
+        ? 'Your latest logged meals while today is still empty.'
+        : '0 meals logged yet.'
   const macroDescription =
-    data.totals.mealCount > 0
+    totals.mealCount > 0
       ? "A quick look at today's macro balance."
-      : 'Today is still empty, so this is waiting for your first meal log.'
+      : 'Current macro split for today.'
 
   const summaryCards = [
     {
       label: 'Calories',
-      value: `${data.totals.calories}`,
+      value: `${totals.calories}`,
       helper: 'today',
       accent: NEON.yellow,
     },
     {
       label: 'Protein',
-      value: `${data.totals.proteinGrams.toFixed(1)}g`,
+      value: `${totals.proteinGrams.toFixed(1)}g`,
       helper: 'today',
       accent: NEON.green,
     },
     {
       label: 'Meals',
-      value: `${data.totals.mealCount}`,
+      value: `${totals.mealCount}`,
       helper: 'logged today',
       accent: NEON.blue,
     },
     {
       label: 'Remaining',
       value:
-        data.remainingCalories != null
+        data?.remainingCalories != null
           ? `${data.remainingCalories}`
-          : 'No goal',
-      helper: data.goal ? 'vs goal' : 'set a calorie goal',
+          : '0',
+      helper: data?.goal ? 'vs goal' : 'set a calorie goal',
       accent: NEON.orange,
         },
       ]
@@ -197,7 +194,7 @@ export function OverviewSection() {
             </div>
           </div>
           <div className="space-y-3">
-            {displayMeals.map((meal) => {
+            {displayMeals.length > 0 ? displayMeals.map((meal) => {
               const calories = meal.items.reduce(
                 (sum, item) => sum + item.calories,
                 0
@@ -247,7 +244,22 @@ export function OverviewSection() {
                   </div>
                 </div>
               )
-            })}
+            }) : (
+              <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <span className="inline-flex items-center rounded-lg border border-white/10 bg-white/[0.03] px-2 py-0.5 text-[10px] font-black tracking-tighter text-[#777] uppercase">
+                      0 meals
+                    </span>
+                    <div className="mt-1.5 text-xs text-[#777]">No food logged yet</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-mono text-sm font-black text-[#e4ff00]">0 cal</div>
+                    <div className="mt-1 text-xs tracking-wide text-[#666] uppercase">today</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </SectionCard>
 
@@ -257,21 +269,21 @@ export function OverviewSection() {
             <p className="mt-1 text-sm text-[#777]">{macroDescription}</p>
           </div>
           <MiniDonut
-            totalLabel={`${data.totals.calories}`}
+            totalLabel={`${totals.calories}`}
             data={[
               {
                 name: 'Protein',
-                value: Math.max(0, data.totals.proteinGrams),
+                value: Math.max(0, totals.proteinGrams),
                 color: NEON.green.hex,
               },
               {
                 name: 'Carbs',
-                value: Math.max(0, data.totals.carbsGrams),
+                value: Math.max(0, totals.carbsGrams),
                 color: NEON.blue.hex,
               },
               {
                 name: 'Fat',
-                value: Math.max(0, data.totals.fatGrams),
+                value: Math.max(0, totals.fatGrams),
                 color: NEON.orange.hex,
               },
             ]}

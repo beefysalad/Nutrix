@@ -68,13 +68,6 @@ export function TrendsSection() {
             description="Nutrix hit an issue while loading your nutrition trend data. Try again in a moment."
           />
         </SectionCard>
-      ) : trendData.line.every((item) => item.calories === 0) ? (
-        <SectionCard>
-          <EmptyState
-            title="Trends will appear after meals are logged"
-            description="Once you log meals over multiple days, Nutrix will chart calories and macro patterns here."
-          />
-        </SectionCard>
       ) : (
         <>
           <SectionCard>

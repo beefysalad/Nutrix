@@ -2,7 +2,7 @@
 
 import { Bot, Loader2 } from 'lucide-react'
 
-import { EmptyState, SectionCard } from '@/components/dashboard/ui'
+import { SectionCard } from '@/components/dashboard/ui'
 import { useDashboardInsightsQuery } from '@/lib/hooks/use-dashboard-api'
 
 export function InsightsSection() {
@@ -11,10 +11,14 @@ export function InsightsSection() {
   const topFoods = insight?.topFoods ?? []
   const primaryInsight =
     insight?.primaryInsight ??
-    'Nutrix is still building a fuller nutrition readout from your recent meals.'
+    '0 meals analyzed in the last 7 days.'
   const averageProteinPerMeal = insight?.averageProteinPerMeal ?? 0
-  const secondaryInsight = insight?.secondaryInsight ?? null
-  const actionInsight = insight?.actionInsight ?? null
+  const secondaryInsight =
+    insight?.secondaryInsight ??
+    'Logged days: 0. Meal count: 0. Average meal calories: 0.'
+  const actionInsight =
+    insight?.actionInsight ??
+    'Start with one meal and this section will update with your actual food patterns.'
 
   if (insightsQuery.isLoading) {
     return (
@@ -28,23 +32,7 @@ export function InsightsSection() {
     return (
       <div className="mx-auto max-w-7xl space-y-6">
         <SectionCard>
-          <EmptyState
-            title="Insights could not be loaded"
-            description="Nutrix hit an issue while generating your current nutrition insights. Try again in a moment."
-          />
-        </SectionCard>
-      </div>
-    )
-  }
-
-  if (!insight || !insightsQuery.data?.hasData) {
-    return (
-      <div className="mx-auto max-w-7xl space-y-6">
-        <SectionCard>
-          <EmptyState
-            title="Insights need a bit of real nutrition history"
-            description="Log meals across a few days and Nutrix will start surfacing patterns and guidance here."
-          />
+          <div className="text-sm text-[#888]">Insights could not be loaded.</div>
         </SectionCard>
       </div>
     )
@@ -70,13 +58,13 @@ export function InsightsSection() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            <InsightMetric label="Avg meal calories" value={`${insight.averageCalories}`} helper="per logged meal" />
+            <InsightMetric label="Avg meal calories" value={`${insight?.averageCalories ?? 0}`} helper="per logged meal" />
             <InsightMetric label="Avg protein" value={`${averageProteinPerMeal}g`} helper="per logged meal" />
             <InsightMetric
               label="Goal status today"
               value={
-                insight.remainingCalories == null
-                  ? 'No goal'
+                insight?.remainingCalories == null
+                  ? '0'
                   : insight.remainingCalories >= 0
                     ? `${insight.remainingCalories} under`
                     : `${Math.abs(insight.remainingCalories)} over`
@@ -107,13 +95,25 @@ export function InsightsSection() {
                     </div>
                   ))
                 ) : (
-                  <div className="text-sm text-[#777]">Keep logging meals to surface recurring food patterns.</div>
+                  <>
+                    <FoodMetric name="Foods tracked" value="0" />
+                    <FoodMetric name="Recurring foods" value="0" />
+                  </>
                 )}
               </div>
             </div>
           </div>
         </div>
       </SectionCard>
+    </div>
+  )
+}
+
+function FoodMetric({ name, value }: { name: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-[#111] px-4 py-3">
+      <div className="text-sm text-[#f5f5f5]">{name}</div>
+      <div className="text-xs uppercase tracking-wide text-[#888]">{value}</div>
     </div>
   )
 }
