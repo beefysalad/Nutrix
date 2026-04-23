@@ -14,7 +14,7 @@ import {
   type OnboardingFormValues,
 } from '@/lib/validations/dashboard-forms'
 
-type Step = 0 | 1 | 2 | 3 | 4
+type Step = 0 | 1 | 2 | 3 | 4 | 5
 
 const genderOptions = ['male', 'female'] as const
 const activityOptions = [
@@ -28,6 +28,24 @@ const goalOptions = [
   { id: 'lose-weight', label: 'Lose Weight', desc: 'Aggressive calorie deficit for fat loss' },
   { id: 'maintain-weight', label: 'Maintenance', desc: 'Optimize performance and vitality' },
   { id: 'gain-weight', label: 'Gain Muscle', desc: 'Calorie surplus geared for hypertrophy' },
+] as const
+const featureOptions = [
+  {
+    label: 'Search',
+    desc: 'Look up foods quickly and add them with portions.',
+  },
+  {
+    label: 'AI parsing',
+    desc: 'Type meals like "4 siomai and rice" and Nutrix estimates the entry.',
+  },
+  {
+    label: 'Custom',
+    desc: 'Manually add exact calories and macros when you already know them.',
+  },
+  {
+    label: 'Telegram',
+    desc: 'Send meals to @NutrrixBot when you want to log from chat.',
+  },
 ] as const
 
 function OnboardingStepHeader({
@@ -156,7 +174,7 @@ export function OnboardingWizard() {
         <div className="mx-auto mb-8 h-1 w-full max-w-sm overflow-hidden rounded-full bg-white/10">
           <div
             className="h-full bg-[#e4ff00] transition-all duration-500 ease-out"
-            style={{ width: `${(step / 4) * 100}%` }}
+            style={{ width: `${(step / 5) * 100}%` }}
           />
         </div>
 
@@ -293,6 +311,38 @@ export function OnboardingWizard() {
 
           {step === 4 && (
             <div className="space-y-8">
+              <OnboardingStepHeader
+                title="How You'll Log"
+                description="After setup, you can choose the fastest way for each meal."
+              />
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {featureOptions.map((feature) => (
+                  <div
+                    key={feature.label}
+                    className="rounded-xl border border-white/10 bg-transparent px-4 py-3"
+                  >
+                    <div className="text-sm font-bold uppercase tracking-wider text-[#f5f5f5]">
+                      {feature.label}
+                    </div>
+                    <div className="mt-1 text-sm leading-relaxed text-[#777]">
+                      {feature.desc}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-xl border border-[#e4ff00]/20 bg-[#e4ff00]/5 px-4 py-3 text-sm leading-relaxed text-[#cddf73]">
+                Tip: use AI parsing for messy real-life meals, search for simple foods,
+                and custom when you already know the numbers.
+              </div>
+
+              <OnboardingNav back={() => setStep(3)} next={() => setStep(5)} />
+            </div>
+          )}
+
+          {step === 5 && (
+            <div className="space-y-8">
               <div className="text-center space-y-2">
                 <h2 className="text-3xl font-black uppercase tracking-tighter text-white">System Calibration</h2>
                 <p className="text-[#888]">Calculated daily targets based on your telemetry.</p>
@@ -331,7 +381,7 @@ export function OnboardingWizard() {
               </div>
 
               <OnboardingNav
-                back={() => setStep(3)}
+                back={() => setStep(4)}
                 next={handleSubmit(onSubmit)}
                 nextLabel="Confirm"
                 loading={isSubmitting}
