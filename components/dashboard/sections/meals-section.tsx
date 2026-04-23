@@ -262,8 +262,19 @@ function DayCard({
               <div className="text-[9px] font-black tracking-[0.24em] text-[#555] uppercase">
                 Nutrition timeline
               </div>
-              <div className="mt-1 text-2xl font-semibold tracking-tight text-[#f4f4f4]">
-                {formatDayHeader(date)}
+              <div className="relative mt-1 group">
+                <div className="text-2xl font-semibold tracking-tight text-[#f4f4f4] transition-colors group-hover:text-[#e4ff00]">
+                  {formatDayHeader(date)}
+                </div>
+                {onDateChange ? (
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => onDateChange(e.target.value)}
+                    aria-label="Filter meals by date"
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  />
+                ) : null}
               </div>
             </div>
             {(onPrev || onNext) && (
@@ -293,20 +304,6 @@ function DayCard({
             {meals.length} {meals.length === 1 ? 'meal' : 'meals'}
           </div>
         </div>
-
-        {onDateChange ? (
-          <div className="flex justify-end">
-            <label className="relative block h-11 w-full sm:w-[220px]">
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => onDateChange(e.target.value)}
-                aria-label="Filter meals by date"
-                className="h-11 w-full cursor-pointer rounded-2xl border border-white/10 bg-[#0c0c0c] px-4 font-mono text-sm text-[#cfcfcf] [color-scheme:dark] outline-none hover:border-white/20 focus:border-[#e4ff00] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70"
-              />
-            </label>
-          </div>
-        ) : null}
       </div>
 
       <div className="space-y-5 p-5 sm:p-6">

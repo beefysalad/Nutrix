@@ -238,17 +238,6 @@ export function SettingsSection() {
                   />
                 </div>
               </div>
-
-              <div
-                className={cn(
-                  'self-start rounded-full border px-3 py-1 text-xs tracking-wide uppercase md:mt-0',
-                  isTelegramConnected && isWebhookConfigured
-                    ? 'border-[#e4ff00]/30 bg-[#e4ff00]/10 text-[#e4ff00]'
-                    : 'border-white/10 bg-[#141414] text-[#888]'
-                )}
-              >
-                {telegramQuery.isLoading ? 'checking' : telegramSetupState}
-              </div>
             </div>
 
             {!isWebhookConfigured ? (
