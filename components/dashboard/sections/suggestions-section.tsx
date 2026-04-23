@@ -2,12 +2,13 @@
 
 import {
   AlertCircle,
+  Bookmark,
+  BookmarkCheck,
   ChefHat,
   Clock,
   ExternalLink,
   Loader2,
   Lock,
-  RotateCcw,
   Salad,
   Sparkles,
   Target,
@@ -16,14 +17,18 @@ import {
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import Link from 'next/link'
 
 import { EmptyState, SectionCard, cn } from '@/components/dashboard/ui'
 import {
   getApiErrorMessage,
   useGenerateMealSuggestionsMutation,
   useMealSuggestionsQuery,
+  useSavedMealSuggestionsQuery,
+  useSaveMealSuggestionMutation,
   type MealSuggestionResponse,
 } from '@/lib/hooks/use-dashboard-api'
+import type { SuggestionsSubview } from '@/components/dashboard/types'
 
 const suggestionStyleOptions = [
   {
@@ -53,7 +58,19 @@ type SuggestionCard = NonNullable<
   MealSuggestionResponse['payload']
 >['suggestions'][number]
 
-export function SuggestionsSection() {
+export function SuggestionsSection({
+  initialView = 'generate',
+}: {
+  initialView?: SuggestionsSubview
+}) {
+  return initialView === 'saved' ? (
+    <SavedSuggestionsSection />
+  ) : (
+    <GenerateSuggestionsSection />
+  )
+}
+
+function GenerateSuggestionsSection() {
   const [activeCategory, setActiveCategory] = useState('All')
   const [selectedStyle, setSelectedStyle] = useState<SuggestionStyle>('quick')
   const [selectedSuggestionId, setSelectedSuggestionId] = useState<
@@ -249,19 +266,13 @@ export function SuggestionsSection() {
               Used today: {usage?.usedToday ?? 0} / {usage?.dailyLimit ?? 3}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => void suggestionsQuery.refetch()}
-            disabled={suggestionsQuery.isFetching}
+          <Link
+            href="/dashboard/suggestions/saved"
             className="flex items-center justify-center gap-3 self-start rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-bold tracking-widest text-[#d7d7d7] uppercase transition-colors hover:border-[#e4ff00]/30 hover:text-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {suggestionsQuery.isFetching ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RotateCcw className="h-4 w-4" />
-            )}
-            Refresh Usage
-          </button>
+            <BookmarkCheck className="h-4 w-4" />
+            Saved meals
+          </Link>
         </SectionCard>
 
         {suggestions.length > 0 ? (
@@ -393,6 +404,140 @@ export function SuggestionsSection() {
   )
 }
 
+function SavedSuggestionsSection() {
+  const savedSuggestionsQuery = useSavedMealSuggestionsQuery()
+  const [selectedSuggestionId, setSelectedSuggestionId] = useState<
+    string | null
+  >(null)
+  const suggestions = savedSuggestionsQuery.data?.suggestions ?? []
+  const selectedSuggestion =
+    suggestions.find((suggestion) => suggestion.id === selectedSuggestionId) ??
+    null
+
+  if (savedSuggestionsQuery.isLoading) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-8 pb-10">
+        <SectionCard className="flex items-center justify-center py-16">
+          <Loader2 className="h-5 w-5 animate-spin text-[#e4ff00]" />
+        </SectionCard>
+      </div>
+    )
+  }
+
+  if (savedSuggestionsQuery.isError) {
+    return (
+      <div className="mx-auto max-w-5xl space-y-8 pb-10">
+        <SectionCard>
+          <EmptyState
+            title="Saved meals could not be loaded"
+            description="Nutrix hit an issue while loading your saved meal suggestions. Try again in a moment."
+          />
+        </SectionCard>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="mx-auto max-w-5xl space-y-8 pb-10">
+        <div className="rounded-[2rem] border border-white/10 bg-[#141414] p-6 sm:p-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-3 py-1 text-[10px] font-black tracking-[0.2em] text-[#e4ff00] uppercase">
+                Saved meals
+              </div>
+              <h2 className="mt-4 font-mono text-2xl font-black tracking-tighter text-[#f5f5f5] uppercase sm:text-4xl">
+                Saved <span className="text-[#e4ff00]">Suggestions</span>
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#777]">
+                Meals you saved from smart suggestions live here so you can come
+                back to the recipe source later.
+              </p>
+            </div>
+            <Link
+              href="/dashboard/suggestions"
+              className="flex items-center justify-center gap-3 self-start rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-bold tracking-widest text-[#d7d7d7] uppercase transition-colors hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]"
+            >
+              <Sparkles className="h-4 w-4" />
+              Generate more
+            </Link>
+          </div>
+        </div>
+
+        {suggestions.length > 0 ? (
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {suggestions.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setSelectedSuggestionId(item.id)}
+                className="group flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/8 bg-[#111111] text-left transition-all hover:border-[#e4ff00]/30"
+              >
+                <div className="border-b border-white/5 bg-[#151515] p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 text-[10px] font-black tracking-[0.22em] text-[#e4ff00] uppercase">
+                        <BookmarkCheck className="h-3.5 w-3.5" />
+                        Saved
+                      </div>
+                      <h3 className="mt-3 text-xl leading-tight font-bold text-[#f5f5f5] transition-colors group-hover:text-[#e4ff00]">
+                        {item.name}
+                      </h3>
+                    </div>
+                    <div className="rounded-full border border-white/10 bg-black/40 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white uppercase">
+                      {item.prepTime}
+                    </div>
+                  </div>
+
+                  <p className="mt-4 text-sm leading-relaxed text-[#737373]">
+                    {item.description}
+                  </p>
+                </div>
+
+                <div className="flex flex-1 flex-col p-5 sm:p-6">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <SuggestionMacroStat
+                      label="Cals"
+                      value={`${item.calories}`}
+                    />
+                    <SuggestionMacroStat
+                      label="Prot"
+                      value={`${item.protein}g`}
+                    />
+                    <SuggestionMacroStat
+                      label="Carb"
+                      value={`${item.carbs}g`}
+                    />
+                    <SuggestionMacroStat label="Fat" value={`${item.fat}g`} />
+                  </div>
+                  <div className="mt-4 flex items-center justify-between text-xs tracking-[0.2em] text-[#666] uppercase">
+                    <span>{item.sourceLabel}</span>
+                    <span>Open recipe</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <SectionCard>
+            <EmptyState
+              title="No saved meals yet"
+              description="Save a suggestion from the recipe sheet and it will show up here."
+            />
+          </SectionCard>
+        )}
+      </div>
+
+      {selectedSuggestion ? (
+        <RecipeSheet
+          suggestion={selectedSuggestion}
+          onClose={() => setSelectedSuggestionId(null)}
+        />
+      ) : null}
+    </>
+  )
+}
+
 function RecipeSheet({
   suggestion,
   onClose,
@@ -400,6 +545,24 @@ function RecipeSheet({
   suggestion: SuggestionCard
   onClose: () => void
 }) {
+  const saveSuggestionMutation = useSaveMealSuggestionMutation()
+
+  async function handleSaveSuggestion() {
+    try {
+      await saveSuggestionMutation.mutateAsync({
+        suggestionId: suggestion.id,
+        isSaved: !suggestion.isSaved,
+      })
+      toast.success(
+        suggestion.isSaved
+          ? 'Suggestion removed from saved'
+          : 'Suggestion saved'
+      )
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Could not save suggestion'))
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/65 backdrop-blur-sm">
       <button
@@ -441,6 +604,27 @@ function RecipeSheet({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-5 pb-6 sm:px-6">
+          <button
+            type="button"
+            onClick={() => void handleSaveSuggestion()}
+            disabled={saveSuggestionMutation.isPending}
+            className={cn(
+              'mb-5 flex w-full items-center justify-center gap-3 rounded-2xl border px-5 py-3 text-sm font-bold tracking-widest uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+              suggestion.isSaved
+                ? 'border-[#e4ff00]/30 bg-[#e4ff00] text-black'
+                : 'border-white/10 bg-white/[0.03] text-[#d7d7d7] hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]'
+            )}
+          >
+            {saveSuggestionMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : suggestion.isSaved ? (
+              <BookmarkCheck className="h-4 w-4" />
+            ) : (
+              <Bookmark className="h-4 w-4" />
+            )}
+            {suggestion.isSaved ? 'Saved Suggestion' : 'Save Suggestion'}
+          </button>
+
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <RecipeMetaCard
               icon={<Clock className="h-4 w-4" />}

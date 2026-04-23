@@ -3,6 +3,7 @@ import type {
   DashboardSectionKey,
   DashboardSubview,
   HistorySubview,
+  SuggestionsSubview,
 } from '@/components/dashboard/types'
 import { userService } from '@/lib/services/user-service'
 
@@ -26,11 +27,25 @@ function resolveSection(slug: string[]): DashboardSectionKey {
     case 'goals':
       return 'goals'
     case 'suggestions':
+    case 'suggestions/saved':
       return 'suggestions'
     case 'settings':
       return 'settings'
     default:
       return 'dashboard'
+  }
+}
+
+function resolveSuggestionsView(slug: string[]): SuggestionsSubview | undefined {
+  const joined = slug.join('/')
+
+  switch (joined) {
+    case 'suggestions/saved':
+      return 'saved'
+    case 'suggestions':
+      return 'generate'
+    default:
+      return undefined
   }
 }
 
@@ -73,6 +88,7 @@ export default async function DashboardSlugPage({ params }: DashboardSlugPagePro
       section={resolveSection(slug)}
       dashboardView={resolveDashboardView(slug)}
       historyView={resolveHistoryView(slug)}
+      suggestionsView={resolveSuggestionsView(slug)}
     />
   )
 }

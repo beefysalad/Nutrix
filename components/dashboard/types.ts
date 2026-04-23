@@ -8,6 +8,8 @@ export type DashboardSectionKey =
 
 export type DashboardSubview = 'overview' | 'trends' | 'insights'
 
+export type SuggestionsSubview = 'generate' | 'saved'
+
 export type HistorySubview =
   | 'meals'
   | 'calendar'

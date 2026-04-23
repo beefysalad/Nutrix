@@ -73,6 +73,7 @@ model User {
   mealEntries            MealEntry[]
   dailyReports           DailyReport[]
   pendingLinks           PendingLink[]
+  foodSuggestions        FoodSuggestion[]
   profile                UserProfile?
 }
 
@@ -208,4 +209,35 @@ model DailyReport {
 
   @@unique([userId, reportDate])
   @@index([userId, reportDate])
+}
+
+model FoodSuggestion {
+  id                   String   @id @default(cuid())
+  userId               String
+  generationId         String
+  style                String
+  recipeId             String
+  name                 String
+  description          String
+  calories             Int
+  protein              Decimal  @db.Decimal(6, 2)
+  carbs                Decimal  @db.Decimal(6, 2)
+  fat                  Decimal  @db.Decimal(6, 2)
+  tags                 Json
+  reasoning            String
+  prepTime             String
+  difficulty           String
+  sourceLabel          String
+  sourceUrl            String
+  goalMode             String?
+  recentFoods          Json
+  generatedForMealType String?
+  isSaved              Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, style, createdAt])
+  @@index([userId, generationId])
+  @@index([userId, isSaved])
 }

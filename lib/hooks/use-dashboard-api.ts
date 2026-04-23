@@ -103,6 +103,7 @@ export type MealSuggestionResponse = {
     }
     suggestions: Array<{
       id: string
+      recipeId: string
       name: string
       description: string
       calories: number
@@ -115,8 +116,13 @@ export type MealSuggestionResponse = {
       difficulty: 'easy' | 'medium'
       sourceLabel: string
       sourceUrl: string
+      isSaved: boolean
     }>
   } | null
+}
+
+export type SavedMealSuggestionsResponse = {
+  suggestions: NonNullable<MealSuggestionResponse['payload']>['suggestions']
 }
 
 export type MealItemResponse = {
@@ -398,6 +404,35 @@ export function useGenerateMealSuggestionsMutation() {
     },
     onSuccess: (data, variables) => {
       queryClient.setQueryData(['meal-suggestions', variables?.style ?? 'quick'], data)
+    },
+  })
+}
+
+export function useSavedMealSuggestionsQuery() {
+  return useQuery({
+    queryKey: ['meal-suggestions', 'saved'],
+    queryFn: async () => {
+      const response = await api.get<SavedMealSuggestionsResponse>('/ai/meal-suggestions/saved')
+      return response.data
+    },
+  })
+}
+
+export function useSaveMealSuggestionMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (input: { suggestionId: string; isSaved?: boolean }) => {
+      const response = await api.post(`/ai/meal-suggestions/${input.suggestionId}/save`, {
+        isSaved: input.isSaved ?? true,
+      })
+      return response.data
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['meal-suggestions'] }),
+        queryClient.invalidateQueries({ queryKey: ['meal-suggestions', 'saved'] }),
+      ])
     },
   })
 }

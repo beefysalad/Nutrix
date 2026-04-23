@@ -17,6 +17,7 @@ import {
   DashboardSectionKey,
   DashboardSubview,
   HistorySubview,
+  SuggestionsSubview,
 } from '@/components/dashboard/types'
 import { cn } from '@/components/dashboard/ui'
 import { useDashboardSummaryQuery } from '@/lib/hooks/use-dashboard-api'
@@ -35,6 +36,7 @@ function renderSection(
   options?: {
     dashboardView?: DashboardSubview
     historyView?: HistorySubview
+    suggestionsView?: SuggestionsSubview
   },
 ) {
   switch (section) {
@@ -47,7 +49,7 @@ function renderSection(
     case 'goals':
       return <GoalsSection />
     case 'suggestions':
-      return <SuggestionsSection />
+      return <SuggestionsSection initialView={options?.suggestionsView} />
     case 'settings':
       return <SettingsSection />
     default:
@@ -59,10 +61,12 @@ export function NutrixDashboard({
   section = 'dashboard',
   dashboardView,
   historyView,
+  suggestionsView,
 }: {
   section?: DashboardSectionKey
   dashboardView?: DashboardSubview
   historyView?: HistorySubview
+  suggestionsView?: SuggestionsSubview
 }) {
   const summaryQuery = useDashboardSummaryQuery()
   const onboarded = summaryQuery.data?.onBoarded ?? true
@@ -182,7 +186,7 @@ export function NutrixDashboard({
             {!onboarded ? (
               <OnboardingWizard />
             ) : (
-              renderSection(section, { dashboardView, historyView })
+              renderSection(section, { dashboardView, historyView, suggestionsView })
             )}
           </main>
         </div>
