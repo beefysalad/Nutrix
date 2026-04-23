@@ -108,7 +108,7 @@ export function SettingsSection() {
   const telegramSetupState = !isWebhookConfigured
     ? 'Bot setup unavailable'
     : !isTelegramConnected
-      ? 'Connect your Telegram chat'
+      ? 'Connect'
       : 'Ready'
 
   async function downloadExport(format: 'csv' | 'json') {
@@ -271,8 +271,8 @@ export function SettingsSection() {
             <div className="mt-4 space-y-3 text-sm">
               <div className="rounded-2xl border border-white/10 bg-[#141414] p-3 text-[#aaa]">
                 1. Search for{' '}
-                <span className="font-mono text-[#f5f5f5]">@NutrrixBot</span>{' '}
-                in Telegram, then start the connection flow.
+                <span className="font-mono text-[#f5f5f5]">@NutrrixBot</span> in
+                Telegram, then start the connection flow.
               </div>
               <div className="rounded-2xl border border-white/10 bg-[#141414] p-3 text-[#aaa]">
                 2. Send a meal message like{' '}

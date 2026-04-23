@@ -1,6 +1,6 @@
 'use client'
 
-import { Bot, CalendarDays, Loader2, Search, Trash2 } from 'lucide-react'
+import { Bot, Loader2, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -50,6 +50,18 @@ function mealCalories(meal: MealResponse) {
   return meal.items.reduce((s, i) => s + i.calories, 0)
 }
 
+function mealMacroTotals(meal: MealResponse) {
+  return meal.items.reduce(
+    (totals, item) => {
+      totals.protein += Number(item.proteinGrams ?? 0)
+      totals.carbs += Number(item.carbsGrams ?? 0)
+      totals.fat += Number(item.fatGrams ?? 0)
+      return totals
+    },
+    { protein: 0, carbs: 0, fat: 0 },
+  )
+}
+
 function StatCard({
   label,
   value,
@@ -94,12 +106,13 @@ function MealCard({
   const mealLabel =
     meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)
   const isAi = meal.source === 'ai' || meal.source === 'telegram'
+  const macros = mealMacroTotals(meal)
 
   const title = meal.items.map((i) => i.foodNameSnapshot).join(', ')
 
   return (
-    <div className="group flex min-h-32 flex-col justify-between rounded-2xl border border-white/[0.07] bg-[#101010] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#e4ff00]/25 hover:bg-[#141414]">
-      <div className="flex items-center justify-between">
+    <div className="group flex min-h-[190px] flex-col justify-between rounded-[1.35rem] border border-white/[0.08] bg-[#101010] p-4 transition-colors duration-200 hover:border-[#e4ff00]/25 hover:bg-[#131313]">
+      <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="rounded-full border border-white/[0.06] bg-white/[0.03] px-2 py-1 text-[9px] font-black tracking-[0.18em] text-[#888] uppercase">
             {mealLabel}
@@ -128,8 +141,29 @@ function MealCard({
         <div className="line-clamp-2 text-sm leading-snug font-semibold text-[#f1f1f1]">
           {title}
         </div>
-        <div className="mt-2 font-mono text-sm font-black text-[#e4ff00]">
-          {cal}<span className="ml-1 text-[10px] tracking-wider text-[#6f7c00]">kcal</span>
+        <div className="mt-1 text-[11px] text-[#666]">
+          {meal.items.length} {meal.items.length === 1 ? 'item' : 'items'}
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-white/[0.06] bg-black/20 p-3">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <div className="text-[9px] font-black tracking-[0.22em] text-[#555] uppercase">
+              Calories
+            </div>
+            <div className="mt-1 font-mono text-xl font-black text-[#e4ff00]">
+              {cal}
+              <span className="ml-1 text-[10px] tracking-wider text-[#6f7c00]">
+                kcal
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-right">
+            <MacroPill label="P" value={`${Math.round(macros.protein)}g`} />
+            <MacroPill label="C" value={`${Math.round(macros.carbs)}g`} />
+            <MacroPill label="F" value={`${Math.round(macros.fat)}g`} />
+          </div>
         </div>
       </div>
 
@@ -152,6 +186,19 @@ function MealCard({
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+function MacroPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[8px] font-black tracking-widest text-[#555] uppercase">
+        {label}
+      </div>
+      <div className="mt-1 font-mono text-xs font-bold text-[#d7d7d7]">
+        {value}
+      </div>
     </div>
   )
 }
@@ -203,12 +250,7 @@ function DayCard({
             accent
           />
           <StatCard label="Protein" value={`${Math.round(totals.protein)}g`} />
-          <StatCard
-            label={remaining != null ? 'Remaining' : 'Meals'}
-            value={
-              remaining != null ? remaining.toLocaleString() : `${meals.length}`
-            }
-          />
+          <StatCard label="Fat" value={`${Math.round(totals.fat)}g`} />
         </div>
 
         {pct != null && (
@@ -233,7 +275,7 @@ function DayCard({
         <div className="-mx-5 px-5">
           <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-2 sm:gap-4">
             {meals.map((meal) => (
-              <div key={meal.id} className="w-[245px] flex-shrink-0 sm:w-[280px]">
+              <div key={meal.id} className="w-[300px] flex-shrink-0 sm:w-[340px]">
                 <MealCard
                   meal={meal}
                   deletePending={deletePending}
@@ -332,13 +374,12 @@ export function MealsSection() {
             />
           </label>
           <label className="relative block h-12 lg:w-[190px]">
-            <CalendarDays className="pointer-events-none absolute top-1/2 left-4 z-10 h-4 w-4 -translate-y-1/2 text-[#777]" />
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               aria-label="Filter meals by date"
-              className="h-12 w-full cursor-pointer rounded-2xl border border-white/10 bg-[#0c0c0c] px-4 pl-11 font-mono text-sm text-[#cfcfcf] [color-scheme:dark] outline-none hover:border-white/20 focus:border-[#e4ff00] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70"
+              className="h-12 w-full cursor-pointer rounded-2xl border border-white/10 bg-[#0c0c0c] px-4 font-mono text-sm text-[#cfcfcf] [color-scheme:dark] outline-none hover:border-white/20 focus:border-[#e4ff00] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70"
             />
           </label>
         </div>

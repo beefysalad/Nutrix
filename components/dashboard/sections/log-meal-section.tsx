@@ -824,7 +824,8 @@ function MealActionContent({
         </div>
         <input
           type="text"
-          placeholder="Serving size"
+          placeholder="Portion eaten, e.g. 1 cup, 2 pieces, 100g"
+          aria-label="Portion eaten"
           {...manualForm.register('servingSize')}
           className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
         />

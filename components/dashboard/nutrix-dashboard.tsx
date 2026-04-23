@@ -168,7 +168,7 @@ export function NutrixDashboard({
                       : 'text-[#888] hover:border-white/5 hover:bg-white/[0.03] hover:text-[#f5f5f5]',
                   )}
                 >
-                  {isActive ? (
+                  {isActive && !isSidebarCollapsed ? (
                     <span className="absolute bottom-2 left-0 top-2 w-[2px] bg-[#e4ff00] shadow-[0_0_8px_#e4ff00]" />
                   ) : null}
                   <Icon className={cn('h-4 w-4', isActive ? 'text-[#e4ff00]' : '')} />
