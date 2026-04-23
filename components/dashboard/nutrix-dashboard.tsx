@@ -210,6 +210,15 @@ export function NutrixDashboard({
             <header className="sticky top-0 z-40 h-20 border-b border-white/10 bg-[#0a0a0a]/90 px-4 backdrop-blur md:px-6">
               <div className="flex h-full items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
+                  <span className="hidden text-sm text-[#777] sm:inline">{today}</span>
+                  <div className="sm:hidden">
+                    <h1 className="font-mono text-lg font-black uppercase tracking-tighter text-[#f5f5f5]">
+                      NUTR<span className="text-[#e4ff00]">IX</span>
+                    </h1>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
                   <button
                     type="button"
                     onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
@@ -222,15 +231,6 @@ export function NutrixDashboard({
                       <PanelLeftClose className="h-4 w-4" />
                     )}
                   </button>
-                  <span className="hidden text-sm text-[#777] sm:inline">{today}</span>
-                  <div className="sm:hidden">
-                    <h1 className="font-mono text-lg font-black uppercase tracking-tighter text-[#f5f5f5]">
-                      NUTR<span className="text-[#e4ff00]">IX</span>
-                    </h1>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4">
                   <button
                     type="button"
                     onClick={() => setIsLogMealSheetOpen(true)}
