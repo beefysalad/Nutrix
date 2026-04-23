@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { after, NextRequest, NextResponse } from 'next/server'
 
 import { telegramService } from '@/lib/services/telegram-service'
 
@@ -61,11 +61,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, duplicate: true })
   }
 
-  void telegramService.handleIncomingMessage(payload.message).catch((error) => {
-    console.error(
-      'Unable to process Telegram update:',
-      error instanceof Error ? error.message : error,
-    )
+  after(async () => {
+    try {
+      await telegramService.handleIncomingMessage(payload.message!)
+    } catch (error) {
+      console.error(
+        'Unable to process Telegram update:',
+        error instanceof Error ? error.message : error,
+      )
+    }
   })
 
   return NextResponse.json({ ok: true })
