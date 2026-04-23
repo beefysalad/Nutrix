@@ -7,6 +7,7 @@ import { MealsSection } from '@/components/dashboard/sections/meals-section'
 import { WeeklySummarySection } from '@/components/dashboard/sections/weekly-summary-section'
 import type { HistorySubview } from '@/components/dashboard/types'
 import { cn } from '@/components/dashboard/ui'
+import { Button } from '@/components/ui/button'
 
 const tabs: Array<{ key: HistorySubview; label: string; isBeta?: boolean }> = [
   { key: 'meals', label: 'Meals' },
@@ -39,7 +40,7 @@ export function HistorySection({
             {tabs.map((tab) => {
               const isActive = activeView === tab.key
               return (
-                <button
+                <Button
                   key={tab.key}
                   onClick={() => setActiveView(tab.key)}
                   className={cn(
@@ -62,7 +63,7 @@ export function HistorySection({
                       Beta
                     </span>
                   ) : null}
-                </button>
+                </Button>
               )
             })}
           </div>

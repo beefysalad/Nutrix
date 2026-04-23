@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 
 import { dietModes } from '@/components/dashboard/data'
 import { SectionCard, cn } from '@/components/dashboard/ui'
+import { Button } from '@/components/ui/button'
 import {
   getApiErrorMessage,
   useDashboardSummaryQuery,
@@ -210,29 +211,37 @@ export function GoalsSection() {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
           {dietModes.map((mode) => (
-            <button
+            <Button
               key={mode.id}
               type="button"
+              variant="ghost"
+              size="default"
               onClick={() => setValue('mode', mode.id as GoalsFormValues['mode'], { shouldDirty: true })}
               className={cn(
-                'rounded-2xl border-2 p-4 text-left transition-all',
+                'h-auto w-full justify-start whitespace-normal rounded-2xl border-2 px-4 py-4 text-left transition-all hover:bg-transparent',
                 selectedMode === mode.id
                   ? 'border-[#e4ff00] bg-[#e4ff00]/5'
                   : 'border-white/10 bg-[#141414] hover:border-[#e4ff00]/30',
               )}
             >
-              <div className="mb-1.5 flex items-start justify-between">
-                <h3 className="text-sm font-semibold text-[#f5f5f5] sm:text-base">{mode.label}</h3>
-                {selectedMode === mode.id ? (
-                  <span className="rounded-full bg-[#e4ff00] px-1.5 py-0.5 text-[9px] font-black text-[#0a0a0a]">
-                    ✓
-                  </span>
-                ) : null}
+              <div className="flex w-full flex-col items-start text-left">
+                <div className="mb-2 flex w-full items-start justify-between gap-3">
+                  <h3 className="text-sm font-semibold text-[#f5f5f5] sm:text-base">
+                    {mode.label}
+                  </h3>
+                  {selectedMode === mode.id ? (
+                    <span className="rounded-full bg-[#e4ff00] px-1.5 py-0.5 text-[9px] font-black text-[#0a0a0a]">
+                      ✓
+                    </span>
+                  ) : null}
+                </div>
+                <p className="block max-w-full text-xs leading-snug text-[#666] sm:text-sm sm:text-[#777]">
+                  {mode.description}
+                </p>
               </div>
-              <p className="text-xs leading-snug text-[#666] sm:text-sm sm:text-[#777]">{mode.description}</p>
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -242,13 +251,15 @@ export function GoalsSection() {
               <h3 className="text-lg text-[#f5f5f5]">Daily Targets</h3>
               <p className="mt-1 text-sm text-[#777]">Save the calories and macros Nutrix should optimize around.</p>
             </div>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setShowTdee((value) => !value)}
-              className="self-start rounded-full border border-white/10 bg-[#0a0a0a] px-3 py-1.5 text-sm text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-[#e4ff00]"
+              className="self-start rounded-full border border-white/10 bg-[#0a0a0a] px-3 text-sm text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:bg-[#0a0a0a] hover:text-[#e4ff00]"
             >
               {showTdee ? 'Hide TDEE' : 'Open TDEE'}
-            </button>
+            </Button>
           </div>
 
           {showTdee ? (
@@ -306,13 +317,14 @@ export function GoalsSection() {
                 <div className="text-sm text-[#777]">
                   {lastCalculatedTdee ? `Last estimated maintenance: ${lastCalculatedTdee} cal/day` : 'No estimate applied yet.'}
                 </div>
-                <button
+                <Button
                   type="button"
+                  size="lg"
                   onClick={() => void tdeeForm.handleSubmit(handleTdeeApply)()}
-                  className="w-full rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] sm:w-auto"
+                  className="w-full rounded-2xl bg-[#e4ff00] px-4 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] sm:w-auto"
                 >
                   Calculate & Apply
-                </button>
+                </Button>
               </div>
             </div>
           ) : null}
@@ -357,10 +369,11 @@ export function GoalsSection() {
 
       
 
-        <button
+        <Button
           type="submit"
+          size="lg"
           disabled={goalsQuery.isLoading || isSubmitting || saveGoalsMutation.isPending}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSubmitting || saveGoalsMutation.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -370,7 +383,7 @@ export function GoalsSection() {
             : isSubmitting || saveGoalsMutation.isPending
               ? 'Saving Goals'
               : 'Save Goals'}
-        </button>
+        </Button>
       </form>
     </div>
   )

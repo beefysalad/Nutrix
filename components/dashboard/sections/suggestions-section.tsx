@@ -20,6 +20,7 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 
 import { EmptyState, SectionCard, cn } from '@/components/dashboard/ui'
+import { Button } from '@/components/ui/button'
 import {
   getApiErrorMessage,
   useGenerateMealSuggestionsMutation,
@@ -163,7 +164,7 @@ function GenerateSuggestionsSection() {
               </p>
             </div>
 
-            <button
+            <Button
               type="button"
               onClick={() => void handleGenerateSuggestions()}
               disabled={generateSuggestionsMutation.isPending || !canGenerate}
@@ -177,7 +178,7 @@ function GenerateSuggestionsSection() {
                 <Lock className="h-4 w-4" />
               )}
               {canGenerate ? 'Get Suggestions' : 'Daily Limit Reached'}
-            </button>
+            </Button>
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -225,28 +226,31 @@ function GenerateSuggestionsSection() {
               const isActive = option.id === selectedStyle
 
               return (
-                <button
+                <Button
                   key={option.id}
                   type="button"
+                  variant="ghost"
                   onClick={() => {
                     setSelectedStyle(option.id)
                     setActiveCategory('All')
                     setSelectedSuggestionId(null)
                   }}
                   className={cn(
-                    'rounded-[1.5rem] border p-4 text-left transition-colors',
+                    'h-auto w-full justify-start whitespace-normal rounded-[1.5rem] border p-4 text-left transition-colors hover:bg-transparent',
                     isActive
                       ? 'border-[#e4ff00] bg-[#1e2307]'
                       : 'border-white/10 bg-[#111111] hover:border-white/20'
                   )}
                 >
-                  <div className="text-sm font-bold tracking-wide text-[#f5f5f5] uppercase">
-                    {option.label}
+                  <div className="flex w-full flex-col items-start text-left">
+                    <div className="text-sm font-bold tracking-wide text-[#f5f5f5] uppercase">
+                      {option.label}
+                    </div>
+                    <div className="mt-2 text-sm leading-relaxed text-[#777]">
+                      {option.description}
+                    </div>
                   </div>
-                  <div className="mt-2 text-sm leading-relaxed text-[#777]">
-                    {option.description}
-                  </div>
-                </button>
+                </Button>
               )
             })}
           </div>
@@ -279,7 +283,7 @@ function GenerateSuggestionsSection() {
           <>
             <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
               {categories.map((cat) => (
-                <button
+                <Button
                   key={cat}
                   type="button"
                   onClick={() => setActiveCategory(cat)}
@@ -291,17 +295,18 @@ function GenerateSuggestionsSection() {
                   )}
                 >
                   {cat}
-                </button>
+                </Button>
               ))}
             </div>
 
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {filteredSuggestions.map((item) => (
-                <button
+                <Button
                   key={item.id}
                   type="button"
+                  variant="ghost"
                   onClick={() => setSelectedSuggestionId(item.id)}
-                  className="group flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/8 bg-[#111111] text-left transition-all hover:border-[#e4ff00]/30"
+                  className="group flex h-full w-full flex-col items-stretch justify-start overflow-hidden whitespace-normal rounded-[1.75rem] border border-white/8 bg-[#111111] text-left transition-all hover:border-[#e4ff00]/30 hover:bg-[#111111]"
                 >
                   <div className="border-b border-white/5 bg-[#151515] p-5">
                     <div className="flex items-start justify-between gap-3">
@@ -371,7 +376,7 @@ function GenerateSuggestionsSection() {
                       <span>Real recipe</span>
                     </div>
                   </div>
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -467,11 +472,12 @@ function SavedSuggestionsSection() {
         {suggestions.length > 0 ? (
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {suggestions.map((item) => (
-              <button
+              <Button
                 key={item.id}
                 type="button"
+                variant="ghost"
                 onClick={() => setSelectedSuggestionId(item.id)}
-                className="group flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-white/8 bg-[#111111] text-left transition-all hover:border-[#e4ff00]/30"
+                className="group flex h-full w-full flex-col items-stretch justify-start overflow-hidden whitespace-normal rounded-[1.75rem] border border-white/8 bg-[#111111] text-left transition-all hover:border-[#e4ff00]/30 hover:bg-[#111111]"
               >
                 <div className="border-b border-white/5 bg-[#151515] p-5">
                   <div className="flex items-start justify-between gap-3">
@@ -515,7 +521,7 @@ function SavedSuggestionsSection() {
                     <span>Open recipe</span>
                   </div>
                 </div>
-              </button>
+              </Button>
             ))}
           </div>
         ) : (
@@ -565,10 +571,11 @@ function RecipeSheet({
 
   return (
     <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/65 backdrop-blur-sm">
-      <button
+      <Button
         type="button"
         aria-label="Close recipe"
-        className="absolute inset-0 cursor-default"
+        variant="ghost"
+        className="absolute inset-0 cursor-default hover:bg-transparent"
         onClick={onClose}
       />
       <div className="relative z-10 flex h-[88vh] min-h-0 w-full max-w-3xl flex-col overflow-hidden rounded-t-[2rem] border border-white/10 bg-[#111111] lg:mb-8 lg:h-auto lg:max-h-[86vh] lg:rounded-[2rem]">
@@ -594,22 +601,25 @@ function RecipeSheet({
             </p>
           </div>
 
-          <button
+          <Button
             type="button"
             onClick={onClose}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#151515] text-[#999] transition-colors hover:text-white"
+            variant="ghost"
+            size="icon-lg"
+            className="shrink-0 rounded-full border border-white/10 bg-[#151515] text-[#999] transition-colors hover:bg-[#151515] hover:text-white"
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-5 pb-6 sm:px-6">
-          <button
+          <Button
             type="button"
             onClick={() => void handleSaveSuggestion()}
             disabled={saveSuggestionMutation.isPending}
+            size="lg"
             className={cn(
-              'mb-5 flex w-full items-center justify-center gap-3 rounded-2xl border px-5 py-3 text-sm font-bold tracking-widest uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+              'mb-5 flex w-full items-center justify-center gap-3 rounded-2xl border px-5 text-sm font-bold tracking-widest uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-60',
               suggestion.isSaved
                 ? 'border-[#e4ff00]/30 bg-[#e4ff00] text-black'
                 : 'border-white/10 bg-white/[0.03] text-[#d7d7d7] hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]'
@@ -623,7 +633,7 @@ function RecipeSheet({
               <Bookmark className="h-4 w-4" />
             )}
             {suggestion.isSaved ? 'Saved Suggestion' : 'Save Suggestion'}
-          </button>
+          </Button>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <RecipeMetaCard

@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import { SectionCard } from '@/components/dashboard/ui'
+import { Button } from '@/components/ui/button'
 import {
   useDeleteMealMutation,
   useGoalsQuery,
@@ -140,14 +141,14 @@ function MealCard({
             </span>
           )}
         </div>
-        <button
+        <Button
           type="button"
           disabled={deletePending}
           onClick={onDelete}
           className="flex h-7 w-7 items-center justify-center rounded-full border border-white/[0.06] bg-black/20 text-[#444] transition-colors hover:border-red-500/30 hover:text-red-400 md:opacity-0 md:group-hover:opacity-100"
         >
           <Trash2 className="h-3 w-3" />
-        </button>
+        </Button>
       </div>
 
       <div className="mt-3 min-h-[64px]">
@@ -185,18 +186,18 @@ function MealCard({
           <span className="font-bold tracking-widest text-[#444] uppercase">
             Accurate?
           </span>
-          <button
+          <Button
             onClick={() => onFeedback('accurate')}
             className="font-black tracking-tighter text-[#555] uppercase transition-colors hover:text-[#e4ff00]"
           >
             Yes
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => onFeedback('inaccurate')}
             className="font-black tracking-tighter text-[#555] uppercase transition-colors hover:text-red-400/70"
           >
             No
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="mt-3 min-h-[22px]" />
@@ -267,7 +268,7 @@ function DayCard({
             </div>
             {(onPrev || onNext) && (
               <div className="flex flex-shrink-0 items-center gap-1">
-                <button
+                <Button
                   type="button"
                   onClick={onPrev}
                   disabled={!canGoPrev}
@@ -275,8 +276,8 @@ function DayCard({
                   className="flex h-7 w-7 items-center justify-center rounded-xl border border-white/10 text-[#555] transition-colors hover:border-white/20 hover:text-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-25"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={onNext}
                   disabled={!canGoNext}
@@ -284,7 +285,7 @@ function DayCard({
                   className="flex h-7 w-7 items-center justify-center rounded-xl border border-white/10 text-[#555] transition-colors hover:border-white/20 hover:text-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-25"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -338,14 +339,11 @@ function DayCard({
           </div>
         )}
 
-        <div className="-mx-5 px-5">
-          <div className="flex flex-col gap-3 pb-2 sm:scrollbar-hide sm:flex-row sm:gap-4 sm:overflow-x-auto">
+        <div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {meals.length > 0 ? (
               meals.map((meal) => (
-                <div
-                  key={meal.id}
-                  className="w-full sm:w-[340px] sm:flex-shrink-0"
-                >
+                <div key={meal.id} className="w-full">
                   <MealCard
                     meal={meal}
                     deletePending={deletePending}

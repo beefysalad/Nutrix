@@ -5,6 +5,8 @@ import type { FormEvent, ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
+import { Button } from '@/components/ui/button'
+
 type TelegramAdminStatus = {
   configured: boolean
   expectedUrl: string | null
@@ -145,14 +147,14 @@ export function TelegramAdminPanel() {
             placeholder="Admin password"
             className="mt-6 w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none transition-colors placeholder:text-[#555] focus:border-[#e4ff00]"
           />
-          <button
+          <Button
             type="submit"
             disabled={isSubmitting || !password}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3 font-bold text-black transition-colors hover:bg-[#f0ff4d] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Unlock Admin
-          </button>
+          </Button>
         </form>
       </AdminShell>
     )
@@ -175,13 +177,13 @@ export function TelegramAdminPanel() {
               connect their Telegram chat from Settings.
             </p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={() => void handleLogout()}
             className="self-start rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-2.5 text-sm text-[#aaa] transition-colors hover:border-white/20 hover:text-[#f5f5f5]"
           >
             Lock
-          </button>
+          </Button>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
@@ -210,7 +212,7 @@ export function TelegramAdminPanel() {
                 Register this after deploying or changing your app URL.
               </p>
             </div>
-            <button
+            <Button
               type="button"
               disabled={!telegram?.configured || isRegistering}
               onClick={() => void handleRegisterWebhook()}
@@ -222,7 +224,7 @@ export function TelegramAdminPanel() {
                 <RefreshCw className="h-4 w-4" />
               )}
               {telegram?.registered ? 'Re-register Webhook' : 'Register Webhook'}
-            </button>
+            </Button>
           </div>
 
           <div className="mt-5 space-y-3">

@@ -27,6 +27,7 @@ import {
   type SettingsFormValues,
 } from '@/lib/validations/dashboard-forms'
 import { SectionCard, cn } from '@/components/dashboard/ui'
+import { Button } from '@/components/ui/button'
 
 export function SettingsSection() {
   const clerk = useClerk()
@@ -172,12 +173,12 @@ export function SettingsSection() {
               </div>
             ) : null}
           </div>
-          <button
+          <Button
             onClick={() => clerk.openUserProfile()}
             className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]"
           >
             Edit Profile
-          </button>
+          </Button>
         </div>
       </SectionCard>
 
@@ -285,7 +286,7 @@ export function SettingsSection() {
           </div>
 
           <div>
-            <button
+            <Button
               type="button"
               disabled={!isWebhookConfigured}
               onClick={() => {
@@ -299,7 +300,7 @@ export function SettingsSection() {
             >
               <ExternalLink className="h-4 w-4" />
               {isTelegramConnected ? 'Reconnect Telegram' : 'Connect Telegram'}
-            </button>
+            </Button>
           </div>
         </div>
       </SectionCard>
@@ -316,7 +317,7 @@ export function SettingsSection() {
             </div>
             <div className="flex gap-2">
               {(['metric', 'imperial'] as const).map((unit) => (
-                <button
+                <Button
                   key={unit}
                   type="button"
                   onClick={() =>
@@ -331,7 +332,7 @@ export function SettingsSection() {
                   disabled={preferencesQuery.isLoading || isSubmitting}
                 >
                   {unit[0].toUpperCase() + unit.slice(1)}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -377,7 +378,7 @@ export function SettingsSection() {
           ) : null}
 
           <div className="border-t border-white/10 pt-4">
-            <button
+            <Button
               type="submit"
               disabled={
                 preferencesQuery.isLoading ||
@@ -396,7 +397,7 @@ export function SettingsSection() {
                 : isSubmitting || savePreferencesMutation.isPending
                   ? 'Saving Preferences'
                   : 'Save Preferences'}
-            </button>
+            </Button>
           </div>
         </form>
       </SectionCard>
@@ -409,7 +410,7 @@ export function SettingsSection() {
             for spreadsheets.
           </div>
           <div className="grid gap-3 md:grid-cols-2">
-            <button
+            <Button
               type="button"
               disabled={exportDataMutation.isPending}
               onClick={() => void downloadExport('json')}
@@ -421,8 +422,8 @@ export function SettingsSection() {
                 <Download className="h-4 w-4" />
               )}
               Export JSON Archive
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               disabled={exportDataMutation.isPending}
               onClick={() => void downloadExport('csv')}
@@ -434,7 +435,7 @@ export function SettingsSection() {
                 <Download className="h-4 w-4" />
               )}
               Export Meals CSV
-            </button>
+            </Button>
           </div>
           <div className="text-xs text-[#666]">
             JSON includes profile, goals, reports, integrations, and meals. CSV

@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import { EmptyState, SectionCard, cn } from '@/components/dashboard/ui'
+import { Button } from '@/components/ui/button'
 import {
   getApiErrorMessage,
   useCreateMealMutation,
@@ -239,13 +240,15 @@ export function LogMealSection({
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-start gap-3">
             {mobileStep !== 'mode' ? (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={() => setMobileStep(mobileStep === 'form' ? 'meal' : 'mode')}
-                className="mt-0.5 rounded-full border border-white/10 bg-[#161616] p-2 text-[#888]"
+                className="mt-0.5 rounded-full border border-white/10 bg-[#161616] text-[#888] hover:bg-[#161616] hover:text-[#f5f5f5]"
               >
                 <ChevronLeft className="h-4 w-4" />
-              </button>
+              </Button>
             ) : null}
             <div>
               <div className="text-xs font-black uppercase tracking-[0.2em] text-[#666]">
@@ -268,13 +271,15 @@ export function LogMealSection({
                 </div>
               </div>
           {onClose ? (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon-sm"
               onClick={closeActionSheet}
-              className="rounded-full border border-white/10 bg-[#161616] p-2 text-[#888]"
+              className="rounded-full border border-white/10 bg-[#161616] text-[#888] hover:bg-[#161616] hover:text-[#f5f5f5]"
             >
               <X className="h-4 w-4" />
-            </button>
+            </Button>
           ) : null}
         </div>
 
@@ -307,15 +312,16 @@ export function LogMealSection({
               const selected = activeTab === tab.id
 
               return (
-                <button
+                <Button
                   key={tab.id}
                   type="button"
+                  variant="ghost"
                   onClick={() => {
                     setActiveTab(tab.id)
                     setMobileStep('meal')
                   }}
                   className={cn(
-                    'flex items-start gap-3 rounded-2xl border px-4 py-4 text-left transition-colors',
+                    'h-auto w-full justify-start whitespace-normal rounded-2xl border px-4 py-4 text-left transition-colors hover:bg-transparent',
                     selected
                       ? 'border-[#e4ff00] bg-[#e4ff00]/8 text-[#f5f5f5]'
                       : 'border-white/10 bg-[#0f0f0f] text-[#888] hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]',
@@ -337,7 +343,7 @@ export function LogMealSection({
                     </div>
                     <div className="mt-1 text-xs text-[#777]">{tab.description}</div>
                   </div>
-                </button>
+                </Button>
               )
             })}
           </div>
@@ -346,22 +352,23 @@ export function LogMealSection({
         {mobileStep === 'meal' ? (
           <div className="grid grid-cols-2 gap-2">
             {mealTags.map((tag) => (
-              <button
+              <Button
                 key={tag}
                 type="button"
+                variant="ghost"
                 onClick={() => {
                   setSelectedMealTag(tag)
                   setMobileStep('form')
                 }}
                 className={cn(
-                  'rounded-2xl border px-4 py-4 text-sm font-medium capitalize transition-colors',
+                  'h-auto w-full whitespace-normal rounded-2xl border px-4 py-4 text-sm font-medium capitalize transition-colors hover:bg-transparent',
                   selectedMealTag === tag
                     ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
                     : 'border-white/10 bg-[#141414] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]',
                 )}
               >
                 {tag}
-              </button>
+              </Button>
             ))}
           </div>
         ) : null}
@@ -373,20 +380,24 @@ export function LogMealSection({
                 Quick setup
               </div>
               <div className="mt-3 flex flex-wrap gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setMobileStep('mode')}
-                  className="rounded-full border border-white/10 bg-[#141414] px-3 py-1.5 text-sm text-[#f5f5f5]"
+                  className="rounded-full border border-white/10 bg-[#141414] px-3 text-sm text-[#f5f5f5] hover:bg-[#141414]"
                 >
                   {currentMode?.label}
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setMobileStep('meal')}
-                  className="rounded-full border border-white/10 bg-[#141414] px-3 py-1.5 text-sm capitalize text-[#f5f5f5]"
+                  className="rounded-full border border-white/10 bg-[#141414] px-3 text-sm capitalize text-[#f5f5f5] hover:bg-[#141414]"
                 >
                   {selectedMealTag}
-                </button>
+                </Button>
               </div>
             </div>
             <MealActionContent
@@ -426,19 +437,20 @@ export function LogMealSection({
 
         <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
           {mealTags.map((tag) => (
-            <button
+            <Button
               key={tag}
               type="button"
+              variant="ghost"
               onClick={() => setSelectedMealTag(tag)}
               className={cn(
-                'rounded-2xl border px-4 py-3 text-sm font-medium capitalize transition-colors sm:rounded-full sm:px-4 sm:py-2',
+                'h-auto w-full whitespace-normal rounded-2xl border px-4 py-3 text-sm font-medium capitalize transition-colors hover:bg-transparent sm:w-auto sm:rounded-full sm:px-4 sm:py-2',
                 selectedMealTag === tag
                   ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
                   : 'border-white/10 bg-[#141414] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]',
               )}
             >
               {tag}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -461,14 +473,15 @@ export function LogMealSection({
               Mobile
             </div>
           </div>
-          <button
+          <Button
             type="button"
+            size="lg"
             onClick={openActionSheet}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3.5 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d]"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d]"
           >
             <PlusCircle className="h-4 w-4" />
             Open Meal Actions
-          </button>
+          </Button>
         </SectionCard>
       </div>
 
@@ -480,12 +493,13 @@ export function LogMealSection({
               const selected = activeTab === tab.id
 
               return (
-                <button
+                <Button
                   key={tab.id}
                   type="button"
+                  variant="ghost"
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    'flex items-start gap-3 rounded-2xl border px-4 py-3 text-left transition-colors',
+                    'h-auto w-full justify-start whitespace-normal rounded-2xl border px-4 py-3 text-left transition-colors hover:bg-transparent',
                     selected
                       ? 'border-[#e4ff00] bg-[#e4ff00]/8 text-[#f5f5f5]'
                       : 'border-white/10 bg-[#0f0f0f] text-[#888] hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]',
@@ -507,7 +521,7 @@ export function LogMealSection({
                     </div>
                     <div className="mt-1 text-xs text-[#777]">{tab.description}</div>
                   </div>
-                </button>
+                </Button>
               )
             })}
           </div>
@@ -537,7 +551,7 @@ export function LogMealSection({
 
       {isActionSheetOpen ? (
         <div className="fixed inset-0 z-[70] flex items-end bg-black/60 backdrop-blur-sm md:hidden">
-          <button
+          <Button
             type="button"
             aria-label="Close meal actions"
             className="absolute inset-0 cursor-default"
@@ -551,13 +565,15 @@ export function LogMealSection({
             <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3">
               <div className="flex min-w-0 items-start gap-3">
                 {mobileStep !== 'mode' ? (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-sm"
                     onClick={() => setMobileStep(mobileStep === 'form' ? 'meal' : 'mode')}
-                    className="mt-0.5 rounded-full border border-white/10 bg-[#161616] p-2 text-[#888]"
+                    className="mt-0.5 rounded-full border border-white/10 bg-[#161616] text-[#888] hover:bg-[#161616] hover:text-[#f5f5f5]"
                   >
                     <ChevronLeft className="h-4 w-4" />
-                  </button>
+                  </Button>
                 ) : null}
                 <div>
                   <div className="text-xs font-black uppercase tracking-[0.2em] text-[#666]">
@@ -579,13 +595,15 @@ export function LogMealSection({
                   </div>
                 </div>
               </div>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-sm"
                 onClick={closeActionSheet}
-                className="rounded-full border border-white/10 bg-[#161616] p-2 text-[#888]"
+                className="rounded-full border border-white/10 bg-[#161616] text-[#888] hover:bg-[#161616] hover:text-[#f5f5f5]"
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
 
             <div className="px-4 pb-3">
@@ -620,15 +638,16 @@ export function LogMealSection({
                     const selected = activeTab === tab.id
 
                     return (
-                      <button
+                      <Button
                         key={tab.id}
                         type="button"
+                        variant="ghost"
                         onClick={() => {
                           setActiveTab(tab.id)
                           setMobileStep('meal')
                         }}
                         className={cn(
-                          'flex items-start gap-3 rounded-2xl border px-4 py-4 text-left transition-colors',
+                          'h-auto w-full justify-start whitespace-normal rounded-2xl border px-4 py-4 text-left transition-colors hover:bg-transparent',
                           selected
                             ? 'border-[#e4ff00] bg-[#e4ff00]/8 text-[#f5f5f5]'
                             : 'border-white/10 bg-[#0f0f0f] text-[#888] hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]',
@@ -650,7 +669,7 @@ export function LogMealSection({
                           </div>
                           <div className="mt-1 text-xs text-[#777]">{tab.description}</div>
                         </div>
-                      </button>
+                      </Button>
                     )
                   })}
                 </div>
@@ -659,22 +678,23 @@ export function LogMealSection({
               {mobileStep === 'meal' ? (
                 <div className="grid grid-cols-2 gap-2">
                   {mealTags.map((tag) => (
-                    <button
+                    <Button
                       key={tag}
                       type="button"
+                      variant="ghost"
                       onClick={() => {
                         setSelectedMealTag(tag)
                         setMobileStep('form')
                       }}
                       className={cn(
-                        'rounded-2xl border px-4 py-4 text-sm font-medium capitalize transition-colors',
+                        'h-auto w-full whitespace-normal rounded-2xl border px-4 py-4 text-sm font-medium capitalize transition-colors hover:bg-transparent',
                         selectedMealTag === tag
                           ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
                           : 'border-white/10 bg-[#141414] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]',
                       )}
                     >
                       {tag}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               ) : null}
@@ -835,7 +855,7 @@ function MealActionContent({
               manualForm.formState.errors.calories?.message}
           </div>
         ) : null}
-        <button
+        <Button
           type="submit"
           disabled={manualForm.formState.isSubmitting || createMealMutation.isPending}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3.5 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] disabled:cursor-not-allowed disabled:opacity-60"
@@ -846,7 +866,7 @@ function MealActionContent({
             <PlusCircle className="h-4 w-4" />
           )}
           Add Custom Food
-        </button>
+        </Button>
       </form>
     )
   }
@@ -878,7 +898,7 @@ function MealActionContent({
             {aiForm.formState.errors.text.message}
           </div>
         ) : null}
-        <button
+        <Button
           type="submit"
           disabled={aiForm.formState.isSubmitting || parseMealMutation.isPending}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3.5 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] disabled:cursor-not-allowed disabled:opacity-60"
@@ -889,7 +909,7 @@ function MealActionContent({
             <Bot className="h-4 w-4" />
           )}
           {aiForm.formState.isSubmitting || parseMealMutation.isPending ? 'Parsing Meal' : 'Parse with AI'}
-        </button>
+        </Button>
       </form>
 
       {aiError ? (
@@ -957,7 +977,7 @@ function MealActionContent({
               This helps us understand whether the AI got the calories and macros roughly right.
             </div>
             <div className="mt-3 flex flex-wrap gap-3">
-              <button
+              <Button
                 type="button"
                 onClick={() => setAiFeedback('accurate')}
                 className={cn(
@@ -968,8 +988,8 @@ function MealActionContent({
                 )}
               >
                 Looks accurate
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 onClick={() => setAiFeedback('inaccurate')}
                 className={cn(
@@ -980,11 +1000,11 @@ function MealActionContent({
                 )}
               >
                 Needs work
-              </button>
+              </Button>
             </div>
           </div>
 
-          <button
+          <Button
             type="button"
             onClick={() => void saveParsedMeal()}
             disabled={createMealMutation.isPending}
@@ -996,7 +1016,7 @@ function MealActionContent({
               <PlusCircle className="h-4 w-4" />
             )}
             {createMealMutation.isPending ? 'Saving Meal' : 'Save Parsed Meal'}
-          </button>
+          </Button>
         </div>
       ) : (
         <EmptyState

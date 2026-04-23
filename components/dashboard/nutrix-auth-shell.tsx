@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Mail } from 'lucide-react'
 
 import type { AuthMode } from '@/components/dashboard/types'
+import { Button } from '@/components/ui/button'
 
 export function NutrixAuthShell({ mode }: { mode: AuthMode }) {
   const title = mode === 'sign-in' ? 'Welcome back' : 'Create account'
@@ -54,10 +55,10 @@ export function NutrixAuthShell({ mode }: { mode: AuthMode }) {
             <div className="h-px flex-1 bg-white/10" />
           </div>
 
-          <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/40 hover:bg-white/[0.02]">
+          <Button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/40 hover:bg-white/[0.02]">
             <Mail className="h-4 w-4" />
             {cta}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

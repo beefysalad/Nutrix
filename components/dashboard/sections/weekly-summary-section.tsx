@@ -13,6 +13,7 @@ import {
 } from 'recharts'
 
 import { EmptyState, SectionCard } from '@/components/dashboard/ui'
+import { Button } from '@/components/ui/button'
 import { useMealsQuery } from '@/lib/hooks/use-dashboard-api'
 
 function getWeekStart(date: Date) {
@@ -89,18 +90,18 @@ export function WeeklySummarySection() {
           <p className="mt-1 text-sm text-[#777]">Your weekly nutrition summary</p>
         </div>
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={() => setAnchorDate((value) => new Date(value.getFullYear(), value.getMonth(), value.getDate() - 7))}
             className="rounded-full border border-white/10 bg-[#141414] p-2 text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-white"
           >
             <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setAnchorDate((value) => new Date(value.getFullYear(), value.getMonth(), value.getDate() + 7))}
             className="rounded-full border border-white/10 bg-[#141414] p-2 text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-white"
           >
             <ChevronRight className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
 

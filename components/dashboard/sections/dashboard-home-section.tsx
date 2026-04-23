@@ -7,6 +7,7 @@ import { OverviewSection } from '@/components/dashboard/sections/overview-sectio
 import { TrendsSection } from '@/components/dashboard/sections/trends-section'
 import type { DashboardSubview } from '@/components/dashboard/types'
 import { cn } from '@/components/dashboard/ui'
+import { Button } from '@/components/ui/button'
 
 const tabs: Array<{ key: DashboardSubview; label: string }> = [
   { key: 'overview', label: 'Overview' },
@@ -32,7 +33,7 @@ export function DashboardHomeSection({
         </div>
         <div className="flex flex-wrap gap-2">
           {tabs.map((tab) => (
-            <button
+            <Button
               key={tab.key}
               onClick={() => setActiveView(tab.key)}
               className={cn(
@@ -43,7 +44,7 @@ export function DashboardHomeSection({
               )}
             >
               {tab.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>

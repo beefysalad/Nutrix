@@ -30,6 +30,7 @@ import {
   SuggestionsSubview,
 } from '@/components/dashboard/types'
 import { cn } from '@/components/dashboard/ui'
+import { Button } from '@/components/ui/button'
 import { useDashboardSummaryQuery } from '@/lib/hooks/use-dashboard-api'
 
 const iconMap = {
@@ -219,7 +220,7 @@ export function NutrixDashboard({
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <button
+                  <Button
                     type="button"
                     onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
                     aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -230,14 +231,14 @@ export function NutrixDashboard({
                     ) : (
                       <PanelLeftClose className="h-4 w-4" />
                     )}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
                     onClick={() => setIsLogMealSheetOpen(true)}
                     className="hidden items-center justify-center rounded-full bg-[#e4ff00] px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-black transition-all hover:bg-[#e4ff00]/90 md:flex"
                   >
                     <span className="mr-2">+</span> Log Meal
-                  </button>
+                  </Button>
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#141414] lg:hidden">
                     <DashboardUserButton />
                   </div>
@@ -272,14 +273,14 @@ export function NutrixDashboard({
               icon={History}
             />
             <div className="flex justify-center">
-              <button
+              <Button
                 type="button"
                 onClick={() => setIsLogMealSheetOpen(true)}
                 aria-label="Log meal"
                 className="flex h-16 w-16 -translate-y-5 items-center justify-center rounded-full bg-[#e4ff00] text-black shadow-[0_10px_30px_rgba(228,255,0,0.4)] transition-transform active:scale-95"
               >
                 <Plus className="h-7 w-7" />
-              </button>
+              </Button>
             </div>
             <MobileNavItem
               href="/dashboard/goals"
@@ -299,7 +300,7 @@ export function NutrixDashboard({
 
       {isLogMealSheetOpen ? (
         <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 backdrop-blur-sm">
-          <button
+          <Button
             type="button"
             aria-label="Close log meal sheet"
             className="absolute inset-0 cursor-default"

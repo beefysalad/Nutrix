@@ -51,7 +51,15 @@ function createTelegramApi() {
   })
 }
 
-const telegramApi = createTelegramApi()
+let telegramApi: ReturnType<typeof createTelegramApi> | null = null
+
+function getTelegramApi() {
+  if (!telegramApi) {
+    telegramApi = createTelegramApi()
+  }
+
+  return telegramApi
+}
 
 function logTelegramApiError(action: string, error: unknown) {
   const details = getAxiosErrorDetails(error, `Telegram ${action} failed`)
@@ -119,7 +127,7 @@ export async function sendTelegramMessage({
   replyMarkup,
 }: SendTelegramMessageInput) {
   const response = await withTelegramRetries('sendMessage', () =>
-    telegramApi.post('/sendMessage', {
+    getTelegramApi().post('/sendMessage', {
       chat_id: chatId,
       text,
       disable_web_page_preview: disableWebPagePreview,
@@ -133,7 +141,7 @@ export async function sendTelegramMessage({
 
 export async function setTelegramWebhook(webhookUrl: string, secretToken?: string) {
   const response = await withTelegramRetries('setWebhook', () =>
-    telegramApi.post('/setWebhook', {
+    getTelegramApi().post('/setWebhook', {
       url: webhookUrl,
       secret_token: secretToken,
     }),
@@ -153,7 +161,7 @@ type TelegramWebhookInfo = {
 
 export async function getTelegramWebhookInfo() {
   const response = await withTelegramRetries('getWebhookInfo', () =>
-    telegramApi.get<TelegramWebhookInfo>('/getWebhookInfo'),
+    getTelegramApi().get<TelegramWebhookInfo>('/getWebhookInfo'),
   )
 
   return response.data

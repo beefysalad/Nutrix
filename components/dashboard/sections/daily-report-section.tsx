@@ -7,6 +7,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import { EmptyState, SectionCard, cn } from '@/components/dashboard/ui'
+import { Button } from '@/components/ui/button'
 import {
   getApiErrorMessage,
   useDailyReportQuery,
@@ -153,7 +154,7 @@ export function DailyReportSection() {
             <label className="mb-4 block text-[10px] font-black uppercase tracking-widest text-[#555]">Daily Reflection</label>
             <div className="mb-3 flex justify-between gap-2 sm:justify-start">
               {[1, 2, 3, 4, 5].map((value) => (
-                <button
+                <Button
                   key={value}
                   type="button"
                   onClick={() => setValue('rating', value, { shouldDirty: true })}
@@ -166,7 +167,7 @@ export function DailyReportSection() {
                   aria-label={`Rate ${value} out of 5`}
                 >
                   <Star className={cn('h-5 w-5 sm:h-6 sm:w-6', value <= rating && 'fill-current')} />
-                </button>
+                </Button>
               ))}
             </div>
             <div className="mb-6 text-xs uppercase tracking-wide text-[#666]">
@@ -185,7 +186,7 @@ export function DailyReportSection() {
             ) : null}
 
             <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <button
+              <Button
                 type="submit"
                 disabled={isSubmitting || saveDailyReportMutation.isPending}
                 className="flex items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] disabled:cursor-not-allowed disabled:opacity-60"
@@ -196,15 +197,15 @@ export function DailyReportSection() {
                   <Save className="h-4 w-4" />
                 )}
                 Save Reflection
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
                 className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/50"
                 onClick={() => toast.message('Export is not wired yet')}
               >
                 <Download className="h-4 w-4" />
                 Export as Image
-              </button>
+              </Button>
              
             </div>
           </form>

@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { SectionCard, cn } from '@/components/dashboard/ui'
+import { Button } from '@/components/ui/button'
 import { useMealsQuery } from '@/lib/hooks/use-dashboard-api'
 
 function startOfMonth(date: Date) {
@@ -69,18 +70,18 @@ export function CalendarSection() {
           }).format(visibleMonth)}
         </h2>
         <div className="flex gap-2">
-          <button
+          <Button
             onClick={() => setVisibleMonth((value) => new Date(value.getFullYear(), value.getMonth() - 1, 1))}
             className="rounded-full border border-white/10 bg-[#141414] p-2 text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-white"
           >
             <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => setVisibleMonth((value) => new Date(value.getFullYear(), value.getMonth() + 1, 1))}
             className="rounded-full border border-white/10 bg-[#141414] p-2 text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-white"
           >
             <ChevronRight className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
 

@@ -2,23 +2,21 @@
 
 import { useEffect, useState } from 'react'
 
+import { SignInButton, SignUpButton } from '@clerk/nextjs'
 import {
-  ArrowRight,
   Bot,
   CalendarDays,
   CheckCircle2,
-  ChevronRight,
   Flame,
   MessageCircle,
   Target,
   Zap,
 } from 'lucide-react'
-import { SignInButton, SignUpButton } from '@clerk/nextjs'
 import Link from 'next/link'
-import FadeIn from './fade-in'
 import Counter from './counter'
+import FadeIn from './fade-in'
 
-// ── Live stats strip ─────────────────────────────────────────────────────────
+import { Button } from '@/components/ui/button'
 
 type SiteStats = { mealCount: number; userCount: number; itemCount: number }
 
@@ -64,8 +62,6 @@ function StatsStrip() {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-
 const LandingPageComponent = () => {
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#080808] text-white">
@@ -78,14 +74,14 @@ const LandingPageComponent = () => {
         </Link>
         <nav className="flex items-center gap-2">
           <SignInButton mode="modal">
-            <button className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/80 transition-all duration-200 hover:border-white/20 hover:text-white">
+            <Button className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-white/80 transition-all duration-200 hover:border-white/20 hover:text-white">
               Sign in
-            </button>
+            </Button>
           </SignInButton>
           <SignUpButton mode="modal">
-            <button className="inline-flex items-center gap-1.5 rounded-full bg-[#e4ff00] px-4 py-2 text-sm font-bold text-black transition-all duration-200 hover:bg-[#f0ff4d] hover:shadow-[0_0_20px_rgba(228,255,0,0.35)]">
-              Sign up <ChevronRight className="h-3.5 w-3.5" />
-            </button>
+            <Button className="inline-flex items-center gap-1.5 rounded-full bg-[#e4ff00] px-4 py-2 text-sm font-bold text-black transition-all duration-200 hover:bg-[#f0ff4d] hover:shadow-[0_0_20px_rgba(228,255,0,0.35)]">
+              Sign up
+            </Button>
           </SignUpButton>
         </nav>
       </header>
@@ -118,14 +114,14 @@ const LandingPageComponent = () => {
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <SignUpButton mode="modal">
-              <button className="inline-flex items-center gap-2 rounded-2xl bg-[#e4ff00] px-8 py-3.5 text-sm font-bold text-black shadow-[0_0_30px_rgba(228,255,0,0.25)] transition-all duration-200 hover:bg-[#f0ff4d] hover:shadow-[0_0_40px_rgba(228,255,0,0.45)]">
-                Sign up <ArrowRight className="h-4 w-4" />
-              </button>
+              <Button className="inline-flex items-center gap-2 rounded-2xl bg-[#e4ff00] px-8 py-3.5 text-sm font-bold text-black shadow-[0_0_30px_rgba(228,255,0,0.25)] transition-all duration-200 hover:bg-[#f0ff4d] hover:shadow-[0_0_40px_rgba(228,255,0,0.45)]">
+                Sign up
+              </Button>
             </SignUpButton>
             <SignInButton mode="modal">
-              <button className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-8 py-3.5 text-sm font-medium text-white/80 transition-all duration-200 hover:border-white/20 hover:text-white">
+              <Button className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-8 py-3.5 text-sm font-medium text-white/80 transition-all duration-200 hover:border-white/20 hover:text-white">
                 Sign in
-              </button>
+              </Button>
             </SignInButton>
           </div>
 
@@ -144,12 +140,10 @@ const LandingPageComponent = () => {
           </div>
         </div>
 
-        {/* ── MOCK DASHBOARD PREVIEW ── */}
         <div className="relative mt-16 w-full max-w-3xl">
           <div className="absolute -inset-6 rounded-[2.5rem] bg-[radial-gradient(ellipse_at_top,rgba(228,255,0,0.18),transparent_55%)] blur-2xl" />
           <div className="relative overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(255,255,255,0.01))] p-1 shadow-[0_40px_140px_rgba(0,0,0,0.6)]">
             <div className="rounded-[1.75rem] border border-white/[0.06] bg-[#0d0d0d] p-5">
-              {/* mock topbar */}
               <div className="flex items-center justify-between border-b border-white/5 pb-4">
                 <div>
                   <div className="text-[10px] font-black tracking-[0.22em] text-[#444] uppercase">
@@ -191,7 +185,6 @@ const LandingPageComponent = () => {
                 ))}
               </div>
 
-              {/* progress bar */}
               <div className="mt-4 overflow-hidden rounded-full border border-white/5 bg-white/[0.03] p-1">
                 <div
                   className="h-2 rounded-full bg-[linear-gradient(90deg,#e4ff00,#aacc00)]"
@@ -206,7 +199,6 @@ const LandingPageComponent = () => {
                 <span>340 kcal left</span>
               </div>
 
-              {/* meal cards */}
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 {[
                   {
@@ -247,7 +239,6 @@ const LandingPageComponent = () => {
                 ))}
               </div>
 
-              {/* telegram widget */}
               <div className="mt-4 flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
                 <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#e4ff00]/10">
                   <Bot className="h-4 w-4 text-[#e4ff00]" />
@@ -266,11 +257,10 @@ const LandingPageComponent = () => {
         </div>
       </section>
 
-      <section className="border-y border-white/[0.06] bg-[#0d0d0d] px-5 py-16 lg:px-10">
+      <section className="mt-20 border-y border-white/[0.06] bg-[#0d0d0d] px-5 py-16 lg:px-10">
         <StatsStrip />
       </section>
 
-      {/* ── HOW IT WORKS ── */}
       <section className="px-5 py-24 lg:px-10">
         <div className="mx-auto max-w-5xl">
           <FadeIn className="text-center">
@@ -332,7 +322,6 @@ const LandingPageComponent = () => {
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
       <section className="bg-[#0a0a0a] px-5 py-24 lg:px-10">
         <div className="mx-auto max-w-5xl">
           <FadeIn className="text-center">
@@ -397,12 +386,10 @@ const LandingPageComponent = () => {
         </div>
       </section>
 
-      {/* ── TELEGRAM HIGHLIGHT ── */}
       <section className="px-5 py-24 lg:px-10">
         <div className="mx-auto max-w-5xl">
           <div className="overflow-hidden rounded-3xl border border-white/[0.07] bg-[#0d0d0d]">
             <div className="grid lg:grid-cols-2">
-              {/* left text */}
               <FadeIn className="flex flex-col justify-center p-10 lg:p-14">
                 <div className="mb-3 text-xs font-black tracking-[0.26em] text-[#e4ff00]/60 uppercase">
                   Telegram integration
@@ -436,7 +423,6 @@ const LandingPageComponent = () => {
                 </ul>
               </FadeIn>
 
-              {/* right mock chat */}
               <div className="flex items-center justify-center border-t border-white/[0.06] bg-[#0a0a0a] p-10 lg:border-t-0 lg:border-l">
                 <div className="w-full max-w-xs space-y-3">
                   {[
@@ -473,7 +459,6 @@ const LandingPageComponent = () => {
         </div>
       </section>
 
-      {/* ── CTA ── */}
       <section className="px-5 py-24 lg:px-10">
         <div className="mx-auto max-w-2xl text-center">
           <FadeIn>
@@ -492,14 +477,14 @@ const LandingPageComponent = () => {
                 </p>
                 <div className="mt-8 flex flex-wrap justify-center gap-4">
                   <SignUpButton mode="modal">
-                    <button className="inline-flex items-center gap-2 rounded-2xl bg-[#e4ff00] px-8 py-3.5 text-sm font-bold text-black shadow-[0_0_30px_rgba(228,255,0,0.3)] transition-all duration-200 hover:bg-[#f0ff4d] hover:shadow-[0_0_50px_rgba(228,255,0,0.5)]">
-                      Start free <ArrowRight className="h-4 w-4" />
-                    </button>
+                    <Button className="inline-flex items-center gap-2 rounded-2xl bg-[#e4ff00] px-8 py-3.5 text-sm font-bold text-black shadow-[0_0_30px_rgba(228,255,0,0.3)] transition-all duration-200 hover:bg-[#f0ff4d] hover:shadow-[0_0_50px_rgba(228,255,0,0.5)]">
+                      Start free
+                    </Button>
                   </SignUpButton>
                   <SignInButton mode="modal">
-                    <button className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-8 py-3.5 text-sm font-medium text-white/70 transition-all duration-200 hover:border-white/20 hover:text-white">
+                    <Button className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-8 py-3.5 text-sm font-medium text-white/70 transition-all duration-200 hover:border-white/20 hover:text-white">
                       Already have an account
-                    </button>
+                    </Button>
                   </SignInButton>
                 </div>
               </div>
@@ -518,18 +503,18 @@ const LandingPageComponent = () => {
             NUTR<span className="text-[#e4ff00]">IX</span>
           </Link>
           <p className="text-sm text-[#444]">
-            Built by John Patrick Ryan Mandal · MIT License
+            Built by John Patrick Ryan Mandal
           </p>
           <div className="flex gap-5 text-sm text-[#444]">
             <SignInButton mode="modal">
-              <button className="transition-colors hover:text-white">
+              <Button className="transition-colors hover:text-white">
                 Sign in
-              </button>
+              </Button>
             </SignInButton>
             <SignUpButton mode="modal">
-              <button className="transition-colors hover:text-white">
+              <Button className="transition-colors hover:text-white">
                 Register
-              </button>
+              </Button>
             </SignUpButton>
           </div>
         </div>

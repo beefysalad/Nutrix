@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 
 import { useOnboardingMutation } from '@/lib/hooks/use-dashboard-api'
 import { cn } from '@/components/dashboard/ui'
+import { Button } from '@/components/ui/button'
 import {
   onboardingSchema,
   type OnboardingFormInput,
@@ -18,16 +19,48 @@ type Step = 0 | 1 | 2 | 3 | 4 | 5
 
 const genderOptions = ['male', 'female'] as const
 const activityOptions = [
-  { id: 'sedentary', label: 'Sedentary', desc: 'Minimal movement, office life' },
-  { id: 'lightly-active', label: 'Lightly Active', desc: '1-3 days of exercise' },
-  { id: 'moderately-active', label: 'Moderately Active', desc: '3-5 days of hard work' },
-  { id: 'very-active', label: 'Very Active', desc: '6-7 days of intense training' },
-  { id: 'extra-active', label: 'Extra Active', desc: 'Physical job & pro athlete' },
+  {
+    id: 'sedentary',
+    label: 'Sedentary',
+    desc: 'Minimal movement, office life',
+  },
+  {
+    id: 'lightly-active',
+    label: 'Lightly Active',
+    desc: '1-3 days of exercise',
+  },
+  {
+    id: 'moderately-active',
+    label: 'Moderately Active',
+    desc: '3-5 days of hard work',
+  },
+  {
+    id: 'very-active',
+    label: 'Very Active',
+    desc: '6-7 days of intense training',
+  },
+  {
+    id: 'extra-active',
+    label: 'Extra Active',
+    desc: 'Physical job & pro athlete',
+  },
 ] as const
 const goalOptions = [
-  { id: 'lose-weight', label: 'Lose Weight', desc: 'Aggressive calorie deficit for fat loss' },
-  { id: 'maintain-weight', label: 'Maintenance', desc: 'Optimize performance and vitality' },
-  { id: 'gain-weight', label: 'Gain Muscle', desc: 'Calorie surplus geared for hypertrophy' },
+  {
+    id: 'lose-weight',
+    label: 'Lose Weight',
+    desc: 'Aggressive calorie deficit for fat loss',
+  },
+  {
+    id: 'maintain-weight',
+    label: 'Maintenance',
+    desc: 'Optimize performance and vitality',
+  },
+  {
+    id: 'gain-weight',
+    label: 'Gain Muscle',
+    desc: 'Calorie surplus geared for hypertrophy',
+  },
 ] as const
 const featureOptions = [
   {
@@ -57,7 +90,9 @@ function OnboardingStepHeader({
 }) {
   return (
     <div>
-      <h2 className="text-2xl font-bold uppercase tracking-tight text-white">{title}</h2>
+      <h2 className="text-2xl font-bold tracking-tight text-white uppercase">
+        {title}
+      </h2>
       <p className="mt-1 text-[#666]">{description}</p>
     </div>
   )
@@ -78,28 +113,28 @@ function OnboardingNav({
 }) {
   return (
     <div className="flex justify-end gap-2 pt-2">
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         onClick={back}
-        className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-transparent text-[#777] transition-all hover:text-white"
+        className="rounded-xl border border-white/10 bg-transparent text-[#777] transition-all hover:bg-transparent hover:text-white"
       >
         <ChevronLeft className="h-4 w-4" />
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         onClick={next}
         disabled={disabled || loading}
-        className="flex h-10 items-center justify-center gap-2 rounded-xl bg-[#e4ff00] px-5 text-xs font-bold uppercase tracking-widest text-black transition-all hover:bg-[#f0ff4d] disabled:opacity-30"
+        size="lg"
+        className="flex items-center justify-center gap-2 rounded-xl bg-[#e4ff00] px-5 text-xs font-bold tracking-widest text-black uppercase transition-all hover:bg-[#f0ff4d] disabled:opacity-30"
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <>
-            {nextLabel}
-            <ChevronRight className="h-3.5 w-3.5" />
-          </>
+          <>{nextLabel}</>
         )}
-      </button>
+      </Button>
     </div>
   )
 }
@@ -182,21 +217,22 @@ export function OnboardingWizard() {
           {step === 0 && (
             <div className="space-y-8 py-4 text-center">
               <div className="space-y-4">
-                <h1 className="font-mono text-4xl font-black uppercase tracking-tighter text-white lg:text-5xl">
+                <h1 className="font-mono text-4xl font-black tracking-tighter text-white uppercase lg:text-5xl">
                   NUTR<span className="text-[#e4ff00]">IX</span>
                 </h1>
                 <p className="mx-auto max-w-md text-lg text-[#888]">
-                  Welcome to Nutrix. Let&apos;s calibrate your biology to optimize your nutrition
-                  performance.
+                  Welcome to Nutrix. Let&apos;s calibrate your biology to
+                  optimize your nutrition performance.
                 </p>
               </div>
-              <button
+              <Button
                 onClick={() => setStep(1)}
-                className="group mx-auto flex w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-[#e4ff00] px-5 py-3 text-sm font-bold uppercase tracking-widest text-black transition-all hover:bg-[#f0ff4d]"
+                size="lg"
+                className="group mx-auto flex w-full max-w-sm items-center justify-center gap-2 rounded-xl bg-[#e4ff00] px-5 text-sm font-bold tracking-widest text-black uppercase transition-all hover:bg-[#f0ff4d]"
               >
-               Start Onboarding
+                Start Onboarding
                 <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-              </button>
+              </Button>
             </div>
           )}
 
@@ -209,29 +245,46 @@ export function OnboardingWizard() {
 
               <div className="grid gap-6 sm:grid-cols-2">
                 <div className="space-y-3">
-                  <label className="text-xs font-bold uppercase tracking-widest text-[#555]">Gender</label>
+                  <label className="text-xs font-bold tracking-widest text-[#555] uppercase">
+                    Gender
+                  </label>
                   <div className="grid grid-cols-2 gap-3">
                     {genderOptions.map((g) => (
-                      <button
+                      <Button
                         key={g}
                         type="button"
-                        onClick={() => setValue('gender', g as 'male' | 'female')}
+                        variant="ghost"
+                        onClick={() =>
+                          setValue('gender', g as 'male' | 'female')
+                        }
                         className={cn(
-                          'rounded-xl border px-4 py-3 text-sm font-bold uppercase transition-all',
-                          selectedGender === g
+                          'h-auto w-full whitespace-normal rounded-xl border px-4 py-3 text-sm font-bold uppercase transition-all hover:bg-transparent',
+                      selectedGender === g
                             ? 'border-[#e4ff00] bg-[#e4ff00] text-black'
-                            : 'border-white/10 bg-[#0a0a0a] text-[#555] hover:border-white/20'
+                            : 'border-white/10 bg-[#0a0a0a] text-[#777] hover:border-white/20 hover:text-[#f1f1f1]'
                         )}
                       >
                         {g}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
 
-                <OnboardingInput label="Age" register={register('age')} error={errors.age?.message} />
-                <OnboardingInput label="Weight (kg)" register={register('weightKg')} error={errors.weightKg?.message} />
-                <OnboardingInput label="Height (cm)" register={register('heightCm')} error={errors.heightCm?.message} />
+                <OnboardingInput
+                  label="Age"
+                  register={register('age')}
+                  error={errors.age?.message}
+                />
+                <OnboardingInput
+                  label="Weight (kg)"
+                  register={register('weightKg')}
+                  error={errors.weightKg?.message}
+                />
+                <OnboardingInput
+                  label="Height (cm)"
+                  register={register('heightCm')}
+                  error={errors.heightCm?.message}
+                />
               </div>
 
               <OnboardingNav
@@ -251,25 +304,28 @@ export function OnboardingWizard() {
 
               <div className="grid gap-3">
                 {activityOptions.map((act) => (
-                  <button
+                  <Button
                     key={act.id}
                     type="button"
+                    variant="ghost"
                     onClick={() => setValue('activityLevel', act.id)}
                     className={cn(
-                      'flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-all',
+                      'h-auto w-full justify-between whitespace-normal rounded-xl border px-4 py-3 text-left transition-all hover:bg-transparent',
                       selectedActivityLevel === act.id
-                        ? 'border-[#e4ff00] bg-[#e4ff00]/5 text-[#e4ff00]'
-                        : 'border-white/10 bg-[#0a0a0a] text-[#555] hover:border-white/20'
+                        ? 'border-[#e4ff00] bg-[#e4ff00]/5 text-[#e4ff00] hover:bg-[#e4ff00]/5 hover:text-[#e4ff00]'
+                        : 'border-white/10 bg-[#0a0a0a] text-[#777] hover:border-white/20 hover:text-[#f1f1f1]'
                     )}
                   >
                     <div>
-                      <div className="font-bold uppercase tracking-wide">{act.label}</div>
+                      <div className="font-bold tracking-wide uppercase">
+                        {act.label}
+                      </div>
                       <div className="text-xs opacity-60">{act.desc}</div>
                     </div>
                     {selectedActivityLevel === act.id && (
                       <span className="h-2.5 w-2.5 rounded-full bg-[#e4ff00]" />
                     )}
-                  </button>
+                  </Button>
                 ))}
               </div>
 
@@ -286,22 +342,25 @@ export function OnboardingWizard() {
 
               <div className="grid gap-4">
                 {goalOptions.map((g) => (
-                  <button
+                  <Button
                     key={g.id}
                     type="button"
+                    variant="ghost"
                     onClick={() => setValue('goal', g.id)}
                     className={cn(
-                      'flex items-center justify-between rounded-xl border px-4 py-4 text-left transition-all',
+                      'h-auto w-full justify-between whitespace-normal rounded-xl border px-4 py-4 text-left transition-all hover:bg-transparent',
                       selectedGoal === g.id
-                        ? 'border-[#e4ff00] bg-[#e4ff00]/5 text-[#e4ff00]'
-                        : 'border-white/10 bg-[#0a0a0a] text-[#555] hover:border-white/20'
+                        ? 'border-[#e4ff00] bg-[#e4ff00]/5 text-[#e4ff00] hover:bg-[#e4ff00]/5 hover:text-[#e4ff00]'
+                        : 'border-white/10 bg-[#0a0a0a] text-[#777] hover:border-white/20 hover:text-[#f1f1f1]'
                     )}
                   >
                     <div>
-                      <div className="font-bold uppercase tracking-wider">{g.label}</div>
+                      <div className="font-bold tracking-wider uppercase">
+                        {g.label}
+                      </div>
                       <div className="mt-1 text-sm opacity-60">{g.desc}</div>
                     </div>
-                  </button>
+                  </Button>
                 ))}
               </div>
 
@@ -322,7 +381,7 @@ export function OnboardingWizard() {
                     key={feature.label}
                     className="rounded-xl border border-white/10 bg-transparent px-4 py-3"
                   >
-                    <div className="text-sm font-bold uppercase tracking-wider text-[#f5f5f5]">
+                    <div className="text-sm font-bold tracking-wider text-[#f5f5f5] uppercase">
                       {feature.label}
                     </div>
                     <div className="mt-1 text-sm leading-relaxed text-[#777]">
@@ -333,8 +392,8 @@ export function OnboardingWizard() {
               </div>
 
               <div className="rounded-xl border border-[#e4ff00]/20 bg-[#e4ff00]/5 px-4 py-3 text-sm leading-relaxed text-[#cddf73]">
-                Tip: use AI parsing for messy real-life meals, search for simple foods,
-                and custom when you already know the numbers.
+                Tip: use AI parsing for messy real-life meals, search for simple
+                foods, and custom when you already know the numbers.
               </div>
 
               <OnboardingNav back={() => setStep(3)} next={() => setStep(5)} />
@@ -343,37 +402,51 @@ export function OnboardingWizard() {
 
           {step === 5 && (
             <div className="space-y-8">
-              <div className="text-center space-y-2">
-                <h2 className="text-3xl font-black uppercase tracking-tighter text-white">System Calibration</h2>
-                <p className="text-[#888]">Calculated daily targets based on your telemetry.</p>
+              <div className="space-y-2 text-center">
+                <h2 className="text-3xl font-black tracking-tighter text-white uppercase">
+                  System Calibration
+                </h2>
+                <p className="text-[#888]">
+                  Calculated daily targets based on your telemetry.
+                </p>
               </div>
 
               <div className="text-center">
-                <div className="text-xs font-bold uppercase tracking-widest text-[#e4ff00]/60">Daily Target </div>
+                <div className="text-xs font-bold tracking-widest text-[#e4ff00]/60 uppercase">
+                  Daily Target{' '}
+                </div>
                 <div className="mt-2 font-mono text-6xl font-black text-[#e4ff00] lg:text-7xl">
                   {targetCalories}
-                  <span className="text-xl ml-2 opacity-50 uppercase tracking-tighter">cal</span>
+                  <span className="ml-2 text-xl tracking-tighter uppercase opacity-50">
+                    cal
+                  </span>
                 </div>
-                <div className="mt-4 inline-flex rounded-full bg-[#e4ff00]/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-[#e4ff00]">
+                <div className="mt-4 inline-flex rounded-full bg-[#e4ff00]/10 px-4 py-1.5 text-xs font-bold tracking-wider text-[#e4ff00] uppercase">
                   Objective: {selectedGoal.replace('-', ' ')}
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center">
-                  <div className="text-[10px] uppercase tracking-widest text-[#555]">Protein</div>
+                  <div className="text-[10px] tracking-widest text-[#555] uppercase">
+                    Protein
+                  </div>
                   <div className="mt-1 font-mono text-xl font-bold text-white">
                     {Math.round((targetCalories * 0.3) / 4)}g
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-[10px] uppercase tracking-widest text-[#555]">Carbs</div>
+                  <div className="text-[10px] tracking-widest text-[#555] uppercase">
+                    Carbs
+                  </div>
                   <div className="mt-1 font-mono text-xl font-bold text-white">
                     {Math.round((targetCalories * 0.4) / 4)}g
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-[10px] uppercase tracking-widest text-[#555]">Fat</div>
+                  <div className="text-[10px] tracking-widest text-[#555] uppercase">
+                    Fat
+                  </div>
                   <div className="mt-1 font-mono text-xl font-bold text-white">
                     {Math.round((targetCalories * 0.3) / 9)}g
                   </div>
@@ -407,18 +480,24 @@ function OnboardingInput({
 
   return (
     <div className="space-y-2">
-      <label className="text-xs font-bold uppercase tracking-widest text-[#555]">{label}</label>
+      <label className="text-xs font-bold tracking-widest text-[#555] uppercase">
+        {label}
+      </label>
       <input
         {...register}
         type="number"
         step={isWeightField ? '0.1' : '1'}
         min="0"
         className={cn(
-          'w-full rounded-xl border border-white/10 bg-transparent px-4 py-3 font-mono text-white outline-none transition-all focus:border-[#e4ff00]',
+          'w-full rounded-xl border border-white/10 bg-transparent px-4 py-3 font-mono text-white transition-all outline-none focus:border-[#e4ff00]',
           error && 'border-red-500/50 text-red-100'
         )}
       />
-      {error && <div className="text-[10px] text-red-400 uppercase tracking-tighter">{error}</div>}
+      {error && (
+        <div className="text-[10px] tracking-tighter text-red-400 uppercase">
+          {error}
+        </div>
+      )}
     </div>
   )
 }
