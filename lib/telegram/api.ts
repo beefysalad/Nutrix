@@ -40,6 +40,7 @@ type SendTelegramMessageInput = {
   text: string
   disableWebPagePreview?: boolean
   parseMode?: 'HTML' | 'MarkdownV2'
+  replyMarkup?: Record<string, unknown>
 }
 
 export async function sendTelegramMessage({
@@ -47,6 +48,7 @@ export async function sendTelegramMessage({
   text,
   disableWebPagePreview = true,
   parseMode,
+  replyMarkup,
 }: SendTelegramMessageInput) {
   try {
     const response = await createTelegramApi().post('/sendMessage', {
@@ -54,6 +56,7 @@ export async function sendTelegramMessage({
       text,
       disable_web_page_preview: disableWebPagePreview,
       ...(parseMode ? { parse_mode: parseMode } : {}),
+      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
     })
 
     return response.data
