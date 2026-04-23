@@ -1,7 +1,8 @@
 import prisma from '@/lib/prisma'
 import { NextResponse } from 'next/server'
 
-export const revalidate = 3600 // cache for 1 hour
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 export async function GET() {
   const [mealCount, userCount, itemCount] = await Promise.all([
