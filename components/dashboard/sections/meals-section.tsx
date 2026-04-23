@@ -1,124 +1,346 @@
 'use client'
 
-import { Bot, CalendarDays, Loader2, Search, Trash2, Clock } from 'lucide-react'
+import { Bot, CalendarDays, Loader2, Search, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import { EmptyState, SectionCard } from '@/components/dashboard/ui'
 import {
   useDeleteMealMutation,
+  useGoalsQuery,
   getApiErrorMessage,
   useMealsQuery,
   useUpdateMealAiFeedbackMutation,
+  type MealResponse,
 } from '@/lib/hooks/use-dashboard-api'
 
-const MEAL_TYPE_COLORS: Record<string, { badge: string; cal: string }> = {
-  breakfast: { badge: 'bg-[#ff6b35]/15 border border-[#ff6b35]/40 text-[#ff6b35]', cal: 'text-[#ff6b35]' },
-  lunch:     { badge: 'bg-[#00ff88]/12 border border-[#00ff88]/40 text-[#00ff88]', cal: 'text-[#00ff88]' },
-  dinner:    { badge: 'bg-[#38bdf8]/12 border border-[#38bdf8]/40 text-[#38bdf8]', cal: 'text-[#38bdf8]' },
-  snack:     { badge: 'bg-[#bf5af2]/12 border border-[#bf5af2]/40 text-[#bf5af2]', cal: 'text-[#bf5af2]' },
-  other:     { badge: 'bg-[#e4ff00]/10 border border-[#e4ff00]/30 text-[#e4ff00]', cal: 'text-[#e4ff00]' },
-}
-function getMealColor(type: string) {
-  return MEAL_TYPE_COLORS[type.toLowerCase()] ?? MEAL_TYPE_COLORS.other
-}
+// ── helpers ──────────────────────────────────────────────────────────────────
 
-function formatDateLabel(date: string) {
-  if (!date) {
-    return 'Pick date'
-  }
-
-  const parsedDate = new Date(`${date}T00:00:00`)
-
+function formatDayHeader(iso: string) {
   return new Intl.DateTimeFormat('en-US', {
-    month: '2-digit',
-    day: '2-digit',
-    year: 'numeric',
-  }).format(parsedDate)
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  }).format(new Date(`${iso}T00:00:00`))
+}
+
+function formatTime(loggedAt: string) {
+  return new Intl.DateTimeFormat('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(loggedAt))
+}
+
+function mealTotals(meals: MealResponse[]) {
+  return meals.reduce(
+    (acc, meal) => {
+      meal.items.forEach((item) => {
+        acc.calories += item.calories
+        acc.protein += Number(item.proteinGrams ?? 0)
+        acc.carbs += Number(item.carbsGrams ?? 0)
+        acc.fat += Number(item.fatGrams ?? 0)
+      })
+      return acc
+    },
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  )
+}
+
+function mealCalories(meal: MealResponse) {
+  return meal.items.reduce((s, i) => s + i.calories, 0)
+}
+
+function StatCard({
+  label,
+  value,
+  accent = false,
+}: {
+  label: string
+  value: string
+  accent?: boolean
+}) {
+  return (
+    <div
+      className={
+        accent
+          ? 'rounded-2xl border border-[#e4ff00]/25 bg-[#e4ff00]/10 px-4 py-3 shadow-[inset_0_1px_0_rgba(228,255,0,0.14)]'
+          : 'rounded-2xl border border-white/[0.08] bg-white/[0.035] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
+      }
+    >
+      <div className="text-[9px] font-black tracking-[0.24em] text-[#5f5f5f] uppercase">
+        {label}
+      </div>
+      <div
+        className={`mt-2 font-mono text-xl font-black sm:text-2xl ${accent ? 'text-[#e4ff00]' : 'text-[#f0f0f0]'}`}
+      >
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function MealCard({
+  meal,
+  onDelete,
+  onFeedback,
+  deletePending,
+}: {
+  meal: MealResponse
+  onDelete: () => void
+  onFeedback: (fb: 'accurate' | 'inaccurate') => void
+  deletePending: boolean
+}) {
+  const cal = mealCalories(meal)
+  const mealLabel =
+    meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)
+  const isAi = meal.source === 'ai' || meal.source === 'telegram'
+
+  const title = meal.items.map((i) => i.foodNameSnapshot).join(', ')
+
+  return (
+    <div className="group flex min-h-32 flex-col justify-between rounded-2xl border border-white/[0.07] bg-[#101010] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#e4ff00]/25 hover:bg-[#141414]">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="rounded-full border border-white/[0.06] bg-white/[0.03] px-2 py-1 text-[9px] font-black tracking-[0.18em] text-[#888] uppercase">
+            {mealLabel}
+          </span>
+          <span className="text-[10px] font-bold tracking-wider text-[#555] uppercase">
+            {formatTime(meal.loggedAt)}
+          </span>
+          {isAi && (
+            <span className="flex items-center gap-0.5 rounded-full border border-white/5 bg-white/5 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-[#666] uppercase">
+              <Bot className="h-2.5 w-2.5 text-[#e4ff00]/50" />
+              AI
+            </span>
+          )}
+        </div>
+        <button
+          type="button"
+          disabled={deletePending}
+          onClick={onDelete}
+          className="flex h-7 w-7 items-center justify-center rounded-full border border-white/[0.06] bg-black/20 text-[#444] transition-colors hover:border-red-500/30 hover:text-red-400 md:opacity-0 md:group-hover:opacity-100"
+        >
+          <Trash2 className="h-3 w-3" />
+        </button>
+      </div>
+
+      <div className="mt-3">
+        <div className="line-clamp-2 text-sm leading-snug font-semibold text-[#f1f1f1]">
+          {title}
+        </div>
+        <div className="mt-2 font-mono text-sm font-black text-[#e4ff00]">
+          {cal}<span className="ml-1 text-[10px] tracking-wider text-[#6f7c00]">kcal</span>
+        </div>
+      </div>
+
+      {isAi && !meal.aiFeedback && (
+        <div className="mt-3 flex items-center gap-3 border-t border-white/[0.05] pt-2 text-[10px]">
+          <span className="font-bold tracking-widest text-[#444] uppercase">
+            Accurate?
+          </span>
+          <button
+            onClick={() => onFeedback('accurate')}
+            className="font-black tracking-tighter text-[#555] uppercase transition-colors hover:text-[#e4ff00]"
+          >
+            Yes
+          </button>
+          <button
+            onClick={() => onFeedback('inaccurate')}
+            className="font-black tracking-tighter text-[#555] uppercase transition-colors hover:text-red-400/70"
+          >
+            No
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function DayCard({
+  date,
+  meals,
+  goalCalories,
+  onDelete,
+  onFeedback,
+  deletePending,
+}: {
+  date: string
+  meals: MealResponse[]
+  goalCalories: number | null
+  onDelete: (id: string) => void
+  onFeedback: (mealId: string, fb: 'accurate' | 'inaccurate') => void
+  deletePending: boolean
+}) {
+  const totals = mealTotals(meals)
+  const remaining =
+    goalCalories != null ? Math.max(0, goalCalories - totals.calories) : null
+  const pct = goalCalories
+    ? Math.min(100, Math.round((totals.calories / goalCalories) * 100))
+    : null
+  const hasTelegram = meals.some((m) => m.source === 'telegram')
+
+  return (
+    <div className="overflow-hidden rounded-[2rem] border border-white/[0.08] bg-[#101010] shadow-[0_30px_90px_rgba(0,0,0,0.36)]">
+      <div className="flex items-start justify-between gap-4 border-b border-white/[0.06] px-5 py-5 sm:px-6">
+        <div>
+          <div className="text-[9px] font-black tracking-[0.24em] text-[#555] uppercase">
+            Nutrition timeline
+          </div>
+          <div className="mt-1 text-2xl font-semibold tracking-tight text-[#f4f4f4]">
+            {formatDayHeader(date)}
+          </div>
+        </div>
+        <div className="rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1 text-[10px] font-black tracking-widest text-[#777] uppercase">
+          {meals.length} {meals.length === 1 ? 'meal' : 'meals'}
+        </div>
+      </div>
+
+      <div className="space-y-5 p-5 sm:p-6">
+        <div className="grid grid-cols-3 gap-3">
+          <StatCard
+            label="Calories"
+            value={totals.calories.toLocaleString()}
+            accent
+          />
+          <StatCard label="Protein" value={`${Math.round(totals.protein)}g`} />
+          <StatCard
+            label={remaining != null ? 'Remaining' : 'Meals'}
+            value={
+              remaining != null ? remaining.toLocaleString() : `${meals.length}`
+            }
+          />
+        </div>
+
+        {pct != null && (
+          <div className="space-y-2">
+            <div className="overflow-hidden rounded-full bg-white/[0.06]">
+              <div
+                className="h-2.5 rounded-full bg-[#e4ff00] transition-all duration-700"
+                style={{
+                  width: `${pct}%`,
+                }}
+              />
+            </div>
+            <div className="flex justify-between text-[10px] font-bold tracking-wide text-[#555] uppercase">
+              <span>{pct}% of daily goal</span>
+              {remaining != null && (
+                <span>{remaining.toLocaleString()} kcal left</span>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="-mx-5 px-5">
+          <div className="scrollbar-hide flex gap-3 overflow-x-auto pb-2 sm:gap-4">
+            {meals.map((meal) => (
+              <div key={meal.id} className="w-[245px] flex-shrink-0 sm:w-[280px]">
+                <MealCard
+                  meal={meal}
+                  deletePending={deletePending}
+                  onDelete={() => onDelete(meal.id)}
+                  onFeedback={(fb) => onFeedback(meal.id, fb)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {hasTelegram && (
+          <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#e4ff00]/10">
+              <Bot className="h-3.5 w-3.5 text-[#e4ff00]" />
+            </div>
+            <span className="text-xs text-[#555]">
+              Some meals captured via{' '}
+              <span className="text-[#888]">@NutrrixBot</span> on Telegram
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 export function MealsSection() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10))
-  const mealsQuery = useMealsQuery({
-    limit: 100,
-  })
-  const updateFeedbackMutation = useUpdateMealAiFeedbackMutation()
-  const deleteMealMutation = useDeleteMealMutation()
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().slice(0, 10)
+  )
 
-  const filteredMeals = useMemo(() => {
+  const mealsQuery = useMealsQuery({ limit: 100 })
+  const goalsQuery = useGoalsQuery()
+  const updateFeedbackMut = useUpdateMealAiFeedbackMutation()
+  const deleteMealMut = useDeleteMealMutation()
+
+  const goalCalories = goalsQuery.data?.goal?.dailyCalories ?? null
+
+  const groupedDays = useMemo(() => {
     const meals = mealsQuery.data?.meals ?? []
-    const normalizedQuery = searchQuery.trim().toLowerCase()
+    const q = searchQuery.trim().toLowerCase()
 
-    return meals.filter((meal) => {
+    const filtered = meals.filter((meal) => {
       const mealDate = meal.loggedAt.slice(0, 10)
       const matchesDate = selectedDate ? mealDate === selectedDate : true
       const haystack = [
         meal.mealType,
         meal.notes ?? '',
-        ...meal.items.map((item) => item.foodNameSnapshot),
+        ...meal.items.map((i) => i.foodNameSnapshot),
       ]
         .join(' ')
         .toLowerCase()
-
-      const matchesQuery = normalizedQuery ? haystack.includes(normalizedQuery) : true
-
-      return matchesDate && matchesQuery
+      const matchesQ = q ? haystack.includes(q) : true
+      return matchesDate && matchesQ
     })
+
+    // group by date
+    const map = new Map<string, MealResponse[]>()
+    for (const meal of filtered) {
+      const d = meal.loggedAt.slice(0, 10)
+      if (!map.has(d)) map.set(d, [])
+      map.get(d)!.push(meal)
+    }
+
+    return [...map.entries()].sort(([a], [b]) => b.localeCompare(a))
   }, [mealsQuery.data?.meals, searchQuery, selectedDate])
 
-  const dayTotals = useMemo(() => {
-    return filteredMeals.reduce(
-      (totals, meal) => {
-        meal.items.forEach((item) => {
-          totals.calories += item.calories
-          totals.protein += Number(item.proteinGrams ?? 0)
-          totals.carbs += Number(item.carbsGrams ?? 0)
-          totals.fat += Number(item.fatGrams ?? 0)
-        })
+  async function handleDelete(mealId: string) {
+    if (!window.confirm('Delete this meal entry?')) return
+    try {
+      await deleteMealMut.mutateAsync(mealId)
+      toast.success('Meal deleted')
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Could not delete meal'))
+    }
+  }
 
-        return totals
-      },
-      { calories: 0, protein: 0, carbs: 0, fat: 0 },
-    )
-  }, [filteredMeals])
+  function handleFeedback(mealId: string, fb: 'accurate' | 'inaccurate') {
+    updateFeedbackMut.mutate({ mealId, aiFeedback: fb })
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
       <div className="rounded-[1.75rem] border border-white/10 bg-[#111111] p-4 sm:p-5">
         <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
           <label className="relative block">
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#666]" />
+            <Search className="absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-[#666]" />
             <input
               type="text"
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search meals, notes, or ingredients..."
-              className="h-12 w-full rounded-2xl border border-white/10 bg-[#0c0c0c] pl-11 pr-4 text-sm text-[#f5f5f5] outline-none placeholder:text-[#555] focus:border-[#e4ff00]"
+              className="h-12 w-full rounded-2xl border border-white/10 bg-[#0c0c0c] pr-4 pl-11 text-sm text-[#f5f5f5] outline-none placeholder:text-[#555] focus:border-[#e4ff00]"
             />
           </label>
-          <label className="group relative block h-12 cursor-pointer lg:w-[190px]">
-            <div className="pointer-events-none flex h-full w-full items-center gap-3 rounded-2xl border border-white/10 bg-[#0c0c0c] px-4 text-left transition-colors group-hover:border-white/20 group-focus-within:border-[#e4ff00]">
-              <CalendarDays className="h-4 w-4 text-[#777] transition-colors group-hover:text-[#e4ff00]" />
-              <span className="font-mono text-sm text-[#cfcfcf]">
-                {formatDateLabel(selectedDate)}
-              </span>
-            </div>
+          <label className="relative block h-12 lg:w-[190px]">
+            <CalendarDays className="pointer-events-none absolute top-1/2 left-4 z-10 h-4 w-4 -translate-y-1/2 text-[#777]" />
             <input
               type="date"
               value={selectedDate}
-              onChange={(event) => setSelectedDate(event.target.value)}
+              onChange={(e) => setSelectedDate(e.target.value)}
               aria-label="Filter meals by date"
-              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              className="h-12 w-full cursor-pointer rounded-2xl border border-white/10 bg-[#0c0c0c] px-4 pl-11 font-mono text-sm text-[#cfcfcf] [color-scheme:dark] outline-none hover:border-white/20 focus:border-[#e4ff00] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70"
             />
           </label>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <HistoryStat label="Showing" value={`${filteredMeals.length}`} helper="meals" />
-          <HistoryStat label="Calories" value={`${dayTotals.calories}`} helper="kcal" />
-          <HistoryStat label="Protein" value={`${dayTotals.protein.toFixed(1)}g`} helper="logged" />
-          <HistoryStat label="Carbs / Fat" value={`${dayTotals.carbs.toFixed(0)}g / ${dayTotals.fat.toFixed(0)}g`} helper="split" />
         </div>
       </div>
 
@@ -126,7 +348,7 @@ export function MealsSection() {
         <SectionCard className="flex items-center justify-center py-14">
           <Loader2 className="h-5 w-5 animate-spin text-[#e4ff00]" />
         </SectionCard>
-      ) : filteredMeals.length === 0 ? (
+      ) : groupedDays.length === 0 ? (
         <SectionCard>
           <EmptyState
             title="No meal entries for this filter yet"
@@ -134,191 +356,42 @@ export function MealsSection() {
           />
         </SectionCard>
       ) : (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {filteredMeals.map((meal) => {
-                const calories = meal.items.reduce((sum, item) => sum + item.calories, 0)
-                const protein = meal.items.reduce(
-                  (sum, item) => sum + Number(item.proteinGrams ?? 0),
-                  0,
-                )
-                const carbs = meal.items.reduce(
-                  (sum, item) => sum + Number(item.carbsGrams ?? 0),
-                  0,
-                )
-                const fat = meal.items.reduce((sum, item) => sum + Number(item.fatGrams ?? 0), 0)
+        <>
+          <div className="-mx-4 px-4 md:hidden">
+            <div className="scrollbar-hide flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2">
+              {groupedDays.map(([date, meals]) => (
+                <div
+                  key={date}
+                  className="w-[calc(100vw-2.5rem)] flex-shrink-0 snap-start"
+                >
+                  <DayCard
+                    date={date}
+                    meals={meals}
+                    goalCalories={goalCalories}
+                    onDelete={handleDelete}
+                    onFeedback={handleFeedback}
+                    deletePending={deleteMealMut.isPending}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
 
-                return (
-                  <div
-                    key={meal.id}
-                    className="group relative flex flex-col overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#121212] transition-all hover:border-white/20"
-                  >
-                    <div className="border-b border-white/[0.06] bg-[#181818] px-4 py-3.5 sm:px-5">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                          <span className={`rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-tighter ${getMealColor(meal.mealType).badge}`}>
-                            {meal.mealType}
-                          </span>
-                          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-[#555]">
-                            <Clock className="h-3 w-3" />
-                            {new Intl.DateTimeFormat('en-US', {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            }).format(new Date(meal.loggedAt))}
-                          </div>
-                          {meal.source === 'ai' || meal.source === 'telegram' ? (
-                            <div className="flex items-center gap-1 rounded-full border border-white/5 bg-white/5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-[#777]">
-                              <Bot className="h-2.5 w-2.5 text-[#e4ff00]/50" />
-                              AI
-                            </div>
-                          ) : null}
-                        </div>
-
-                        <div className="flex items-baseline gap-1 self-start sm:self-auto">
-                          <span className={`font-mono text-xl font-black tracking-tighter ${getMealColor(meal.mealType).cal}`}>
-                            {calories}
-                          </span>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#444]">
-                            kcal
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex-1 px-4 py-3 sm:px-5">
-                      <div className="divide-y divide-white/[0.05]">
-                        {meal.items.map((item) => (
-                          <div
-                            key={item.id}
-                            className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 py-3 first:pt-0 last:pb-0"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <span className="block break-words text-sm font-semibold leading-snug text-[#f5f5f5]">
-                                {item.foodNameSnapshot}
-                              </span>
-                              {item.quantity || item.unit ? (
-                                <span className="mt-1 block break-words text-[11px] leading-snug text-[#666]">
-                                  {[item.quantity, item.unit].filter(Boolean).join(' ')}
-                                </span>
-                              ) : null}
-                            </div>
-                            <div className="shrink-0 text-right">
-                              <div className="font-mono text-sm font-black text-[#9a9a9a]">
-                                {item.calories}
-                              </div>
-                              <div className="mt-0.5 text-[9px] font-bold uppercase tracking-wider text-[#444]">
-                                kcal
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-3 border-t border-white/[0.06] bg-[#181818]/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                      <MacroStrip protein={protein} carbs={carbs} fat={fat} />
-                      <div className="flex items-center justify-end gap-3">
-                        <button
-                          type="button"
-                          disabled={deleteMealMutation.isPending}
-                          onClick={async () => {
-                            if (!window.confirm('Delete this meal entry?')) return
-                            try {
-                              await deleteMealMutation.mutateAsync(meal.id)
-                              toast.success('Meal deleted')
-                            } catch (error) {
-                              toast.error(getApiErrorMessage(error, 'Could not delete meal'))
-                            }
-                          }}
-                          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/5 bg-black/20 text-[#444] transition-colors hover:border-red-500/30 hover:text-red-500/80"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {(meal.source === 'ai' || meal.source === 'telegram') && !meal.aiFeedback ? (
-                      <div className="flex flex-col gap-3 bg-[#e4ff00]/[0.02] px-4 py-3 text-[10px] sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                        <span className="font-bold uppercase tracking-widest text-[#444]">
-                          Accuracy Feedback?
-                        </span>
-                        <div className="flex gap-4">
-                          <button
-                            onClick={() =>
-                              updateFeedbackMutation.mutateAsync({
-                                mealId: meal.id,
-                                aiFeedback: 'accurate',
-                              })
-                            }
-                            className="font-black uppercase tracking-tighter text-[#666] transition-colors hover:text-[#e4ff00]"
-                          >
-                            Correct
-                          </button>
-                          <button
-                            onClick={() =>
-                              updateFeedbackMutation.mutateAsync({
-                                mealId: meal.id,
-                                aiFeedback: 'inaccurate',
-                              })
-                            }
-                            className="font-black uppercase tracking-tighter text-[#666] transition-colors hover:text-red-500/50"
-                          >
-                            Wrong
-                          </button>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                )
-              })}
-        </div>
+          <div className="hidden space-y-5 md:block">
+            {groupedDays.map(([date, meals]) => (
+              <DayCard
+                key={date}
+                date={date}
+                meals={meals}
+                goalCalories={goalCalories}
+                onDelete={handleDelete}
+                onFeedback={handleFeedback}
+                deletePending={deleteMealMut.isPending}
+              />
+            ))}
+          </div>
+        </>
       )}
-    </div>
-  )
-}
-
-function HistoryStat({
-  label,
-  value,
-  helper,
-}: {
-  label: string
-  value: string
-  helper: string
-}) {
-  return (
-    <div className="rounded-2xl border border-white/8 bg-[#0b0b0b] px-4 py-3">
-      <div className="text-[9px] font-black uppercase tracking-[0.22em] text-[#555]">{label}</div>
-      <div className="mt-2 flex items-baseline gap-1.5">
-        <span className="font-mono text-lg font-black text-[#f5f5f5]">{value}</span>
-        <span className="text-[10px] font-bold uppercase tracking-wider text-[#555]">{helper}</span>
-      </div>
-    </div>
-  )
-}
-
-function MacroStrip({
-  protein,
-  carbs,
-  fat,
-}: {
-  protein: number
-  carbs: number
-  fat: number
-}) {
-  return (
-    <div className="flex gap-4">
-      <div className="flex flex-col">
-        <span className="text-[9px] font-bold uppercase tracking-widest text-[#444]">Protein</span>
-        <span className="text-xs font-bold text-[#00ff88]">{protein.toFixed(1)}<span className="ml-0.5 text-[10px] text-[#00ff88]/50">g</span></span>
-      </div>
-      <div className="flex flex-col">
-        <span className="text-[9px] font-bold uppercase tracking-widest text-[#444]">Carbs</span>
-        <span className="text-xs font-bold text-[#38bdf8]">{carbs.toFixed(1)}<span className="ml-0.5 text-[10px] text-[#38bdf8]/50">g</span></span>
-      </div>
-      <div className="flex flex-col">
-        <span className="text-[9px] font-bold uppercase tracking-widest text-[#444]">Fat</span>
-        <span className="text-xs font-bold text-[#ff6b35]">{fat.toFixed(1)}<span className="ml-0.5 text-[10px] text-[#ff6b35]/50">g</span></span>
-      </div>
     </div>
   )
 }
