@@ -1,7 +1,7 @@
 'use client'
 
 import { Bot, CalendarDays, Loader2, Search, Trash2, Clock } from 'lucide-react'
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import { EmptyState, SectionCard } from '@/components/dashboard/ui'
@@ -40,7 +40,6 @@ function formatDateLabel(date: string) {
 export function MealsSection() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10))
-  const dateInputRef = useRef<HTMLInputElement>(null)
   const mealsQuery = useMealsQuery({
     limit: 100,
   })
@@ -98,37 +97,21 @@ export function MealsSection() {
               className="h-12 w-full rounded-2xl border border-white/10 bg-[#0c0c0c] pl-11 pr-4 text-sm text-[#f5f5f5] outline-none placeholder:text-[#555] focus:border-[#e4ff00]"
             />
           </label>
-          <div className="relative lg:w-[190px]">
-            <button
-              type="button"
-              onClick={() => {
-                const dateInput = dateInputRef.current
-                if (!dateInput) return
-
-                if (typeof dateInput.showPicker === 'function') {
-                  dateInput.showPicker()
-                  return
-                }
-
-                dateInput.click()
-                dateInput.focus()
-              }}
-              className="group flex h-12 w-full items-center gap-3 rounded-2xl border border-white/10 bg-[#0c0c0c] px-4 text-left transition-colors hover:border-white/20 focus:border-[#e4ff00] focus:outline-none"
-            >
+          <label className="group relative block h-12 cursor-pointer lg:w-[190px]">
+            <div className="pointer-events-none flex h-full w-full items-center gap-3 rounded-2xl border border-white/10 bg-[#0c0c0c] px-4 text-left transition-colors group-hover:border-white/20 group-focus-within:border-[#e4ff00]">
               <CalendarDays className="h-4 w-4 text-[#777] transition-colors group-hover:text-[#e4ff00]" />
-            <span className="font-mono text-sm text-[#cfcfcf]">
-              {formatDateLabel(selectedDate)}
-            </span>
-            </button>
+              <span className="font-mono text-sm text-[#cfcfcf]">
+                {formatDateLabel(selectedDate)}
+              </span>
+            </div>
             <input
-              ref={dateInputRef}
               type="date"
               value={selectedDate}
               onChange={(event) => setSelectedDate(event.target.value)}
               aria-label="Filter meals by date"
-              className="pointer-events-none absolute bottom-0 left-0 h-px w-px opacity-0"
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
             />
-          </div>
+          </label>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">

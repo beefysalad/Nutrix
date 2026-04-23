@@ -2,7 +2,15 @@
 
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useClerk, useUser } from '@clerk/nextjs'
-import { Check, Download, ExternalLink, Loader2, RefreshCw, Save, Send, User } from 'lucide-react'
+import {
+  Check,
+  Download,
+  ExternalLink,
+  Loader2,
+  Save,
+  Send,
+  User,
+} from 'lucide-react'
 import { useEffect } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
@@ -46,7 +54,9 @@ export function SettingsSection() {
   const selectedUnitSystem = useWatch({ control, name: 'unitSystem' })
 
   const primaryEmail =
-    user?.primaryEmailAddress?.emailAddress ?? user?.emailAddresses[0]?.emailAddress ?? null
+    user?.primaryEmailAddress?.emailAddress ??
+    user?.emailAddresses[0]?.emailAddress ??
+    null
   const fullNameFromParts =
     [user?.firstName, user?.lastName].filter(Boolean).join(' ').trim() || null
   const displayName =
@@ -79,7 +89,9 @@ export function SettingsSection() {
       })
 
       if (response.preferences.aiModelPersistencePendingMigration) {
-        toast.warning('Preferences saved, but AI model persistence is waiting on the DB migration')
+        toast.warning(
+          'Preferences saved, but AI model persistence is waiting on the DB migration'
+        )
         return
       }
 
@@ -93,14 +105,11 @@ export function SettingsSection() {
   const telegramWebhook = telegramQuery.data?.webhook
   const isTelegramConnected = telegramConnection?.status === 'connected'
   const isWebhookConfigured = Boolean(telegramWebhook?.configured)
-  const isWebhookRegistered = Boolean(telegramWebhook?.registered)
   const telegramSetupState = !isWebhookConfigured
-    ? 'Configuration needed'
+    ? 'Bot setup unavailable'
     : !isTelegramConnected
       ? 'Connect your Telegram chat'
-      : !isWebhookRegistered
-        ? 'Register webhook'
-        : 'Ready to log meals'
+      : 'Ready'
 
   async function downloadExport(format: 'csv' | 'json') {
     try {
@@ -115,7 +124,12 @@ export function SettingsSection() {
       window.URL.revokeObjectURL(url)
       toast.success(`${format.toUpperCase()} export ready`)
     } catch (error) {
-      toast.error(getApiErrorMessage(error, `Could not export ${format.toUpperCase()} data`))
+      toast.error(
+        getApiErrorMessage(
+          error,
+          `Could not export ${format.toUpperCase()} data`
+        )
+      )
     }
   }
 
@@ -123,7 +137,9 @@ export function SettingsSection() {
     <div className="mx-auto max-w-4xl space-y-6">
       <div>
         <h2 className="mb-2 text-2xl text-[#f5f5f5]">Settings</h2>
-        <p className="text-sm text-[#777]">Manage your account and preferences</p>
+        <p className="text-sm text-[#777]">
+          Manage your account and preferences
+        </p>
       </div>
 
       <SectionCard>
@@ -132,18 +148,26 @@ export function SettingsSection() {
           <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-[#0a0a0a]">
             {isLoaded && user?.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.imageUrl} alt={displayName} className="h-full w-full object-cover" />
+              <img
+                src={user.imageUrl}
+                alt={displayName}
+                className="h-full w-full object-cover"
+              />
             ) : (
               <User className="h-8 w-8 text-[#888]" />
             )}
           </div>
           <div className="flex-1">
-            <div className="text-[#f5f5f5]">{isLoaded ? displayName : 'Loading account...'}</div>
+            <div className="text-[#f5f5f5]">
+              {isLoaded ? displayName : 'Loading account...'}
+            </div>
             <div className="text-sm text-[#777]">
-              {isLoaded ? primaryEmail ?? 'No primary email found' : 'Fetching your Clerk profile'}
+              {isLoaded
+                ? (primaryEmail ?? 'No primary email found')
+                : 'Fetching your Clerk profile'}
             </div>
             {isLoaded && memberSince ? (
-              <div className="mt-1 text-xs uppercase tracking-wide text-[#666]">
+              <div className="mt-1 text-xs tracking-wide text-[#666] uppercase">
                 Member since {memberSince}
               </div>
             ) : null}
@@ -175,11 +199,13 @@ export function SettingsSection() {
                   </span>
                   <div>
                     <div className="text-[#f5f5f5]">Telegram Bot</div>
-                    <div className="text-sm text-[#777]">{telegramSetupState}</div>
+                    <div className="text-sm text-[#777]">
+                      {telegramSetupState}
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <TelegramStatusTile
                     title="Chat Connection"
                     status={isTelegramConnected ? 'Connected' : 'Not connected'}
@@ -200,53 +226,39 @@ export function SettingsSection() {
                     }
                   />
                   <TelegramStatusTile
-                    title="Webhook"
-                    status={
-                      !isWebhookConfigured
-                        ? 'Needs env setup'
-                        : isWebhookRegistered
-                          ? 'Registered'
-                          : 'Not registered'
-                    }
-                    tone={isWebhookRegistered ? 'success' : isWebhookConfigured ? 'warning' : 'default'}
+                    title="Meal Logging"
+                    status={isWebhookConfigured ? 'Available' : 'Unavailable'}
+                    tone={isWebhookConfigured ? 'success' : 'default'}
                     body={
-                      !isWebhookConfigured
-                        ? 'Add TELEGRAM_BOT_TOKEN, TELEGRAM_BOT_USERNAME, and NEXT_PUBLIC_APP_URL first.'
-                        : isWebhookRegistered
-                          ? 'Telegram is pointing to Nutrix.'
-                          : 'Register the webhook so Telegram can send meal messages into Nutrix.'
+                      isWebhookConfigured
+                        ? 'Once connected, send meals to the Nutrix bot and they will sync into your dashboard.'
+                        : 'Telegram logging is being configured by the Nutrix admin.'
                     }
-                    footer={isWebhookRegistered ? 'Step 2 complete' : 'Step 2 of 2'}
+                    footer={
+                      isWebhookConfigured
+                        ? 'No extra setup needed'
+                        : 'Please try again later'
+                    }
                   />
                 </div>
               </div>
 
               <div
                 className={cn(
-                  'self-start rounded-full border px-3 py-1 text-xs uppercase tracking-wide',
-                  isTelegramConnected && isWebhookRegistered
+                  'self-start rounded-full border px-3 py-1 text-xs tracking-wide uppercase',
+                  isTelegramConnected && isWebhookConfigured
                     ? 'border-[#e4ff00]/30 bg-[#e4ff00]/10 text-[#e4ff00]'
-                    : 'border-white/10 bg-[#141414] text-[#888]',
+                    : 'border-white/10 bg-[#141414] text-[#888]'
                 )}
               >
                 {telegramQuery.isLoading ? 'checking' : telegramSetupState}
               </div>
             </div>
 
-            {telegramWebhook?.lastErrorMessage ? (
-              <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-500/10 p-3 text-xs text-red-200">
-                {telegramWebhook.lastErrorMessage}
-              </div>
-            ) : null}
-
-            {telegramWebhook?.expectedUrl ? (
-              <div className="mt-4 rounded-2xl border border-white/10 bg-[#111] p-3">
-                <div className="text-[11px] font-bold uppercase tracking-wide text-[#666]">
-                  Expected Webhook URL
-                </div>
-                <div className="mt-2 break-all text-xs text-[#888]">
-                  {telegramWebhook.expectedUrl}
-                </div>
+            {!isWebhookConfigured ? (
+              <div className="mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 p-3 text-xs text-amber-100">
+                Telegram bot setup is not available yet. No action is needed
+                from your account.
               </div>
             ) : null}
           </div>
@@ -258,38 +270,34 @@ export function SettingsSection() {
             </div>
             <div className="mt-4 space-y-3 text-sm">
               <div className="rounded-2xl border border-white/10 bg-[#141414] p-3 text-[#aaa]">
-                1. Open your Nutrix bot in Telegram and start the connection flow.
+                1. Open your Nutrix bot in Telegram and start the connection
+                flow.
               </div>
               <div className="rounded-2xl border border-white/10 bg-[#141414] p-3 text-[#aaa]">
-                2. Register the webhook so Telegram can deliver new messages.
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-[#141414] p-3 text-[#aaa]">
-                3. Send a meal message like <span className="font-mono text-[#f5f5f5]">2 eggs and rice</span> to test it.
+                2. Send a meal message like{' '}
+                <span className="font-mono text-[#f5f5f5]">
+                  2 eggs and rice
+                </span>{' '}
+                to test it.
               </div>
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => {
-                window.open('/api/integrations/telegram/start', '_blank', 'noopener,noreferrer')
-              }}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d]"
-            >
-              <ExternalLink className="h-4 w-4" />
-              {isTelegramConnected ? 'Reconnect Telegram' : 'Connect Telegram'}
-            </button>
+          <div>
             <button
               type="button"
               disabled={!isWebhookConfigured}
               onClick={() => {
-                window.location.href = '/api/integrations/telegram/webhook/register'
+                window.open(
+                  '/api/integrations/telegram/start',
+                  '_blank',
+                  'noopener,noreferrer'
+                )
               }}
-              className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <RefreshCw className="h-4 w-4" />
-              {isWebhookRegistered ? 'Re-register Webhook' : 'Register Webhook'}
+              <ExternalLink className="h-4 w-4" />
+              {isTelegramConnected ? 'Reconnect Telegram' : 'Connect Telegram'}
             </button>
           </div>
         </div>
@@ -301,19 +309,23 @@ export function SettingsSection() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-[#f5f5f5]">Units</div>
-              <div className="text-sm text-[#777]">Metric or imperial measurements</div>
+              <div className="text-sm text-[#777]">
+                Metric or imperial measurements
+              </div>
             </div>
             <div className="flex gap-2">
               {(['metric', 'imperial'] as const).map((unit) => (
                 <button
                   key={unit}
                   type="button"
-                  onClick={() => setValue('unitSystem', unit, { shouldDirty: true })}
+                  onClick={() =>
+                    setValue('unitSystem', unit, { shouldDirty: true })
+                  }
                   className={cn(
                     'rounded-full border px-4 py-2 text-sm transition-colors',
                     selectedUnitSystem === unit
                       ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
-                      : 'border-white/10 bg-[#0a0a0a] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]',
+                      : 'border-white/10 bg-[#0a0a0a] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]'
                   )}
                   disabled={preferencesQuery.isLoading || isSubmitting}
                 >
@@ -326,14 +338,18 @@ export function SettingsSection() {
           <div className="flex flex-col gap-4 border-t border-white/10 pt-4 md:flex-row md:items-center md:justify-between">
             <div>
               <div className="text-[#f5f5f5]">AI Model</div>
-              <div className="text-sm text-[#777]">Choose the Gemini model used for AI meal parsing.</div>
+              <div className="text-sm text-[#777]">
+                Choose the Gemini model used for AI meal parsing.
+              </div>
             </div>
             <select
               {...register('aiModel')}
               disabled={preferencesQuery.isLoading || isSubmitting}
               className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none focus:border-[#e4ff00] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite</option>
+              <option value="gemini-2.5-flash-lite">
+                Gemini 2.5 Flash-Lite
+              </option>
               <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
             </select>
           </div>
@@ -353,14 +369,20 @@ export function SettingsSection() {
 
           {errors.aiModel || errors.unitSystem || errors.language ? (
             <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
-              {errors.aiModel?.message || errors.unitSystem?.message || errors.language?.message}
+              {errors.aiModel?.message ||
+                errors.unitSystem?.message ||
+                errors.language?.message}
             </div>
           ) : null}
 
           <div className="border-t border-white/10 pt-4">
             <button
               type="submit"
-              disabled={preferencesQuery.isLoading || isSubmitting || savePreferencesMutation.isPending}
+              disabled={
+                preferencesQuery.isLoading ||
+                isSubmitting ||
+                savePreferencesMutation.isPending
+              }
               className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting || savePreferencesMutation.isPending ? (
@@ -382,7 +404,8 @@ export function SettingsSection() {
         <h3 className="mb-4 text-lg text-[#f5f5f5]">Data</h3>
         <div className="space-y-3">
           <div className="text-sm text-[#777]">
-            Export your Nutrix data as a full JSON archive or a flat meals CSV for spreadsheets.
+            Export your Nutrix data as a full JSON archive or a flat meals CSV
+            for spreadsheets.
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             <button
@@ -413,7 +436,8 @@ export function SettingsSection() {
             </button>
           </div>
           <div className="text-xs text-[#666]">
-            JSON includes profile, goals, reports, integrations, and meals. CSV exports meal items in spreadsheet-friendly rows.
+            JSON includes profile, goals, reports, integrations, and meals. CSV
+            exports meal items in spreadsheet-friendly rows.
           </div>
         </div>
       </SectionCard>
@@ -440,19 +464,21 @@ function TelegramStatusTile({
         <div className="text-[#f5f5f5]">{title}</div>
         <div
           className={cn(
-            'rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-wide',
+            'rounded-full border px-2.5 py-1 text-[10px] tracking-wide uppercase',
             tone === 'success'
               ? 'border-[#e4ff00]/30 bg-[#e4ff00]/10 text-[#e4ff00]'
               : tone === 'warning'
                 ? 'border-amber-400/20 bg-amber-400/10 text-amber-300'
-                : 'border-white/10 bg-[#101010] text-[#888]',
+                : 'border-white/10 bg-[#101010] text-[#888]'
           )}
         >
           {status}
         </div>
       </div>
       <div className="mt-2 text-sm leading-relaxed text-[#777]">{body}</div>
-      <div className="mt-3 text-[11px] uppercase tracking-wide text-[#666]">{footer}</div>
+      <div className="mt-3 text-[11px] tracking-wide text-[#666] uppercase">
+        {footer}
+      </div>
     </div>
   )
 }
