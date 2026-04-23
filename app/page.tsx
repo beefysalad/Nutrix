@@ -1,5 +1,5 @@
 import { auth } from '@clerk/nextjs/server'
-import { ArrowRight, Bot, CalendarDays, Sparkles, Target } from 'lucide-react'
+import { ArrowRight, Bot, CalendarDays, Target } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
@@ -160,7 +160,7 @@ export default async function Home() {
                   </div>
 
                   <div className="mt-4 flex items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-[#b5b5b5]">
-                    <Sparkles className="h-4 w-4 text-[#e4ff00]" />
+                    <Bot className="h-4 w-4 text-[#e4ff00]" />
                     Designed to feel lightweight every day, not impressive only on day one.
                   </div>
                 </div>

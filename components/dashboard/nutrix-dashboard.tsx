@@ -3,7 +3,17 @@ import { useState, useEffect } from 'react'
 
 import { UserButton } from '@clerk/nextjs'
 import Link from 'next/link'
-import { History, Home, Plus, PlusCircle, Settings as SettingsIcon, Sparkles, Target } from 'lucide-react'
+import {
+  History,
+  Home,
+  Bot,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plus,
+  PlusCircle,
+  Settings as SettingsIcon,
+  Target,
+} from 'lucide-react'
 
 import { navItems } from '@/components/dashboard/data'
 import { DashboardHomeSection } from '@/components/dashboard/sections/dashboard-home-section'
@@ -27,7 +37,7 @@ const iconMap = {
   log: PlusCircle,
   history: History,
   goals: Target,
-  suggestions: Sparkles,
+  suggestions: Bot,
   settings: SettingsIcon,
 } satisfies Record<DashboardSectionKey, React.ComponentType<{ className?: string }>>
 
@@ -73,6 +83,7 @@ export function NutrixDashboard({
 
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
   const [isLogMealSheetOpen, setIsLogMealSheetOpen] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
   useEffect(() => {
     const handleResize = () => {
@@ -102,18 +113,33 @@ export function NutrixDashboard({
       <div className="flex min-h-screen flex-col lg:flex-row">
         <aside
           className={cn(
-            'hidden flex-shrink-0 bg-[#111111] lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:flex-col lg:border-r lg:border-white/10',
+            'hidden flex-shrink-0 bg-[#111111] transition-[width] duration-200 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:border-r lg:border-white/10',
+            isSidebarCollapsed ? 'lg:w-20' : 'lg:w-64',
             !onboarded && 'lg:hidden',
           )}
         >
-          <div className="flex h-20 items-center justify-between border-b border-white/10 px-6">
-            <div>
+          <div
+            className={cn(
+              'flex h-20 items-center border-b border-white/10 px-4',
+              isSidebarCollapsed ? 'justify-center' : 'justify-start',
+            )}
+          >
+            {isSidebarCollapsed ? (
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-[#0a0a0a] font-mono text-[11px] font-black tracking-tighter text-[#e4ff00]">
+                NX
+              </div>
+            ) : (
               <h1 className="font-mono text-2xl font-black uppercase tracking-tighter text-[#f5f5f5]">
                 NUTR<span className="text-[#e4ff00]">IX</span>
               </h1>
-            </div>
+            )}
           </div>
-          <nav className="grid flex-1 content-start gap-1 overflow-x-hidden overflow-y-auto p-4">
+          <nav
+            className={cn(
+              'grid flex-1 content-start gap-1 overflow-x-hidden overflow-y-auto p-4',
+              isSidebarCollapsed && 'px-3',
+            )}
+          >
             {navItems.map((item) => {
               const Icon = iconMap[item.key]
               const isActive = item.key === section
@@ -122,8 +148,11 @@ export function NutrixDashboard({
                 <Link
                   key={item.href}
                   href={item.href}
+                  title={isSidebarCollapsed ? item.label : undefined}
+                  aria-label={item.label}
                   className={cn(
                     'relative flex items-center gap-3 rounded-none border border-transparent px-4 py-3 text-sm transition-colors',
+                    isSidebarCollapsed && 'justify-center px-0',
                     isActive
                       ? 'border-white/10 bg-white/5 text-[#f5f5f5]'
                       : 'text-[#888] hover:border-white/5 hover:bg-white/[0.03] hover:text-[#f5f5f5]',
@@ -133,7 +162,7 @@ export function NutrixDashboard({
                     <span className="absolute bottom-2 left-0 top-2 w-[2px] bg-[#e4ff00] shadow-[0_0_8px_#e4ff00]" />
                   ) : null}
                   <Icon className={cn('h-4 w-4', isActive ? 'text-[#e4ff00]' : '')} />
-                  {item.label}
+                  <span className={cn(isSidebarCollapsed && 'sr-only')}>{item.label}</span>
                 </Link>
               )
             })}
@@ -145,6 +174,18 @@ export function NutrixDashboard({
             <header className="sticky top-0 z-40 h-20 border-b border-white/10 bg-[#0a0a0a]/90 px-4 backdrop-blur md:px-6">
               <div className="flex h-full items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
+                    aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                    className="hidden h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[#111111] text-[#888] transition-colors hover:border-[#e4ff00]/40 hover:text-[#e4ff00] lg:flex"
+                  >
+                    {isSidebarCollapsed ? (
+                      <PanelLeftOpen className="h-4 w-4" />
+                    ) : (
+                      <PanelLeftClose className="h-4 w-4" />
+                    )}
+                  </button>
                   <span className="hidden text-sm text-[#777] sm:inline">{today}</span>
                   <div className="sm:hidden">
                     <h1 className="font-mono text-lg font-black uppercase tracking-tighter text-[#f5f5f5]">

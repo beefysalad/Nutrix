@@ -5,7 +5,7 @@ export function MiniBarChart({
   data: Array<{ label: string; value: number }>
   color?: string
 }) {
-  const max = Math.max(...data.map((item) => item.value))
+  const max = Math.max(...data.map((item) => Number.isFinite(item.value) ? item.value : 0), 0)
 
   return (
     <div className="space-y-4">
@@ -17,7 +17,7 @@ export function MiniBarChart({
               <div
                 className="relative w-full rounded-t-xl"
                 style={{
-                  height: `${(item.value / max) * 100}%`,
+                  height: `${max > 0 ? ((Number.isFinite(item.value) ? item.value : 0) / max) * 100 : 0}%`,
                   background: `linear-gradient(180deg, ${color} 0%, rgba(74,222,128,0.35) 100%)`,
                 }}
               />
@@ -40,10 +40,15 @@ export function MiniDonut({
   data: Array<{ name: string; value: number; color: string }>
   totalLabel: string
 }) {
-  const total = data.reduce((sum, item) => sum + item.value, 0)
+  const safeData = data.map((item) => ({
+    ...item,
+    value: Number.isFinite(item.value) ? Math.max(0, item.value) : 0,
+  }))
+  const total = safeData.reduce((sum, item) => sum + item.value, 0)
   const segments = data.reduce<Array<(typeof data)[number] & { length: number; offset: number }>>(
     (all, item) => {
-      const fraction = item.value / total
+      const value = Number.isFinite(item.value) ? Math.max(0, item.value) : 0
+      const fraction = total > 0 ? value / total : 0
       const length = fraction * 339.292
       const offset =
         all.length === 0 ? 0 : all[all.length - 1].offset + all[all.length - 1].length
@@ -80,7 +85,7 @@ export function MiniDonut({
         </div>
       </div>
       <div className="space-y-2">
-        {data.map((item) => (
+        {safeData.map((item) => (
           <div key={item.name} className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
@@ -101,15 +106,20 @@ export function MiniLineChart({
 }) {
   const width = 520
   const height = 240
-  const max = Math.max(...data.map((item) => Math.max(item.calories, item.goal))) + 100
-  const stepX = width / (data.length - 1)
+  const safeData = data.map((item) => ({
+    ...item,
+    calories: Number.isFinite(item.calories) ? Math.max(0, item.calories) : 0,
+    goal: Number.isFinite(item.goal) ? Math.max(0, item.goal) : 0,
+  }))
+  const max = Math.max(...safeData.map((item) => Math.max(item.calories, item.goal)), 0) + 100
+  const stepX = safeData.length > 1 ? width / (safeData.length - 1) : 0
   const toY = (value: number) => height - (value / max) * (height - 24) - 12
 
-  const caloriesPath = data
+  const caloriesPath = safeData
     .map((item, index) => `${index === 0 ? 'M' : 'L'} ${index * stepX} ${toY(item.calories)}`)
     .join(' ')
 
-  const goalPath = data
+  const goalPath = safeData
     .map((item, index) => `${index === 0 ? 'M' : 'L'} ${index * stepX} ${toY(item.goal)}`)
     .join(' ')
 
@@ -130,7 +140,7 @@ export function MiniLineChart({
           ))}
           <path d={goalPath} fill="none" stroke="#767676" strokeDasharray="6 8" strokeWidth="3" />
           <path d={caloriesPath} fill="none" stroke="#e4ff00" strokeWidth="4" />
-          {data.map((item, index) => (
+          {safeData.map((item, index) => (
             <circle
               key={item.label}
               cx={index * stepX}
@@ -142,7 +152,7 @@ export function MiniLineChart({
         </svg>
       </div>
       <div className="grid grid-cols-7 gap-2 text-center text-xs text-[#777]">
-        {data.map((item) => (
+        {safeData.map((item) => (
           <div key={item.label}>{item.label}</div>
         ))}
       </div>
@@ -155,29 +165,35 @@ export function StackedBars({
 }: {
   data: Array<{ label: string; protein: number; carbs: number; fat: number }>
 }) {
-  const max = Math.max(...data.map((item) => item.protein + item.carbs + item.fat))
+  const safeData = data.map((item) => ({
+    ...item,
+    protein: Number.isFinite(item.protein) ? Math.max(0, item.protein) : 0,
+    carbs: Number.isFinite(item.carbs) ? Math.max(0, item.carbs) : 0,
+    fat: Number.isFinite(item.fat) ? Math.max(0, item.fat) : 0,
+  }))
+  const max = Math.max(...safeData.map((item) => item.protein + item.carbs + item.fat), 0)
 
   return (
     <div className="space-y-4">
       <div className="flex h-72 items-end gap-4 rounded-2xl border border-white/5 bg-[#0a0a0a] p-5">
-        {data.map((item) => {
+        {safeData.map((item) => {
           const total = item.protein + item.carbs + item.fat
-          const totalHeight = (total / max) * 100
+          const totalHeight = max > 0 ? (total / max) * 100 : 0
 
           return (
             <div key={item.label} className="flex flex-1 flex-col items-center gap-3">
               <div className="flex h-full w-full items-end justify-center">
                 <div className="flex w-full flex-col overflow-hidden rounded-t-xl">
                   <div
-                    style={{ height: `${(item.protein / total) * totalHeight}%` }}
+                    style={{ height: `${total > 0 ? (item.protein / total) * totalHeight : 0}%` }}
                     className="w-full bg-[#e4ff00]"
                   />
                   <div
-                    style={{ height: `${(item.carbs / total) * totalHeight}%` }}
+                    style={{ height: `${total > 0 ? (item.carbs / total) * totalHeight : 0}%` }}
                     className="w-full bg-[#c9df00]"
                   />
                   <div
-                    style={{ height: `${(item.fat / total) * totalHeight}%` }}
+                    style={{ height: `${total > 0 ? (item.fat / total) * totalHeight : 0}%` }}
                     className="w-full bg-[#888888]"
                   />
                 </div>

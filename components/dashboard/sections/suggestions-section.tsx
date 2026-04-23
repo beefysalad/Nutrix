@@ -4,13 +4,13 @@ import {
   AlertCircle,
   Bookmark,
   BookmarkCheck,
+  Bot,
   ChefHat,
   Clock,
   ExternalLink,
   Loader2,
   Lock,
   Salad,
-  Sparkles,
   Target,
   X,
 } from 'lucide-react'
@@ -172,7 +172,7 @@ function GenerateSuggestionsSection() {
               {generateSuggestionsMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : canGenerate ? (
-                <Sparkles className="h-4 w-4" />
+                <Bot className="h-4 w-4" />
               ) : (
                 <Lock className="h-4 w-4" />
               )}
@@ -268,9 +268,9 @@ function GenerateSuggestionsSection() {
           </div>
           <Link
             href="/dashboard/suggestions/saved"
-            className="flex items-center justify-center gap-3 self-start rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-bold tracking-widest text-[#d7d7d7] uppercase transition-colors hover:border-[#e4ff00]/30 hover:text-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex items-center justify-center gap-2 self-start rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-xs font-bold tracking-widest text-[#d7d7d7] uppercase transition-colors hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]"
           >
-            <BookmarkCheck className="h-4 w-4" />
+            <BookmarkCheck className="h-3.5 w-3.5" />
             Saved meals
           </Link>
         </SectionCard>
@@ -458,7 +458,7 @@ function SavedSuggestionsSection() {
               href="/dashboard/suggestions"
               className="flex items-center justify-center gap-3 self-start rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-bold tracking-widest text-[#d7d7d7] uppercase transition-colors hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]"
             >
-              <Sparkles className="h-4 w-4" />
+              <Bot className="h-4 w-4" />
               Generate more
             </Link>
           </div>
@@ -647,7 +647,7 @@ function RecipeSheet({
               value={`${suggestion.carbs}g`}
             />
             <RecipeMetaCard
-              icon={<Sparkles className="h-4 w-4" />}
+              icon={<Salad className="h-4 w-4" />}
               label="Fat"
               value={`${suggestion.fat}g`}
             />

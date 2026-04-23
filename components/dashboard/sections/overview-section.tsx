@@ -1,6 +1,6 @@
 'use client'
 
-import { Loader2, Sparkles, ChevronRight } from 'lucide-react'
+import { Bot, Loader2, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
 import { MiniDonut } from '@/components/dashboard/charts'
@@ -95,6 +95,7 @@ export function OverviewSection() {
   }
 
   const displayMeals = data.totals.mealCount > 0 ? data.meals : data.recentMeals
+  const isShowingRecentMeals = data.totals.mealCount === 0
   const mealsHeading = data.totals.mealCount > 0 ? "Today's meals" : 'Recent meals'
   const mealsDescription =
     data.totals.mealCount > 0
@@ -164,7 +165,7 @@ export function OverviewSection() {
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#e4ff00] text-black shadow-[0_0_20px_rgba(228,255,0,0.3)] sm:h-12 sm:w-12">
-              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
+              <Bot className="h-5 w-5 sm:h-6 sm:w-6" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -202,6 +203,18 @@ export function OverviewSection() {
                 0
               )
               const color = getMealColor(meal.mealType)
+              const loggedAt = new Date(meal.loggedAt)
+              const loggedAtLabel = isShowingRecentMeals
+                ? new Intl.DateTimeFormat('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  }).format(loggedAt)
+                : new Intl.DateTimeFormat('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                  }).format(loggedAt)
 
               return (
                 <div
@@ -228,10 +241,7 @@ export function OverviewSection() {
                         {calories} cal
                       </div>
                       <div className="mt-1 text-xs tracking-wide text-[#666] uppercase">
-                        {new Intl.DateTimeFormat('en-US', {
-                          hour: 'numeric',
-                          minute: '2-digit',
-                        }).format(new Date(meal.loggedAt))}
+                        {loggedAtLabel}
                       </div>
                     </div>
                   </div>
