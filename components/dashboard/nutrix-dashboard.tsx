@@ -12,7 +12,7 @@ import {
   Plus,
   PlusCircle,
   Settings as SettingsIcon,
-  Target,
+  Goal,
 } from 'lucide-react'
 
 import { navItems } from '@/components/dashboard/data'
@@ -37,7 +37,7 @@ const iconMap = {
   dashboard: Home,
   log: PlusCircle,
   history: History,
-  goals: Target,
+  goals: Goal,
   suggestions: Bot,
   settings: SettingsIcon,
 } satisfies Record<DashboardSectionKey, React.ComponentType<{ className?: string }>>
@@ -288,7 +288,7 @@ export function NutrixDashboard({
               href="/dashboard/goals"
               label="Goals"
               active={section === 'goals'}
-              icon={Target}
+              icon={Goal}
             />
             <MobileNavItem
               href="/dashboard/settings"

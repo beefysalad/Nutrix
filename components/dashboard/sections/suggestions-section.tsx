@@ -143,9 +143,9 @@ function GenerateSuggestionsSection() {
 
   return (
     <>
-      <div className="mx-auto max-w-5xl space-y-8 pb-10">
-        <div className="border-b border-white/10 px-1 pb-6">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+      <div className="mx-auto max-w-5xl space-y-5 pb-10">
+        <div className="border-b border-white/10 px-1 pb-4">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="inline-flex items-center gap-2 rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-3 py-1 text-[10px] font-black tracking-[0.2em] text-[#e4ff00] uppercase">
@@ -258,15 +258,15 @@ function GenerateSuggestionsSection() {
 
         <SectionCard className="flex flex-col gap-3 border-0 bg-transparent p-0 shadow-none sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
+            <div className="text-[10px] font-black tracking-[0.2em] text-[#555] uppercase">
               Daily limit
             </div>
-            <div className="mt-2 text-sm text-[#cfcfcf]">
+            <div className="mt-1.5 text-xs text-[#777]">
               {suggestions.length > 0
                 ? `These are your current ${formatStyleLabel(selectedStyle)} suggestions from this session. Generating again will use another one of your daily attempts.`
                 : `You have ${usage?.remainingToday ?? 0} of ${usage?.dailyLimit ?? 3} suggestion attempts left today.`}
             </div>
-            <div className="mt-1 text-xs text-[#6f6f6f]">
+            <div className="mt-1 text-[10px] font-medium text-[#555]">
               Used today: {usage?.usedToday ?? 0} / {usage?.dailyLimit ?? 3}
             </div>
           </div>
@@ -282,21 +282,24 @@ function GenerateSuggestionsSection() {
         {suggestions.length > 0 ? (
           <>
             <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
-              {categories.map((cat) => (
-                <Button
-                  key={cat}
-                  type="button"
-                  onClick={() => setActiveCategory(cat)}
-                  className={cn(
-                    'rounded-xl px-4 py-2.5 text-xs font-bold tracking-wider whitespace-nowrap uppercase transition-all',
-                    activeCategory === cat
-                      ? 'border border-[#e4ff00]/20 bg-[#e4ff00] text-black'
-                      : 'border border-white/5 bg-[#141414] text-[#666] hover:border-white/10 hover:text-[#999]'
-                  )}
-                >
-                  {cat}
-                </Button>
-              ))}
+              {categories.map((cat) => {
+                const isActive = activeCategory === cat
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setActiveCategory(cat)}
+                    className={cn(
+                      'shrink-0 rounded-xl px-4 py-2 text-xs font-bold tracking-wider whitespace-nowrap uppercase transition-all',
+                      isActive
+                        ? 'border border-[#e4ff00] bg-[#e4ff00] text-black hover:bg-[#efff4d]'
+                        : 'border border-white/5 bg-[#141414] text-[#888] hover:border-white/10 hover:bg-[#1a1a1a] hover:text-white'
+                    )}
+                  >
+                    {cat}
+                  </button>
+                )
+              })}
             </div>
 
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -361,19 +364,6 @@ function GenerateSuggestionsSection() {
                     <SuggestionMacroStat label="Fat" value={`${item.fat}g`} />
                   </div>
 
-                  <div className="mt-5 rounded-2xl border border-[#e4ff00]/10 bg-[#161908] px-4 py-4">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#e4ff00]/70" />
-                      <div>
-                        <div className="text-[10px] font-black tracking-[0.18em] text-[#777] uppercase">
-                          Why this might work for you
-                        </div>
-                        <p className="mt-2 text-sm leading-relaxed text-[#9a9a9a]">
-                          {item.reasoning}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
 
                   <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/6 pt-4 text-xs text-[#727272]">
                     <span className="truncate">
@@ -452,7 +442,7 @@ function SavedSuggestionsSection() {
 
   return (
     <>
-      <div className="mx-auto max-w-5xl space-y-8 pb-10">
+      <div className="mx-auto max-w-5xl space-y-5 pb-10">
         <div className="rounded-[2rem] border border-white/10 bg-[#141414] p-6 sm:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -754,7 +744,7 @@ function SuggestionTopCard({
   helper: string
 }) {
   return (
-    <div className="border-b border-white/10 px-1 py-3 last:border-b-0">
+    <div className="px-1 py-3">
       <div className="flex items-center gap-2 text-[#e4ff00]">
         {icon}
         <div className="text-[10px] font-black tracking-[0.2em] text-[#777] uppercase">
