@@ -76,7 +76,7 @@ export function WeeklySummarySection() {
   }, [anchorDate, mealsQuery.data?.meals])
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl text-[#f5f5f5]">

@@ -133,7 +133,7 @@ export function OverviewSection() {
   ]
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         {summaryCards.map((card) => (
           <div

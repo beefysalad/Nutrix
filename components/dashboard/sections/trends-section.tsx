@@ -44,7 +44,7 @@ export function TrendsSection() {
   }, [trendsQuery.data?.goalCalories, trendsQuery.data?.points])
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl text-[#f5f5f5]">Nutrition Trends</h2>

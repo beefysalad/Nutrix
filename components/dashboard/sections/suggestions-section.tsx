@@ -144,7 +144,7 @@ function GenerateSuggestionsSection() {
   return (
     <>
       <div className="mx-auto max-w-5xl space-y-8 pb-10">
-        <div className="rounded-[2rem] border border-white/10 bg-[#141414] p-6 sm:p-8">
+        <div className="border-b border-white/10 px-1 pb-6">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -203,7 +203,7 @@ function GenerateSuggestionsSection() {
           </div>
         </div>
 
-        <SectionCard className="space-y-4">
+        <SectionCard className="space-y-4 border-0 bg-transparent p-0 shadow-none">
           <div className="flex items-center justify-between gap-4">
             <div>
               <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
@@ -256,7 +256,7 @@ function GenerateSuggestionsSection() {
           </div>
         </SectionCard>
 
-        <SectionCard className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <SectionCard className="flex flex-col gap-3 border-0 bg-transparent p-0 shadow-none sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
               Daily limit
@@ -306,75 +306,83 @@ function GenerateSuggestionsSection() {
                   type="button"
                   variant="ghost"
                   onClick={() => setSelectedSuggestionId(item.id)}
-                  className="group flex h-full w-full flex-col items-stretch justify-start overflow-hidden whitespace-normal rounded-[1.75rem] border border-white/8 bg-[#111111] text-left transition-all hover:border-[#e4ff00]/30 hover:bg-[#111111]"
+                  className="group flex h-full w-full flex-col items-stretch justify-start overflow-hidden whitespace-normal rounded-[1.75rem] border border-white/8 bg-[#111111] px-5 py-5 text-left transition-all hover:border-[#e4ff00]/30 hover:bg-[#121212]"
                 >
-                  <div className="border-b border-white/5 bg-[#151515] p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="text-[10px] font-black tracking-[0.22em] text-[#666] uppercase">
-                          Open recipe
-                        </div>
-                        <h3 className="mt-3 text-xl leading-tight font-bold text-[#f5f5f5] transition-colors group-hover:text-[#e4ff00]">
-                          {item.name}
-                        </h3>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] font-black tracking-[0.22em] text-[#666] uppercase">
+                        Open recipe
                       </div>
-                      <div className="rounded-full border border-white/10 bg-black/40 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white uppercase">
-                        {item.prepTime}
-                      </div>
+                      <h3 className="mt-3 text-2xl leading-tight font-bold text-[#f5f5f5] transition-colors group-hover:text-[#e4ff00]">
+                        {item.name}
+                      </h3>
                     </div>
-
-                    <p className="mt-4 text-sm leading-relaxed text-[#737373]">
-                      {item.description}
-                    </p>
-
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      <span className="rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-2.5 py-1 text-[9px] font-black tracking-wider text-[#e4ff00] uppercase">
-                        {item.difficulty}
-                      </span>
-                      {item.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-white/10 bg-black/35 px-2.5 py-1 text-[9px] font-black tracking-wider text-white uppercase"
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                    <div className="rounded-full border border-white/10 bg-black/35 px-3 py-1 text-[10px] font-bold tracking-[0.18em] text-white uppercase">
+                      {item.prepTime}
                     </div>
                   </div>
 
-                  <div className="flex flex-1 flex-col p-5 sm:p-6">
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      <SuggestionMacroStat
-                        label="Cals"
-                        value={`${item.calories}`}
-                      />
-                      <SuggestionMacroStat
-                        label="Prot"
-                        value={`${item.protein}g`}
-                      />
-                      <SuggestionMacroStat
-                        label="Carb"
-                        value={`${item.carbs}g`}
-                      />
-                      <SuggestionMacroStat label="Fat" value={`${item.fat}g`} />
-                    </div>
+                  <p className="mt-4 text-sm leading-relaxed text-[#7a7a7a]">
+                    {item.description}
+                  </p>
 
-                    <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[#e4ff00]/10 bg-[#171a0a] p-4">
+                  <div className="mt-4 flex flex-wrap gap-1.5">
+                    <span className="rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-2.5 py-1 text-[9px] font-black tracking-wider text-[#e4ff00] uppercase">
+                      {item.difficulty}
+                    </span>
+                    {item.tags.slice(0, 3).map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[9px] font-black tracking-wider text-[#cfcfcf] uppercase"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    {item.tags.length > 3 ? (
+                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[9px] font-black tracking-wider text-[#8d8d8d] uppercase">
+                        +{item.tags.length - 3}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  <div className="mt-5 grid grid-cols-4 gap-2">
+                    <SuggestionMacroStat
+                      label="Cals"
+                      value={`${item.calories}`}
+                    />
+                    <SuggestionMacroStat
+                      label="Prot"
+                      value={`${item.protein}g`}
+                    />
+                    <SuggestionMacroStat
+                      label="Carb"
+                      value={`${item.carbs}g`}
+                    />
+                    <SuggestionMacroStat label="Fat" value={`${item.fat}g`} />
+                  </div>
+
+                  <div className="mt-5 rounded-2xl border border-[#e4ff00]/10 bg-[#161908] px-4 py-4">
+                    <div className="flex items-start gap-3">
                       <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#e4ff00]/70" />
                       <div>
                         <div className="text-[10px] font-black tracking-[0.18em] text-[#777] uppercase">
                           Why this might work for you
                         </div>
-                        <p className="mt-2 text-xs leading-relaxed text-[#8b8b8b]">
+                        <p className="mt-2 text-sm leading-relaxed text-[#9a9a9a]">
                           {item.reasoning}
                         </p>
                       </div>
                     </div>
+                  </div>
 
-                    <div className="mt-4 flex items-center justify-between text-xs tracking-[0.2em] text-[#666] uppercase">
-                      <span>Recipe from {item.sourceLabel}</span>
-                      <span>Real recipe</span>
-                    </div>
+                  <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/6 pt-4 text-xs text-[#727272]">
+                    <span className="truncate">
+                      Recipe from{' '}
+                      <span className="text-[#bcbcbc]">{item.sourceLabel}</span>
+                    </span>
+                    <span className="shrink-0 uppercase tracking-[0.18em] text-[#8a8a8a]">
+                      Real recipe
+                    </span>
                   </div>
                 </Button>
               ))}
@@ -477,49 +485,51 @@ function SavedSuggestionsSection() {
                 type="button"
                 variant="ghost"
                 onClick={() => setSelectedSuggestionId(item.id)}
-                className="group flex h-full w-full flex-col items-stretch justify-start overflow-hidden whitespace-normal rounded-[1.75rem] border border-white/8 bg-[#111111] text-left transition-all hover:border-[#e4ff00]/30 hover:bg-[#111111]"
+                className="group flex h-full w-full flex-col items-stretch justify-start overflow-hidden whitespace-normal rounded-[1.75rem] border border-white/8 bg-[#111111] px-5 py-5 text-left transition-all hover:border-[#e4ff00]/30 hover:bg-[#121212]"
               >
-                <div className="border-b border-white/5 bg-[#151515] p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2 text-[10px] font-black tracking-[0.22em] text-[#e4ff00] uppercase">
-                        <BookmarkCheck className="h-3.5 w-3.5" />
-                        Saved
-                      </div>
-                      <h3 className="mt-3 text-xl leading-tight font-bold text-[#f5f5f5] transition-colors group-hover:text-[#e4ff00]">
-                        {item.name}
-                      </h3>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 text-[10px] font-black tracking-[0.22em] text-[#e4ff00] uppercase">
+                      <BookmarkCheck className="h-3.5 w-3.5" />
+                      Saved
                     </div>
-                    <div className="rounded-full border border-white/10 bg-black/40 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white uppercase">
-                      {item.prepTime}
-                    </div>
+                    <h3 className="mt-3 text-2xl leading-tight font-bold text-[#f5f5f5] transition-colors group-hover:text-[#e4ff00]">
+                      {item.name}
+                    </h3>
                   </div>
-
-                  <p className="mt-4 text-sm leading-relaxed text-[#737373]">
-                    {item.description}
-                  </p>
+                  <div className="rounded-full border border-white/10 bg-black/35 px-3 py-1 text-[10px] font-bold tracking-[0.18em] text-white uppercase">
+                    {item.prepTime}
+                  </div>
                 </div>
 
-                <div className="flex flex-1 flex-col p-5 sm:p-6">
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <SuggestionMacroStat
-                      label="Cals"
-                      value={`${item.calories}`}
-                    />
-                    <SuggestionMacroStat
-                      label="Prot"
-                      value={`${item.protein}g`}
-                    />
-                    <SuggestionMacroStat
-                      label="Carb"
-                      value={`${item.carbs}g`}
-                    />
-                    <SuggestionMacroStat label="Fat" value={`${item.fat}g`} />
-                  </div>
-                  <div className="mt-4 flex items-center justify-between text-xs tracking-[0.2em] text-[#666] uppercase">
-                    <span>{item.sourceLabel}</span>
-                    <span>Open recipe</span>
-                  </div>
+                <p className="mt-4 text-sm leading-relaxed text-[#7a7a7a]">
+                  {item.description}
+                </p>
+
+                <div className="mt-5 grid grid-cols-4 gap-2">
+                  <SuggestionMacroStat
+                    label="Cals"
+                    value={`${item.calories}`}
+                  />
+                  <SuggestionMacroStat
+                    label="Prot"
+                    value={`${item.protein}g`}
+                  />
+                  <SuggestionMacroStat
+                    label="Carb"
+                    value={`${item.carbs}g`}
+                  />
+                  <SuggestionMacroStat label="Fat" value={`${item.fat}g`} />
+                </div>
+
+                <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/6 pt-4 text-xs text-[#727272]">
+                  <span className="truncate">
+                    Recipe from{' '}
+                    <span className="text-[#bcbcbc]">{item.sourceLabel}</span>
+                  </span>
+                  <span className="shrink-0 uppercase tracking-[0.18em] text-[#8a8a8a]">
+                    Open recipe
+                  </span>
                 </div>
               </Button>
             ))}
@@ -744,7 +754,7 @@ function SuggestionTopCard({
   helper: string
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+    <div className="border-b border-white/10 px-1 py-3 last:border-b-0">
       <div className="flex items-center gap-2 text-[#e4ff00]">
         {icon}
         <div className="text-[10px] font-black tracking-[0.2em] text-[#777] uppercase">
@@ -769,11 +779,11 @@ function SuggestionMacroStat({
   value: string
 }) {
   return (
-    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-3 text-center">
-      <div className="text-[10px] font-bold tracking-widest text-[#444] uppercase">
+    <div className="rounded-2xl border border-white/6 bg-white/[0.025] px-3 py-3 text-center">
+      <div className="text-[10px] font-bold tracking-[0.16em] text-[#5b5b5b] uppercase">
         {label}
       </div>
-      <div className="mt-1 font-mono text-sm font-black text-[#aaa]">
+      <div className="mt-2 font-mono text-base font-bold text-[#d2d2d2]">
         {value}
       </div>
     </div>

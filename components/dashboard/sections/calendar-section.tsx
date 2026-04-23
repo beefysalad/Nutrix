@@ -61,7 +61,7 @@ export function CalendarSection() {
   }, [mealsQuery.data?.meals, visibleMonth])
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl text-[#f5f5f5]">
           {new Intl.DateTimeFormat('en-US', {

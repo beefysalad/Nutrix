@@ -170,7 +170,7 @@ export function GoalsSection() {
       {isMetricsLoading ? (
         <GoalsMetricsSkeleton />
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:gap-4">
+        <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-4">
           <GoalMetric
             label="Goal Calories"
             value={dailyCalories ? `${dailyCalories}` : 'Unset'}
@@ -220,15 +220,15 @@ export function GoalsSection() {
               size="default"
               onClick={() => setValue('mode', mode.id as GoalsFormValues['mode'], { shouldDirty: true })}
               className={cn(
-                'h-auto w-full justify-start whitespace-normal rounded-2xl border-2 px-4 py-4 text-left transition-all hover:bg-transparent',
+                'h-auto w-full justify-start whitespace-normal rounded-[1.4rem] border px-4 py-3 text-left transition-all hover:bg-transparent sm:rounded-2xl sm:px-5 sm:py-4',
                 selectedMode === mode.id
                   ? 'border-[#e4ff00] bg-[#e4ff00]/5'
-                  : 'border-white/10 bg-[#141414] hover:border-[#e4ff00]/30',
+                  : 'border-white/10 bg-[#141414]/70 hover:border-[#e4ff00]/30',
               )}
             >
               <div className="flex w-full flex-col items-start text-left">
-                <div className="mb-2 flex w-full items-start justify-between gap-3">
-                  <h3 className="text-sm font-semibold text-[#f5f5f5] sm:text-base">
+                <div className="mb-1.5 flex w-full items-start justify-between gap-3">
+                  <h3 className="text-base font-semibold text-[#f5f5f5]">
                     {mode.label}
                   </h3>
                   {selectedMode === mode.id ? (
@@ -237,7 +237,7 @@ export function GoalsSection() {
                     </span>
                   ) : null}
                 </div>
-                <p className="block max-w-full text-xs leading-snug text-[#666] sm:text-sm sm:text-[#777]">
+                <p className="block max-w-full text-sm leading-snug text-[#6f6f6f] sm:text-sm sm:text-[#777]">
                   {mode.description}
                 </p>
               </div>
@@ -391,7 +391,7 @@ export function GoalsSection() {
 
 function GoalsMetricsSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:gap-4">
+    <div className="grid grid-cols-2 gap-3 xl:grid-cols-4 xl:gap-4">
       {Array.from({ length: 4 }, (_, index) => (
         <SectionCard key={index} className="space-y-3">
           <div className="h-3 w-20 animate-pulse rounded-full bg-white/8 sm:h-4" />
@@ -419,10 +419,10 @@ function GoalMetric({
   accentGlow?: string
 }) {
   return (
-    <div className={`rounded-2xl border border-white/10 border-t-2 ${accentBorder} ${accentGlow} bg-[#141414] p-4 sm:p-5`}>
-      <div className="text-xs text-[#777] sm:text-sm">{label}</div>
-      <div className={`mt-2 font-mono text-2xl font-black sm:mt-3 sm:text-3xl ${accentText}`}>{value}</div>
-      <div className="mt-2 text-xs uppercase tracking-wide text-[#666]">{helper}</div>
+    <div className={`rounded-[1.4rem] border border-white/10 border-t-2 ${accentBorder} ${accentGlow} bg-[#141414] p-4 sm:rounded-2xl sm:p-5`}>
+      <div className="text-[11px] text-[#777] sm:text-sm">{label}</div>
+      <div className={`mt-3 font-mono text-2xl font-black sm:text-3xl ${accentText}`}>{value}</div>
+      <div className="mt-2 text-[11px] uppercase tracking-wide text-[#666]">{helper}</div>
     </div>
   )
 }

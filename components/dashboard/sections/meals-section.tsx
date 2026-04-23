@@ -273,7 +273,7 @@ function DayCard({
                   onClick={onPrev}
                   disabled={!canGoPrev}
                   aria-label="Previous day"
-                  className="flex h-7 w-7 items-center justify-center rounded-xl border border-white/10 text-[#555] transition-colors hover:border-white/20 hover:text-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-25"
+                  className="flex h-7 w-7 items-center justify-center rounded-xl border border-white/10 bg-[#0f0f0f] text-[#e4ff00] transition-colors hover:border-[#e4ff00]/50 hover:bg-[#171a0a] hover:text-[#e4ff00] disabled:cursor-not-allowed disabled:bg-transparent disabled:text-[#555] disabled:opacity-25"
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
@@ -282,7 +282,7 @@ function DayCard({
                   onClick={onNext}
                   disabled={!canGoNext}
                   aria-label="Next day"
-                  className="flex h-7 w-7 items-center justify-center rounded-xl border border-white/10 text-[#555] transition-colors hover:border-white/20 hover:text-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-25"
+                  className="flex h-7 w-7 items-center justify-center rounded-xl border border-white/10 bg-[#0f0f0f] text-[#e4ff00] transition-colors hover:border-[#e4ff00]/50 hover:bg-[#171a0a] hover:text-[#e4ff00] disabled:cursor-not-allowed disabled:bg-transparent disabled:text-[#555] disabled:opacity-25"
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
@@ -416,7 +416,7 @@ export function MealsSection() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <div className="mx-auto max-w-5xl space-y-5">
       {mealsQuery.isLoading ? (
         <SectionCard className="flex items-center justify-center py-14">
           <Loader2 className="h-5 w-5 animate-spin text-[#e4ff00]" />

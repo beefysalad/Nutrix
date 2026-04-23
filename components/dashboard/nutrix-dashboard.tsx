@@ -258,8 +258,8 @@ export function NutrixDashboard({
       </div>
 
       {!onboarded || isKeyboardVisible ? null : (
-        <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#111111]/95 px-2 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden">
-          <div className="grid grid-cols-5 items-end gap-1">
+        <nav className="fixed inset-x-0 bottom-0 z-50 px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pointer-events-none lg:hidden">
+          <div className="pointer-events-auto mx-auto flex max-w-[22rem] items-center justify-between rounded-[2rem] border border-white/10 bg-[#141414]/80 p-2 shadow-[0_20px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl">
             <MobileNavItem
               href="/dashboard"
               label="Home"
@@ -272,16 +272,18 @@ export function NutrixDashboard({
               active={section === 'history'}
               icon={History}
             />
-            <div className="flex justify-center">
+            
+            <div className="px-1">
               <Button
                 type="button"
                 onClick={() => setIsLogMealSheetOpen(true)}
                 aria-label="Log meal"
-                className="flex h-16 w-16 -translate-y-5 items-center justify-center rounded-full bg-[#e4ff00] text-black shadow-[0_10px_30px_rgba(228,255,0,0.4)] transition-transform active:scale-95"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#e4ff00] text-black shadow-[0_0_20px_rgba(228,255,0,0.25)] transition-all hover:bg-[#efff4d] hover:shadow-[0_0_25px_rgba(228,255,0,0.35)] active:scale-95"
               >
-                <Plus className="h-7 w-7" />
+                <Plus className="h-6 w-6 stroke-[2.5]" />
               </Button>
             </div>
+
             <MobileNavItem
               href="/dashboard/goals"
               label="Goals"
@@ -300,10 +302,9 @@ export function NutrixDashboard({
 
       {isLogMealSheetOpen ? (
         <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 backdrop-blur-sm">
-          <Button
-            type="button"
-            aria-label="Close log meal sheet"
-            className="absolute inset-0 cursor-default"
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-transparent"
             onClick={() => setIsLogMealSheetOpen(false)}
           />
           <div className="relative z-10 flex h-[90vh] w-full max-w-4xl min-h-0 flex-col overflow-hidden rounded-t-[2rem] border border-white/10 bg-[#111111] lg:mb-8 lg:h-auto lg:max-h-[88vh] lg:rounded-[2rem]">
@@ -334,13 +335,13 @@ function MobileNavItem({
   return (
     <Link
       href={href}
+      aria-label={label}
       className={cn(
-        'flex flex-col items-center justify-center gap-1 px-2 py-2 text-[11px] transition-all active:scale-95',
-        active ? 'text-[#e4ff00]' : 'text-[#777]',
+        'relative flex h-12 w-12 items-center justify-center rounded-full transition-all active:scale-95',
+        active ? 'bg-white/10 text-[#e4ff00]' : 'text-[#777] hover:bg-white/5 hover:text-[#aaa]',
       )}
     >
-      <Icon className={cn('h-5 w-5 transition-transform', active ? 'text-[#e4ff00]' : 'text-[#999]')} />
-      <span>{label}</span>
+      <Icon className={cn('h-5 w-5 transition-transform', active ? 'text-[#e4ff00] scale-110' : 'text-[#888]')} />
     </Link>
   )
 }

@@ -30,7 +30,7 @@ export function InsightsSection() {
 
   if (insightsQuery.isError) {
     return (
-      <div className="mx-auto max-w-7xl space-y-6">
+      <div className="mx-auto max-w-5xl space-y-6">
         <SectionCard>
           <div className="text-sm text-[#888]">Insights could not be loaded.</div>
         </SectionCard>
@@ -39,7 +39,7 @@ export function InsightsSection() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <SectionCard>
         <div className="space-y-6">
           <div className="flex items-start gap-4">

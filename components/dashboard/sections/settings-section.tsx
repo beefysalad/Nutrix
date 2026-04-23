@@ -135,7 +135,7 @@ export function SettingsSection() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div>
         <h2 className="mb-2 text-2xl text-[#f5f5f5]">Settings</h2>
         <p className="text-sm text-[#777]">
@@ -143,63 +143,58 @@ export function SettingsSection() {
         </p>
       </div>
 
-      <SectionCard>
+      <div>
         <h3 className="mb-4 text-lg text-[#f5f5f5]">Account</h3>
-        <div className="flex flex-col gap-4 md:flex-row md:items-center">
-          <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-[#0a0a0a]">
-            {isLoaded && user?.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={user.imageUrl}
-                alt={displayName}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <User className="h-8 w-8 text-[#888]" />
-            )}
-          </div>
-          <div className="flex-1">
-            <div className="text-[#f5f5f5]">
-              {isLoaded ? displayName : 'Loading account...'}
-            </div>
-            <div className="text-sm text-[#777]">
-              {isLoaded
-                ? (primaryEmail ?? 'No primary email found')
-                : 'Fetching your Clerk profile'}
-            </div>
-            {isLoaded && memberSince ? (
-              <div className="mt-1 text-xs tracking-wide text-[#666] uppercase">
-                Member since {memberSince}
+        <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-5 sm:p-6">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-5">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-[#141414]">
+                {isLoaded && user?.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={user.imageUrl}
+                    alt={displayName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <User className="h-8 w-8 text-[#888]" />
+                )}
               </div>
-            ) : null}
+              <div className="flex-1">
+                <div className="text-lg text-[#f5f5f5]">
+                  {isLoaded ? displayName : 'Loading account...'}
+                </div>
+                <div className="text-sm text-[#777]">
+                  {isLoaded
+                    ? (primaryEmail ?? 'No primary email found')
+                    : 'Fetching your Clerk profile'}
+                </div>
+                {isLoaded && memberSince ? (
+                  <div className="mt-2 text-[11px] tracking-widest text-[#666] uppercase">
+                    Member since {memberSince}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <Button
+              onClick={() => clerk.openUserProfile()}
+              className="mt-2 w-full rounded-xl border border-white/10 bg-[#141414] px-4 py-3 text-sm font-medium text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/50 hover:bg-[#1a1a1a] hover:text-[#e4ff00] md:mt-0 md:w-auto"
+            >
+              Edit Profile
+            </Button>
           </div>
-          <Button
-            onClick={() => clerk.openUserProfile()}
-            className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]"
-          >
-            Edit Profile
-          </Button>
         </div>
-      </SectionCard>
+      </div>
 
-      <SectionCard>
+      <div>
         <h3 className="mb-4 text-lg text-[#f5f5f5]">Telegram Integration</h3>
         <div className="space-y-4">
-          <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4">
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-[#e4ff00]/10 p-2">
-                    {telegramQuery.isLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin text-[#e4ff00]" />
-                    ) : isTelegramConnected ? (
-                      <Check className="h-5 w-5 text-[#e4ff00]" />
-                    ) : (
-                      <Send className="h-5 w-5 text-[#e4ff00]" />
-                    )}
-                  </span>
+          <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-5 sm:p-6">
+            <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+              <div className="flex-1 space-y-4">
+                <div className="flex items-center gap-4">
                   <div>
-                    <div className="text-[#f5f5f5]">Telegram Bot</div>
+                    <div className="text-lg text-[#f5f5f5]">Telegram Bot</div>
                     <div className="text-sm text-[#777]">
                       {telegramSetupState}
                     </div>
@@ -246,7 +241,7 @@ export function SettingsSection() {
 
               <div
                 className={cn(
-                  'self-start rounded-full border px-3 py-1 text-xs tracking-wide uppercase',
+                  'self-start rounded-full border px-3 py-1 text-xs tracking-wide uppercase md:mt-0',
                   isTelegramConnected && isWebhookConfigured
                     ? 'border-[#e4ff00]/30 bg-[#e4ff00]/10 text-[#e4ff00]'
                     : 'border-white/10 bg-[#141414] text-[#888]'
@@ -264,18 +259,18 @@ export function SettingsSection() {
             ) : null}
           </div>
 
-          <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4">
-            <div className="text-[#f5f5f5]">Quick Setup</div>
+          <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-5 sm:p-6">
+            <div className="text-lg text-[#f5f5f5]">Quick Setup</div>
             <div className="mt-1 text-sm text-[#777]">
               Follow these steps to start logging meals from Telegram.
             </div>
-            <div className="mt-4 space-y-3 text-sm">
-              <div className="rounded-2xl border border-white/10 bg-[#141414] p-3 text-[#aaa]">
+            <div className="mt-6 space-y-4 text-sm">
+              <div className="border-b border-white/10 pb-4 text-[#aaa] last:border-b-0 md:rounded-2xl md:border md:bg-[#141414] md:p-5">
                 1. Search for{' '}
                 <span className="font-mono text-[#f5f5f5]">@NutrrixBot</span> in
                 Telegram, then start the connection flow.
               </div>
-              <div className="rounded-2xl border border-white/10 bg-[#141414] p-3 text-[#aaa]">
+              <div className="border-b border-white/10 pb-4 text-[#aaa] last:border-b-0 md:rounded-2xl md:border md:bg-[#141414] md:p-5">
                 2. Send a meal message like{' '}
                 <span className="font-mono text-[#f5f5f5]">
                   2 eggs and rice
@@ -303,146 +298,150 @@ export function SettingsSection() {
             </Button>
           </div>
         </div>
-      </SectionCard>
+      </div>
 
-      <SectionCard>
+      <div>
         <h3 className="mb-4 text-lg text-[#f5f5f5]">Preferences</h3>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="text-[#f5f5f5]">Units</div>
-              <div className="text-sm text-[#777]">
-                Metric or imperial measurements
+          <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-5 sm:p-6">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="text-[#f5f5f5]">Units</div>
+                <div className="mt-1 text-sm text-[#777]">
+                  Metric or imperial measurements
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {(['metric', 'imperial'] as const).map((unit) => (
+                  <Button
+                    key={unit}
+                    type="button"
+                    onClick={() =>
+                      setValue('unitSystem', unit, { shouldDirty: true })
+                    }
+                    className={cn(
+                      'rounded-xl border px-5 py-2.5 text-sm transition-colors',
+                      selectedUnitSystem === unit
+                        ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a] hover:bg-[#f0ff4d]'
+                        : 'border-white/10 bg-[#141414] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]'
+                    )}
+                    disabled={preferencesQuery.isLoading || isSubmitting}
+                  >
+                    {unit[0].toUpperCase() + unit.slice(1)}
+                  </Button>
+                ))}
               </div>
             </div>
-            <div className="flex gap-2">
-              {(['metric', 'imperial'] as const).map((unit) => (
-                <Button
-                  key={unit}
-                  type="button"
-                  onClick={() =>
-                    setValue('unitSystem', unit, { shouldDirty: true })
-                  }
-                  className={cn(
-                    'rounded-full border px-4 py-2 text-sm transition-colors',
-                    selectedUnitSystem === unit
-                      ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
-                      : 'border-white/10 bg-[#0a0a0a] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]'
-                  )}
-                  disabled={preferencesQuery.isLoading || isSubmitting}
-                >
-                  {unit[0].toUpperCase() + unit.slice(1)}
-                </Button>
-              ))}
-            </div>
-          </div>
 
-          <div className="flex flex-col gap-4 border-t border-white/10 pt-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="text-[#f5f5f5]">AI Model</div>
-              <div className="text-sm text-[#777]">
-                Choose the Gemini model used for AI meal parsing.
+            <div className="mt-6 flex flex-col gap-6 border-t border-white/10 pt-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="text-[#f5f5f5]">AI Model</div>
+                <div className="mt-1 text-sm text-[#777]">
+                  Choose the Gemini model used for AI meal parsing.
+                </div>
               </div>
+              <select
+                {...register('aiModel')}
+                disabled={preferencesQuery.isLoading || isSubmitting}
+                className="w-full rounded-xl border border-white/10 bg-[#141414] px-4 py-3 text-[#f5f5f5] transition-colors outline-none focus:border-[#e4ff00] disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+              >
+                <option value="gemini-2.5-flash-lite">
+                  Gemini 2.5 Flash-Lite
+                </option>
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+              </select>
             </div>
-            <select
-              {...register('aiModel')}
-              disabled={preferencesQuery.isLoading || isSubmitting}
-              className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none focus:border-[#e4ff00] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <option value="gemini-2.5-flash-lite">
-                Gemini 2.5 Flash-Lite
-              </option>
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-            </select>
-          </div>
 
-          <div className="flex flex-col gap-4 border-t border-white/10 pt-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="text-[#f5f5f5]">Language</div>
-              <div className="text-sm text-[#777]">Interface language</div>
+            <div className="mt-6 flex flex-col gap-6 border-t border-white/10 pt-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="text-[#f5f5f5]">Language</div>
+                <div className="mt-1 text-sm text-[#777]">
+                  Interface language
+                </div>
+              </div>
+              <select
+                {...register('language')}
+                className="w-full rounded-xl border border-white/10 bg-[#141414] px-4 py-3 text-[#f5f5f5] transition-colors outline-none focus:border-[#e4ff00] md:w-auto"
+              >
+                <option value="English">English</option>
+              </select>
             </div>
-            <select
-              {...register('language')}
-              className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] outline-none focus:border-[#e4ff00]"
-            >
-              <option value="English">English</option>
-            </select>
           </div>
 
           {errors.aiModel || errors.unitSystem || errors.language ? (
-            <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
+            <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-4 text-sm text-red-200">
               {errors.aiModel?.message ||
                 errors.unitSystem?.message ||
                 errors.language?.message}
             </div>
           ) : null}
 
-          <div className="border-t border-white/10 pt-4">
-            <Button
-              type="submit"
-              disabled={
-                preferencesQuery.isLoading ||
-                isSubmitting ||
-                savePreferencesMutation.isPending
-              }
-              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting || savePreferencesMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              {preferencesQuery.isLoading
-                ? 'Loading Preferences'
-                : isSubmitting || savePreferencesMutation.isPending
-                  ? 'Saving Preferences'
-                  : 'Save Preferences'}
-            </Button>
-          </div>
+          <Button
+            type="submit"
+            disabled={
+              preferencesQuery.isLoading ||
+              isSubmitting ||
+              savePreferencesMutation.isPending
+            }
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSubmitting || savePreferencesMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {preferencesQuery.isLoading
+              ? 'Loading Preferences'
+              : isSubmitting || savePreferencesMutation.isPending
+                ? 'Saving Preferences'
+                : 'Save Preferences'}
+          </Button>
         </form>
-      </SectionCard>
+      </div>
 
-      <SectionCard>
+      <div>
         <h3 className="mb-4 text-lg text-[#f5f5f5]">Data</h3>
-        <div className="space-y-3">
-          <div className="text-sm text-[#777]">
-            Export your Nutrix data as a full JSON archive or a flat meals CSV
-            for spreadsheets.
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <Button
-              type="button"
-              disabled={exportDataMutation.isPending}
-              onClick={() => void downloadExport('json')}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {exportDataMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4" />
-              )}
-              Export JSON Archive
-            </Button>
-            <Button
-              type="button"
-              disabled={exportDataMutation.isPending}
-              onClick={() => void downloadExport('csv')}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {exportDataMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="h-4 w-4" />
-              )}
-              Export Meals CSV
-            </Button>
-          </div>
-          <div className="text-xs text-[#666]">
-            JSON includes profile, goals, reports, integrations, and meals. CSV
-            exports meal items in spreadsheet-friendly rows.
+        <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-5 sm:p-6">
+          <div className="space-y-6">
+            <div className="text-sm text-[#777]">
+              Export your Nutrix data as a full JSON archive or a flat meals CSV
+              for spreadsheets.
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Button
+                type="button"
+                disabled={exportDataMutation.isPending}
+                onClick={() => void downloadExport('json')}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#141414] px-4 py-6 font-medium text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/50 hover:bg-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {exportDataMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Download className="h-5 w-5" />
+                )}
+                Export JSON Archive
+              </Button>
+              <Button
+                type="button"
+                disabled={exportDataMutation.isPending}
+                onClick={() => void downloadExport('csv')}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#141414] px-4 py-6 font-medium text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/50 hover:bg-[#1a1a1a] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {exportDataMutation.isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Download className="h-5 w-5" />
+                )}
+                Export Meals CSV
+              </Button>
+            </div>
+            <div className="text-xs leading-relaxed text-[#666]">
+              JSON includes profile, goals, reports, integrations, and meals.
+              CSV exports meal items in spreadsheet-friendly rows.
+            </div>
           </div>
         </div>
-      </SectionCard>
+      </div>
     </div>
   )
 }
@@ -461,7 +460,7 @@ function TelegramStatusTile({
   tone: 'success' | 'warning' | 'default'
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#141414] p-4">
+    <div className="border-b border-white/10 py-5 last:border-b-0 sm:rounded-2xl sm:border sm:bg-[#141414] sm:p-5 sm:last:border-white/10">
       <div className="flex items-start justify-between gap-3">
         <div className="text-[#f5f5f5]">{title}</div>
         <div
@@ -477,8 +476,8 @@ function TelegramStatusTile({
           {status}
         </div>
       </div>
-      <div className="mt-2 text-sm leading-relaxed text-[#777]">{body}</div>
-      <div className="mt-3 text-[11px] tracking-wide text-[#666] uppercase">
+      <div className="mt-3 text-sm leading-relaxed text-[#777]">{body}</div>
+      <div className="mt-4 text-[11px] tracking-wide text-[#666] uppercase">
         {footer}
       </div>
     </div>
