@@ -551,10 +551,9 @@ export function LogMealSection({
 
       {isActionSheetOpen ? (
         <div className="fixed inset-0 z-[70] flex items-end bg-black/60 backdrop-blur-sm md:hidden">
-          <Button
-            type="button"
-            aria-label="Close meal actions"
-            className="absolute inset-0 cursor-default"
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-transparent"
             onClick={closeActionSheet}
           />
           <div className="relative z-10 max-h-[88dvh] w-full overflow-hidden rounded-t-[2rem] border border-white/10 bg-[#111111]">
