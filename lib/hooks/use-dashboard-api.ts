@@ -175,7 +175,7 @@ export type DashboardSummaryResponse = {
 }
 
 export type DashboardTrendsResponse = {
-  days: 7 | 30 | 90
+  days: 7
   goalCalories: number | null
   points: Array<{
     date: string
@@ -326,12 +326,12 @@ export function useDailyReportQuery(date: string) {
   })
 }
 
-export function useDashboardTrendsQuery(days: 7 | 30 | 90) {
+export function useDashboardTrendsQuery() {
   return useQuery({
-    queryKey: ['dashboard-trends', days],
+    queryKey: ['dashboard-trends', 7],
     queryFn: async () => {
       const response = await api.get<DashboardTrendsResponse>('/dashboard/trends', {
-        params: { days },
+        params: { days: 7 },
       })
       return response.data
     },

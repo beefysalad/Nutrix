@@ -1,7 +1,7 @@
 'use client'
 
 import { Loader2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import {
   Bar,
   CartesianGrid,
@@ -14,16 +14,11 @@ import {
   YAxis,
 } from 'recharts'
 
-import { EmptyState, SectionCard, cn } from '@/components/dashboard/ui'
+import { EmptyState, SectionCard } from '@/components/dashboard/ui'
 import { useDashboardTrendsQuery } from '@/lib/hooks/use-dashboard-api'
 
 export function TrendsSection() {
-  const [selectedRange, setSelectedRange] = useState<'7 Days' | '30 Days' | '90 Days'>('7 Days')
-  const rangeDays = useMemo(
-    () => (selectedRange === '7 Days' ? 7 : selectedRange === '30 Days' ? 30 : 90),
-    [selectedRange],
-  )
-  const trendsQuery = useDashboardTrendsQuery(rangeDays)
+  const trendsQuery = useDashboardTrendsQuery()
 
   const trendData = useMemo(() => {
     const goalCalories = trendsQuery.data?.goalCalories ?? 0
@@ -39,12 +34,12 @@ export function TrendsSection() {
         calories: day.calories,
         goal: goalCalories,
       })),
-        bars: sampled.map((day) => ({
-          label: day.label,
-          protein: day.protein,
-          carbs: day.carbs,
-          fat: day.fat,
-        })),
+      bars: sampled.map((day) => ({
+        label: day.label,
+        protein: day.protein,
+        carbs: day.carbs,
+        fat: day.fat,
+      })),
     }
   }, [trendsQuery.data?.goalCalories, trendsQuery.data?.points])
 
@@ -57,21 +52,8 @@ export function TrendsSection() {
             Beta
           </span>
         </div>
-        <div className="flex gap-2">
-          {(['7 Days', '30 Days', '90 Days'] as const).map((range) => (
-            <button
-              key={range}
-              onClick={() => setSelectedRange(range)}
-              className={cn(
-                'rounded-full border px-4 py-2 text-sm transition-colors',
-                selectedRange === range
-                  ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
-                  : 'border-white/10 bg-[#141414] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]',
-              )}
-            >
-              {range}
-            </button>
-          ))}
+        <div className="rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-4 py-2 text-sm font-bold uppercase tracking-wide text-[#e4ff00]">
+          Last 7 days
         </div>
       </div>
 

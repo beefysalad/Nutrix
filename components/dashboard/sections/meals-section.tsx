@@ -1,7 +1,7 @@
 'use client'
 
-import { Bot, Filter, Loader2, Search, Trash2, Clock } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Bot, CalendarDays, Loader2, Search, Trash2, Clock } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 import { EmptyState, SectionCard } from '@/components/dashboard/ui'
@@ -23,9 +23,24 @@ function getMealColor(type: string) {
   return MEAL_TYPE_COLORS[type.toLowerCase()] ?? MEAL_TYPE_COLORS.other
 }
 
+function formatDateLabel(date: string) {
+  if (!date) {
+    return 'Pick date'
+  }
+
+  const parsedDate = new Date(`${date}T00:00:00`)
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: '2-digit',
+    day: '2-digit',
+    year: 'numeric',
+  }).format(parsedDate)
+}
+
 export function MealsSection() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10))
+  const dateInputRef = useRef<HTMLInputElement>(null)
   const mealsQuery = useMealsQuery({
     limit: 100,
   })
@@ -53,43 +68,91 @@ export function MealsSection() {
     })
   }, [mealsQuery.data?.meals, searchQuery, selectedDate])
 
+  const dayTotals = useMemo(() => {
+    return filteredMeals.reduce(
+      (totals, meal) => {
+        meal.items.forEach((item) => {
+          totals.calories += item.calories
+          totals.protein += Number(item.proteinGrams ?? 0)
+          totals.carbs += Number(item.carbsGrams ?? 0)
+          totals.fat += Number(item.fatGrams ?? 0)
+        })
+
+        return totals
+      },
+      { calories: 0, protein: 0, carbs: 0, fat: 0 },
+    )
+  }, [filteredMeals])
+
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <div className="flex flex-col gap-3 lg:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#666]" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search meals..."
-            className="w-full rounded-2xl border border-white/10 bg-[#141414] py-3 pl-11 pr-4 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
-          />
+    <div className="mx-auto max-w-6xl space-y-5">
+      <div className="rounded-[1.75rem] border border-white/10 bg-[#111111] p-4 sm:p-5">
+        <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+          <label className="relative block">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#666]" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search meals, notes, or ingredients..."
+              className="h-12 w-full rounded-2xl border border-white/10 bg-[#0c0c0c] pl-11 pr-4 text-sm text-[#f5f5f5] outline-none placeholder:text-[#555] focus:border-[#e4ff00]"
+            />
+          </label>
+          <div className="relative lg:w-[190px]">
+            <button
+              type="button"
+              onClick={() => {
+                const dateInput = dateInputRef.current
+                if (!dateInput) return
+
+                if (typeof dateInput.showPicker === 'function') {
+                  dateInput.showPicker()
+                  return
+                }
+
+                dateInput.click()
+                dateInput.focus()
+              }}
+              className="group flex h-12 w-full items-center gap-3 rounded-2xl border border-white/10 bg-[#0c0c0c] px-4 text-left transition-colors hover:border-white/20 focus:border-[#e4ff00] focus:outline-none"
+            >
+              <CalendarDays className="h-4 w-4 text-[#777] transition-colors group-hover:text-[#e4ff00]" />
+            <span className="font-mono text-sm text-[#cfcfcf]">
+              {formatDateLabel(selectedDate)}
+            </span>
+            </button>
+            <input
+              ref={dateInputRef}
+              type="date"
+              value={selectedDate}
+              onChange={(event) => setSelectedDate(event.target.value)}
+              aria-label="Filter meals by date"
+              className="pointer-events-none absolute bottom-0 left-0 h-px w-px opacity-0"
+            />
+          </div>
         </div>
-        <div className="flex justify-end">
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(event) => setSelectedDate(event.target.value)}
-            className="w-full rounded-2xl border border-white/10 bg-[#141414] px-3 py-3 text-right font-mono text-sm text-[#888] outline-none focus:border-[#e4ff00] sm:max-w-[152px] sm:px-4 sm:text-base"
-          />
+
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <HistoryStat label="Showing" value={`${filteredMeals.length}`} helper="meals" />
+          <HistoryStat label="Calories" value={`${dayTotals.calories}`} helper="kcal" />
+          <HistoryStat label="Protein" value={`${dayTotals.protein.toFixed(1)}g`} helper="logged" />
+          <HistoryStat label="Carbs / Fat" value={`${dayTotals.carbs.toFixed(0)}g / ${dayTotals.fat.toFixed(0)}g`} helper="split" />
         </div>
       </div>
 
-      <SectionCard className="overflow-hidden p-0">
-        <div className="p-4 sm:p-6">
-          {mealsQuery.isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-5 w-5 animate-spin text-[#e4ff00]" />
-            </div>
-          ) : filteredMeals.length === 0 ? (
-            <EmptyState
-              title="No meal entries for this filter yet"
-              description="Try another date, or log a meal and it will show up here with its foods and macros."
-            />
-          ) : (
-            <div className="space-y-4">
-              {filteredMeals.map((meal) => {
+      {mealsQuery.isLoading ? (
+        <SectionCard className="flex items-center justify-center py-14">
+          <Loader2 className="h-5 w-5 animate-spin text-[#e4ff00]" />
+        </SectionCard>
+      ) : filteredMeals.length === 0 ? (
+        <SectionCard>
+          <EmptyState
+            title="No meal entries for this filter yet"
+            description="Try another date, or log a meal and it will show up here with its foods and macros."
+          />
+        </SectionCard>
+      ) : (
+        <div className="grid gap-4 xl:grid-cols-2">
+          {filteredMeals.map((meal) => {
                 const calories = meal.items.reduce((sum, item) => sum + item.calories, 0)
                 const protein = meal.items.reduce(
                   (sum, item) => sum + Number(item.proteinGrams ?? 0),
@@ -104,9 +167,9 @@ export function MealsSection() {
                 return (
                   <div
                     key={meal.id}
-                    className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#141414] transition-all hover:border-white/20"
+                    className="group relative flex flex-col overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#121212] transition-all hover:border-white/20"
                   >
-                    <div className="border-b border-white/[0.05] bg-[#1a1a1a]/50 px-4 py-4 sm:px-5">
+                    <div className="border-b border-white/[0.06] bg-[#181818] px-4 py-3.5 sm:px-5">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                           <span className={`rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-tighter ${getMealColor(meal.mealType).badge}`}>
@@ -138,34 +201,37 @@ export function MealsSection() {
                       </div>
                     </div>
 
-                    <div className="space-y-3 px-4 py-4 sm:px-5">
-                      {meal.items.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-start justify-between gap-4 text-sm"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <span className="block break-words font-medium leading-snug text-[#f5f5f5]">
-                              {item.foodNameSnapshot}
-                            </span>
-                            <span className="mt-1 block break-words text-[11px] leading-snug text-[#555]">
-                              {item.quantity ? `${item.quantity} ` : ''}
-                              {item.unit ? `${item.unit}` : ''}
-                            </span>
+                    <div className="flex-1 px-4 py-3 sm:px-5">
+                      <div className="divide-y divide-white/[0.05]">
+                        {meal.items.map((item) => (
+                          <div
+                            key={item.id}
+                            className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 py-3 first:pt-0 last:pb-0"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <span className="block break-words text-sm font-semibold leading-snug text-[#f5f5f5]">
+                                {item.foodNameSnapshot}
+                              </span>
+                              {item.quantity || item.unit ? (
+                                <span className="mt-1 block break-words text-[11px] leading-snug text-[#666]">
+                                  {[item.quantity, item.unit].filter(Boolean).join(' ')}
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="shrink-0 text-right">
+                              <div className="font-mono text-sm font-black text-[#9a9a9a]">
+                                {item.calories}
+                              </div>
+                              <div className="mt-0.5 text-[9px] font-bold uppercase tracking-wider text-[#444]">
+                                kcal
+                              </div>
+                            </div>
                           </div>
-                          <div className="shrink-0 font-mono text-xs font-bold text-[#888]">
-                            {item.calories}
-                          </div>
-                        </div>
-                      ))}
-                      {meal.notes ? (
-                        <div className="mt-2 rounded-xl border border-dashed border-white/5 bg-white/[0.02] p-3 text-xs italic text-[#666]">
-                          {meal.notes}
-                        </div>
-                      ) : null}
+                        ))}
+                      </div>
                     </div>
 
-                    <div className="flex flex-col gap-3 border-t border-white/[0.05] bg-[#1a1a1a]/30 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                    <div className="flex flex-col gap-3 border-t border-white/[0.06] bg-[#181818]/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                       <MacroStrip protein={protein} carbs={carbs} fat={fat} />
                       <div className="flex items-center justify-end gap-3">
                         <button
@@ -180,7 +246,7 @@ export function MealsSection() {
                               toast.error(getApiErrorMessage(error, 'Could not delete meal'))
                             }
                           }}
-                          className="text-[#333] transition-colors hover:text-red-500/80"
+                          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/5 bg-black/20 text-[#444] transition-colors hover:border-red-500/30 hover:text-red-500/80"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -221,10 +287,28 @@ export function MealsSection() {
                   </div>
                 )
               })}
-            </div>
-          )}
         </div>
-      </SectionCard>
+      )}
+    </div>
+  )
+}
+
+function HistoryStat({
+  label,
+  value,
+  helper,
+}: {
+  label: string
+  value: string
+  helper: string
+}) {
+  return (
+    <div className="rounded-2xl border border-white/8 bg-[#0b0b0b] px-4 py-3">
+      <div className="text-[9px] font-black uppercase tracking-[0.22em] text-[#555]">{label}</div>
+      <div className="mt-2 flex items-baseline gap-1.5">
+        <span className="font-mono text-lg font-black text-[#f5f5f5]">{value}</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[#555]">{helper}</span>
+      </div>
     </div>
   )
 }

@@ -102,11 +102,11 @@ export function NutrixDashboard({
       <div className="flex min-h-screen flex-col lg:flex-row">
         <aside
           className={cn(
-            'hidden flex-shrink-0 bg-[#111111] lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-white/10',
+            'hidden flex-shrink-0 bg-[#111111] lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-64 lg:flex-col lg:border-r lg:border-white/10',
             !onboarded && 'lg:hidden',
           )}
         >
-          <div className="flex items-center justify-between border-b border-white/10 px-6 py-6">
+          <div className="flex h-20 items-center justify-between border-b border-white/10 px-6">
             <div>
               <h1 className="font-mono text-2xl font-black uppercase tracking-tighter text-[#f5f5f5]">
                 NUTR<span className="text-[#e4ff00]">IX</span>
@@ -142,8 +142,8 @@ export function NutrixDashboard({
 
         <div className="flex min-w-0 flex-1 flex-col">
           {!onboarded ? null : (
-            <header className="sticky top-0 z-40 border-b border-white/10 bg-[#0a0a0a]/90 px-4 py-4 backdrop-blur md:px-6">
-              <div className="flex items-center justify-between gap-4">
+            <header className="sticky top-0 z-40 h-20 border-b border-white/10 bg-[#0a0a0a]/90 px-4 backdrop-blur md:px-6">
+              <div className="flex h-full items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <span className="hidden text-sm text-[#777] sm:inline">{today}</span>
                   <div className="sm:hidden">

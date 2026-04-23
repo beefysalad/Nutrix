@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireAppUser } from '@/lib/api/current-app-user'
 import prisma from '@/lib/prisma'
 
-const allowedRanges = new Set([7, 30, 90])
+const TREND_RANGE_DAYS = 7
 
 function getRangeStart(days: number) {
   const start = new Date()
@@ -22,8 +22,8 @@ export async function GET(request: Request) {
   const searchParams = new URL(request.url).searchParams
   const days = Number(searchParams.get('days') ?? '7')
 
-  if (!allowedRanges.has(days)) {
-    return NextResponse.json({ error: 'days must be one of 7, 30, or 90' }, { status: 400 })
+  if (days !== TREND_RANGE_DAYS) {
+    return NextResponse.json({ error: 'days must be 7' }, { status: 400 })
   }
 
   const start = getRangeStart(days)
