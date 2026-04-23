@@ -714,6 +714,19 @@ export const telegramService = {
           return
         }
 
+        if (normalizedAction === 'help') {
+          await handleHelpCommand(message)
+          return
+        }
+
+        if (normalizedAction === 'start') {
+          await handleStartCommand({
+            ...message,
+            text: '/start',
+          })
+          return
+        }
+
         if (chatId && normalizedAction === 'log meal') {
           markPendingMealPrompt(chatId)
           await sendTelegramMessage({
@@ -724,7 +737,7 @@ export const telegramService = {
           return
         }
 
-        if (normalizedAction === 'today summary') {
+        if (normalizedAction === 'summary' || normalizedAction === 'today summary') {
           await handleSummaryCommand(message)
           return
         }
