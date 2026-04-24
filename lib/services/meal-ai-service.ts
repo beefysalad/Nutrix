@@ -1,10 +1,11 @@
 import { Prisma, type FoodSuggestion } from '@/app/generated/prisma/client'
 
-import { recipeCatalog, type RecipeCatalogItem, type SuggestionStyle } from '@/lib/data/recipe-catalog'
+import type { SuggestionStyle } from '@/lib/data/recipe-catalog'
 import { env } from '@/lib/env'
 import prisma from '@/lib/prisma'
 import {
   aiModelSchema,
+  generatedMealSuggestionsSchema,
   parsedMealResultSchema,
 } from '@/lib/validations/nutrition'
 import type { z } from 'zod'
@@ -105,6 +106,79 @@ const geminiResponseSchema = {
   required: ['mealType', 'confidence', 'assumptions', 'needsReview', 'items'],
 } as const
 
+const geminiMealSuggestionsResponseSchema = {
+  type: 'OBJECT',
+  properties: {
+    suggestions: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          id: { type: 'STRING' },
+          name: { type: 'STRING' },
+          description: { type: 'STRING' },
+          calories: { type: 'NUMBER' },
+          protein: { type: 'NUMBER' },
+          carbs: { type: 'NUMBER' },
+          fat: { type: 'NUMBER' },
+          tags: {
+            type: 'ARRAY',
+            items: {
+              type: 'STRING',
+            },
+          },
+          reasoning: { type: 'STRING' },
+          ingredients: {
+            type: 'ARRAY',
+            items: {
+              type: 'STRING',
+            },
+          },
+          instructions: {
+            type: 'ARRAY',
+            items: {
+              type: 'STRING',
+            },
+          },
+          cookingNotes: {
+            type: 'STRING',
+            nullable: true,
+          },
+          prepTime: { type: 'STRING' },
+          difficulty: {
+            type: 'STRING',
+            enum: ['easy', 'medium'],
+          },
+          sourceLabel: {
+            type: 'STRING',
+            nullable: true,
+          },
+          sourceUrl: {
+            type: 'STRING',
+            nullable: true,
+          },
+        },
+        required: [
+          'id',
+          'name',
+          'description',
+          'calories',
+          'protein',
+          'carbs',
+          'fat',
+          'tags',
+          'reasoning',
+          'ingredients',
+          'instructions',
+          'prepTime',
+          'difficulty',
+        ],
+      },
+    },
+  },
+  required: ['suggestions'],
+} as const
+
 type GeminiModel = z.infer<typeof aiModelSchema>
 
 function isMissingAiModelColumn(error: unknown) {
@@ -182,16 +256,20 @@ function getSuggestionDate(timezone?: string | null) {
   }).format(new Date())
 }
 
+type SuggestionGoalMode = 'cutting' | 'maintenance' | 'bulking' | 'custom' | null
+type SuggestionMealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other' | null
+
 type MealSuggestionsPayload = {
   model: string
   basedOn: {
-    goalMode: 'cutting' | 'maintenance' | 'bulking' | 'custom' | null
+    goalMode: SuggestionGoalMode
     recentFoods: string[]
-    generatedForMealType: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other' | null
+    generatedForMealType: SuggestionMealType
     suggestionStyle: SuggestionStyle | null
   }
   suggestions: Array<{
     id: string
+    recipeId?: string
     name: string
     description: string
     calories: number
@@ -200,10 +278,13 @@ type MealSuggestionsPayload = {
     fat: number
     tags: string[]
     reasoning: string
+    ingredients: string[]
+    instructions: string[]
+    cookingNotes: string | null
     prepTime: string
     difficulty: 'easy' | 'medium'
-    sourceLabel: string
-    sourceUrl: string
+    sourceLabel: string | null
+    sourceUrl: string | null
   }>
 }
 
@@ -221,17 +302,11 @@ function buildPayloadFromSuggestionRows(rows: FoodSuggestion[]): MealSuggestions
   const firstSuggestion = rows[0]
 
   return {
-    model: 'curated-recipe-library',
+    model: firstSuggestion.sourceLabel === 'Nutrix AI' ? 'gemini-ai-suggestions' : 'stored-suggestions',
     basedOn: {
-      goalMode: firstSuggestion.goalMode as 'cutting' | 'maintenance' | 'bulking' | 'custom' | null,
+      goalMode: firstSuggestion.goalMode as SuggestionGoalMode,
       recentFoods: getStringArrayFromJson(firstSuggestion.recentFoods),
-      generatedForMealType: firstSuggestion.generatedForMealType as
-        | 'breakfast'
-        | 'lunch'
-        | 'dinner'
-        | 'snack'
-        | 'other'
-        | null,
+      generatedForMealType: firstSuggestion.generatedForMealType as SuggestionMealType,
       suggestionStyle: firstSuggestion.style as SuggestionStyle,
     },
     suggestions: rows.map((suggestion) => ({
@@ -245,10 +320,13 @@ function buildPayloadFromSuggestionRows(rows: FoodSuggestion[]): MealSuggestions
       fat: Number(suggestion.fat),
       tags: getStringArrayFromJson(suggestion.tags),
       reasoning: suggestion.reasoning,
+      ingredients: getStringArrayFromJson(suggestion.ingredients),
+      instructions: getStringArrayFromJson(suggestion.instructions),
+      cookingNotes: suggestion.cookingNotes || null,
       prepTime: suggestion.prepTime,
       difficulty: suggestion.difficulty as 'easy' | 'medium',
-      sourceLabel: suggestion.sourceLabel,
-      sourceUrl: suggestion.sourceUrl,
+      sourceLabel: suggestion.sourceLabel || null,
+      sourceUrl: suggestion.sourceUrl || null,
       isSaved: suggestion.isSaved,
     })),
   }
@@ -334,131 +412,201 @@ async function callGemini(model: GeminiModel, text: string, mealType?: string) {
   }
 }
 
-function tokenize(values: string[]) {
-  return new Set(
-    values
-      .flatMap((value) => value.toLowerCase().split(/[^a-z0-9]+/))
-      .map((value) => value.trim())
-      .filter((value) => value.length >= 3),
+function slugifySuggestionId(value: string, fallback: string) {
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  return normalized || fallback
+}
+
+function normalizeGeneratedSuggestions(payload: unknown) {
+  const parsed = generatedMealSuggestionsSchema.safeParse(
+    Array.isArray(payload) ? { suggestions: payload } : payload,
   )
+
+  if (!parsed.success) {
+    return null
+  }
+
+  return parsed.data.suggestions.slice(0, 3).map((suggestion, index) => ({
+    id: slugifySuggestionId(suggestion.id ?? suggestion.name, `ai-suggestion-${index + 1}`),
+    name: suggestion.name.trim(),
+    description: suggestion.description.trim().slice(0, 400),
+    calories: Math.round(suggestion.calories),
+    protein: Number(suggestion.protein.toFixed(1)),
+    carbs: Number(suggestion.carbs.toFixed(1)),
+    fat: Number(suggestion.fat.toFixed(1)),
+    tags: Array.from(
+      new Set(
+        suggestion.tags
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+      ),
+    ).slice(0, 4),
+    reasoning: suggestion.reasoning.trim().slice(0, 400),
+    ingredients: suggestion.ingredients
+      .map((ingredient) => ingredient.trim())
+      .filter(Boolean)
+      .slice(0, 12)
+      .map((ingredient) => ingredient.slice(0, 160)),
+    instructions: suggestion.instructions
+      .map((step) => step.trim())
+      .filter(Boolean)
+      .slice(0, 10)
+      .map((step) => step.slice(0, 300)),
+    cookingNotes: suggestion.cookingNotes?.trim().slice(0, 500) || null,
+    prepTime: suggestion.prepTime.trim().slice(0, 50),
+    difficulty: suggestion.difficulty,
+    sourceLabel: suggestion.sourceLabel?.trim() || 'Nutrix AI',
+    sourceUrl: suggestion.sourceUrl?.trim() || '',
+  }))
 }
 
-function extractMinutes(prepTime: string) {
-  const hourMatch = /(\d+)\s*hr/i.exec(prepTime)
-  const minuteMatch = /(\d+)\s*min/i.exec(prepTime)
-
-  const hours = hourMatch ? Number(hourMatch[1]) * 60 : 0
-  const minutes = minuteMatch ? Number(minuteMatch[1]) : 0
-
-  return hours + minutes
+function formatGoalContext(
+  goalMode: SuggestionGoalMode,
+  activeGoal: {
+    dailyCalories?: number | null
+    proteinGrams?: number | null
+    carbsGrams?: number | null
+    fatGrams?: number | null
+  } | null,
+) {
+  return {
+    mode: goalMode ?? 'custom',
+    dailyCalories: activeGoal?.dailyCalories ?? null,
+    proteinGrams: activeGoal?.proteinGrams ?? null,
+    carbsGrams: activeGoal?.carbsGrams ?? null,
+    fatGrams: activeGoal?.fatGrams ?? null,
+  }
 }
 
-function scoreRecipe(input: {
-  recipe: RecipeCatalogItem
+async function callGeminiMealSuggestions(input: {
+  model: GeminiModel
   suggestionStyle: SuggestionStyle
-  goalMode: 'cutting' | 'maintenance' | 'bulking' | 'custom' | null
-  mealTypeFocus: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other' | null
-  recentFoodTokens: Set<string>
+  goalMode: SuggestionGoalMode
+  activeGoal: {
+    dailyCalories?: number | null
+    proteinGrams?: number | null
+    carbsGrams?: number | null
+    fatGrams?: number | null
+  } | null
+  mealTypeFocus: SuggestionMealType
+  recentFoods: string[]
 }) {
-  const { recipe, suggestionStyle, goalMode, mealTypeFocus, recentFoodTokens } = input
-  let score = 0
-
-  if (recipe.styles.includes(suggestionStyle)) {
-    score += 6
+  if (!env.GEMINI_API_KEY) {
+    return {
+      ok: false as const,
+      status: 500,
+      details: 'Gemini API key is not configured',
+    }
   }
 
-  if (mealTypeFocus && recipe.mealTypes.includes(mealTypeFocus)) {
-    score += 3
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${input.model}:generateContent?key=${env.GEMINI_API_KEY}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                text: [
+                  'You are the Nutrix smart meal suggestion engine.',
+                  'Generate 3 complete, cookable meal recipes tailored to the user context below.',
+                  'These should be original recipes, not linked recipes and not selected from a fixed catalog.',
+                  'Keep the meals realistic for Filipino users, using common ingredients, home-style meals, or practical takeout patterns when helpful.',
+                  'Return JSON only.',
+                  'Rules:',
+                  '- Generate exactly 3 recipes.',
+                  '- Do not mention external websites or recipe publishers.',
+                  '- Keep each description concise and useful.',
+                  '- Keep reasoning specific to the user context, not generic nutrition advice.',
+                  '- Include practical ingredients with quantities for one serving.',
+                  '- Include clear step-by-step cooking instructions a normal user can follow.',
+                  '- Include a short cookingNotes value with substitutions, timing, or meal-prep guidance.',
+                  '- Avoid repeating the exact same protein or meal base across all 3 suggestions.',
+                  '- Match the requested style strongly.',
+                  '- If style is high-protein, aim for at least 25g protein in most suggestions.',
+                  '- If style is quick, bias toward 10 to 25 minutes or easy assembly.',
+                  '- If style is budget, favor affordable ingredients and simple combinations.',
+                  '- If style is lutong-bahay, make the meals feel comforting and home-cooked.',
+                  '- Macros should be plausible estimates for one serving.',
+                  '- Use sourceLabel "Nutrix AI" and sourceUrl "" unless a real source is truly required.',
+                  `User context: ${JSON.stringify({
+                    suggestionStyle: input.suggestionStyle,
+                    goal: formatGoalContext(input.goalMode, input.activeGoal),
+                    mealTypeFocus: input.mealTypeFocus,
+                    recentFoods: input.recentFoods,
+                  })}`,
+                ].join('\n'),
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: geminiMealSuggestionsResponseSchema,
+          temperature: 0.8,
+        },
+      }),
+    },
+  )
+
+  if (!response.ok) {
+    return {
+      ok: false as const,
+      status: response.status,
+      details: await response.text(),
+    }
   }
 
-  const recipeTokens = tokenize([recipe.name, recipe.description, ...recipe.tags])
-  const overlapCount = Array.from(recipeTokens).filter((token) => recentFoodTokens.has(token)).length
-  score += overlapCount * 2
-
-  if (suggestionStyle === 'quick' && extractMinutes(recipe.prepTime) <= 30) {
-    score += 3
+  const payload = (await response.json()) as {
+    candidates?: Array<{
+      content?: {
+        parts?: Array<{ text?: string }>
+      }
+    }>
   }
 
-  if (suggestionStyle === 'budget' && recipe.tags.includes('Budget')) {
-    score += 3
+  const textPart = payload.candidates?.[0]?.content?.parts?.[0]?.text
+
+  if (!textPart) {
+    return {
+      ok: false as const,
+      status: 502,
+      details: 'Gemini returned no suggestion content',
+    }
   }
 
-  if (suggestionStyle === 'lutong-bahay' && recipe.tags.includes('Lutong Bahay')) {
-    score += 3
-  }
+  try {
+    const normalizedText = normalizeJsonText(textPart)
+    const parsedPayload = JSON.parse(normalizedText)
+    const normalizedSuggestions = normalizeGeneratedSuggestions(parsedPayload)
 
-  if (suggestionStyle === 'high-protein' && recipe.protein >= 25) {
-    score += 4
-  }
+    if (!normalizedSuggestions) {
+      return {
+        ok: false as const,
+        status: 502,
+        details: 'Gemini returned suggestions in an unexpected shape',
+      }
+    }
 
-  switch (goalMode) {
-    case 'cutting':
-      if (recipe.calories <= 450) score += 3
-      if (recipe.protein >= 20) score += 2
-      if (recipe.fat <= 20) score += 1
-      break
-    case 'maintenance':
-      if (recipe.calories >= 280 && recipe.calories <= 550) score += 2
-      if (recipe.protein >= 18) score += 1
-      break
-    case 'bulking':
-      if (recipe.calories >= 420) score += 3
-      if (recipe.protein >= 25) score += 2
-      if (recipe.carbs >= 30) score += 1
-      break
-    case 'custom':
-    case null:
-      if (recipe.protein >= 18) score += 1
-      break
-  }
-
-  return score
-}
-
-function buildReasoning(input: {
-  recipe: RecipeCatalogItem
-  suggestionStyle: SuggestionStyle
-  goalMode: 'cutting' | 'maintenance' | 'bulking' | 'custom' | null
-  mealTypeFocus: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other' | null
-  recentFoodTokens: Set<string>
-}) {
-  const parts: string[] = []
-  const { recipe, suggestionStyle, goalMode, mealTypeFocus, recentFoodTokens } = input
-
-  parts.push(`This is a real ${formatStyleLabel(suggestionStyle)} recipe`)
-
-  if (mealTypeFocus && recipe.mealTypes.includes(mealTypeFocus)) {
-    parts.push(`that lines up with your usual ${mealTypeFocus} logging`)
-  }
-
-  if (goalMode === 'cutting' && recipe.protein >= 20 && recipe.calories <= 450) {
-    parts.push('with a leaner calorie profile for your cutting target')
-  } else if (goalMode === 'bulking' && recipe.protein >= 25) {
-    parts.push('with solid calories and protein for your bulking target')
-  } else if (goalMode === 'maintenance') {
-    parts.push('that stays balanced for day-to-day maintenance')
-  } else if (goalMode === 'custom' && recipe.protein >= 18) {
-    parts.push('with a solid protein baseline for your custom goals')
-  }
-
-  const recipeTokens = tokenize([recipe.name, recipe.description, ...recipe.tags])
-  const hasOverlap = Array.from(recipeTokens).some((token) => recentFoodTokens.has(token))
-
-  if (hasOverlap) {
-    parts.push('and it stays fairly close to foods you already seem comfortable logging')
-  }
-
-  return `${parts.join(' ')}.`
-}
-
-function formatStyleLabel(style: SuggestionStyle) {
-  switch (style) {
-    case 'lutong-bahay':
-      return 'lutong-bahay'
-    case 'high-protein':
-      return 'high-protein'
-    default:
-      return style
+    return {
+      ok: true as const,
+      suggestions: normalizedSuggestions,
+    }
+  } catch {
+    return {
+      ok: false as const,
+      status: 502,
+      details: 'Gemini returned invalid JSON for suggestions',
+    }
   }
 }
 
@@ -514,6 +662,7 @@ export const mealAiService = {
   async getMealSuggestionsForUser(input: {
     userId: string
     suggestionStyle?: SuggestionStyle
+    mealType?: Exclude<SuggestionMealType, null>
   }) {
     const selectedStyle = input.suggestionStyle ?? 'quick'
     const [profile, user] = await Promise.all([
@@ -532,6 +681,7 @@ export const mealAiService = {
       where: {
         userId: input.userId,
         style: selectedStyle,
+        ...(input.mealType ? { generatedForMealType: input.mealType } : {}),
       },
       orderBy: {
         createdAt: 'desc',
@@ -567,6 +717,7 @@ export const mealAiService = {
   async generateMealSuggestionsForUser(input: {
     userId: string
     suggestionStyle?: SuggestionStyle
+    mealType?: Exclude<SuggestionMealType, null>
   }) {
     const selectedStyle = input.suggestionStyle ?? 'quick'
     const [profile, user] = await Promise.all([
@@ -630,56 +781,49 @@ export const mealAiService = {
       return accumulator
     }, {})
 
-    const mealTypeFocus =
+    const inferredMealTypeFocus =
       Object.entries(mealTypeCounts).sort((left, right) => right[1] - left[1])[0]?.[0] ?? null
+    const mealTypeFocus = input.mealType ?? inferredMealTypeFocus
 
-    const recentFoodTokens = tokenize(recentFoods)
-    const scoredRecipes = recipeCatalog
-      .map((recipe) => ({
-        recipe,
-        score: scoreRecipe({
-          recipe,
-          suggestionStyle: selectedStyle,
-          goalMode: activeGoal?.mode ?? null,
-          mealTypeFocus: mealTypeFocus as 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other' | null,
-          recentFoodTokens,
-        }),
-      }))
-      .sort((left, right) => right.score - left.score)
-      .slice(0, 3)
+    const selectedModel = await this.getUserPreferredModel(input.userId)
+    let modelUsed: GeminiModel = selectedModel
+    const primaryAttempt = await callGeminiMealSuggestions({
+      model: modelUsed,
+      suggestionStyle: selectedStyle,
+      goalMode: activeGoal?.mode ?? null,
+      activeGoal,
+      mealTypeFocus: mealTypeFocus as SuggestionMealType,
+      recentFoods,
+    })
+
+    let suggestionBatch = primaryAttempt
+
+    if (!primaryAttempt.ok && selectedModel === 'gemini-2.5-flash-lite') {
+      modelUsed = 'gemini-2.5-flash'
+      suggestionBatch = await callGeminiMealSuggestions({
+        model: modelUsed,
+        suggestionStyle: selectedStyle,
+        goalMode: activeGoal?.mode ?? null,
+        activeGoal,
+        mealTypeFocus: mealTypeFocus as SuggestionMealType,
+        recentFoods,
+      })
+    }
+
+    if (!suggestionBatch.ok) {
+      throw new Error(suggestionBatch.details)
+    }
 
     const generationId = crypto.randomUUID()
     const payloadBase = {
-      model: 'curated-recipe-library',
+      model: modelUsed,
       basedOn: {
         goalMode: activeGoal?.mode ?? null,
         recentFoods,
-        generatedForMealType:
-          (mealTypeFocus as 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other' | null) ?? null,
+        generatedForMealType: (mealTypeFocus as SuggestionMealType) ?? null,
         suggestionStyle: selectedStyle,
       },
-      suggestions: scoredRecipes.map(({ recipe }) => ({
-        id: recipe.id,
-        name: recipe.name,
-        description: recipe.description,
-        calories: recipe.calories,
-        protein: recipe.protein,
-        carbs: recipe.carbs,
-        fat: recipe.fat,
-        tags: recipe.tags,
-        reasoning: buildReasoning({
-          recipe,
-          suggestionStyle: selectedStyle,
-          goalMode: activeGoal?.mode ?? null,
-          mealTypeFocus:
-            (mealTypeFocus as 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other' | null) ?? null,
-          recentFoodTokens,
-        }),
-        prepTime: recipe.prepTime,
-        difficulty: recipe.difficulty,
-          sourceLabel: recipe.sourceLabel,
-          sourceUrl: recipe.sourceUrl,
-      })),
+      suggestions: suggestionBatch.suggestions,
     }
 
     const createdSuggestions = await prisma.$transaction(async (transaction) => {
@@ -726,6 +870,9 @@ export const mealAiService = {
               fat: new Prisma.Decimal(suggestion.fat),
               tags: suggestion.tags,
               reasoning: suggestion.reasoning,
+              ingredients: suggestion.ingredients,
+              instructions: suggestion.instructions,
+              cookingNotes: suggestion.cookingNotes ?? '',
               prepTime: suggestion.prepTime,
               difficulty: suggestion.difficulty,
               sourceLabel: suggestion.sourceLabel,

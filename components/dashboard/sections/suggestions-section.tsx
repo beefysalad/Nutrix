@@ -1,24 +1,25 @@
 'use client'
 
 import {
-  AlertCircle,
+  ArrowLeft,
   Bookmark,
   BookmarkCheck,
-  Bot,
+  BrainCircuit,
   ChefHat,
   Clock,
-  ExternalLink,
   Loader2,
   Lock,
-  Salad,
+  SlidersHorizontal,
+  Trash2,
   Target,
   X,
 } from 'lucide-react'
+import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import Link from 'next/link'
 
+import type { SuggestionsSubview } from '@/components/dashboard/types'
 import { EmptyState, SectionCard, cn } from '@/components/dashboard/ui'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,35 +30,44 @@ import {
   useSaveMealSuggestionMutation,
   type MealSuggestionResponse,
 } from '@/lib/hooks/use-dashboard-api'
-import type { SuggestionsSubview } from '@/components/dashboard/types'
 
 const suggestionStyleOptions = [
   {
     id: 'quick',
     label: 'Quick',
-    description: 'Fast and easy meals for daily logging',
+    description: 'Fast meals and easy assemblies for busy days.',
   },
   {
     id: 'lutong-bahay',
     label: 'Lutong Bahay',
-    description: 'Comforting home-style Filipino dishes',
+    description: 'Comforting home-style ideas that still fit your targets.',
   },
   {
     id: 'budget',
     label: 'Budget',
-    description: 'More affordable everyday meal ideas',
+    description: 'Affordable combinations using practical ingredients.',
   },
   {
     id: 'high-protein',
     label: 'High Protein',
-    description: 'Protein-forward meals that still feel local',
+    description: 'Protein-forward ideas without making the meal feel plain.',
   },
 ] as const
 
+const mealTypeOptions = [
+  { id: 'any', label: 'Any meal' },
+  { id: 'breakfast', label: 'Breakfast' },
+  { id: 'lunch', label: 'Lunch' },
+  { id: 'dinner', label: 'Dinner' },
+  { id: 'snack', label: 'Snack' },
+  { id: 'other', label: 'Other' },
+] as const
+
 type SuggestionStyle = (typeof suggestionStyleOptions)[number]['id']
-type SuggestionCard = NonNullable<
-  MealSuggestionResponse['payload']
->['suggestions'][number]
+type MealTypePreference = (typeof mealTypeOptions)[number]['id']
+type SuggestionPayload = NonNullable<MealSuggestionResponse['payload']>
+type SuggestionCard = SuggestionPayload['suggestions'][number]
+type GoalMode = SuggestionPayload['basedOn']['goalMode']
 
 export function SuggestionsSection({
   initialView = 'generate',
@@ -74,11 +84,19 @@ export function SuggestionsSection({
 function GenerateSuggestionsSection() {
   const [activeCategory, setActiveCategory] = useState('All')
   const [selectedStyle, setSelectedStyle] = useState<SuggestionStyle>('quick')
+  const [selectedMealType, setSelectedMealType] =
+    useState<MealTypePreference>('any')
+  const [isPreferencesOpen, setIsPreferencesOpen] = useState(false)
   const [selectedSuggestionId, setSelectedSuggestionId] = useState<
     string | null
   >(null)
 
-  const suggestionsQuery = useMealSuggestionsQuery({ style: selectedStyle })
+  const selectedMealTypeParam =
+    selectedMealType === 'any' ? undefined : selectedMealType
+  const suggestionsQuery = useMealSuggestionsQuery({
+    style: selectedStyle,
+    mealType: selectedMealTypeParam,
+  })
   const generateSuggestionsMutation = useGenerateMealSuggestionsMutation()
 
   const usage = suggestionsQuery.data?.usage
@@ -89,10 +107,8 @@ function GenerateSuggestionsSection() {
   )
 
   const categories = useMemo(() => {
-    const dynamicTags = Array.from(
-      new Set(suggestions.flatMap((item) => item.tags))
-    )
-    return ['All', ...dynamicTags]
+    const tags = Array.from(new Set(suggestions.flatMap((item) => item.tags)))
+    return ['All', ...tags]
   }, [suggestions])
 
   const filteredSuggestions =
@@ -105,12 +121,30 @@ function GenerateSuggestionsSection() {
     [selectedSuggestionId, suggestions]
   )
 
+  const activeStyleMeta =
+    suggestionStyleOptions.find((option) => option.id === selectedStyle) ??
+    suggestionStyleOptions[0]
   const canGenerate = (usage?.remainingToday ?? 0) > 0
+
+  if (selectedSuggestion) {
+    return (
+      <RecipeDetailView
+        suggestion={selectedSuggestion}
+        suggestionStyle={selectedStyle}
+        onBack={() => setSelectedSuggestionId(null)}
+      />
+    )
+  }
 
   async function handleGenerateSuggestions() {
     try {
-      await generateSuggestionsMutation.mutateAsync({ style: selectedStyle })
-      toast.success('Smart suggestions generated')
+      await generateSuggestionsMutation.mutateAsync({
+        style: selectedStyle,
+        mealType: selectedMealTypeParam,
+      })
+      toast.success('Suggestions generated')
+      setActiveCategory('All')
+      setSelectedSuggestionId(null)
     } catch (error) {
       toast.error(
         getApiErrorMessage(error, 'Could not generate smart suggestions')
@@ -120,7 +154,7 @@ function GenerateSuggestionsSection() {
 
   if (suggestionsQuery.isLoading) {
     return (
-      <div className="mx-auto max-w-5xl space-y-8 pb-10">
+      <div className="mx-auto max-w-5xl space-y-6">
         <SectionCard className="flex items-center justify-center py-16">
           <Loader2 className="h-5 w-5 animate-spin text-[#e4ff00]" />
         </SectionCard>
@@ -130,11 +164,11 @@ function GenerateSuggestionsSection() {
 
   if (suggestionsQuery.isError) {
     return (
-      <div className="mx-auto max-w-5xl space-y-8 pb-10">
+      <div className="mx-auto max-w-5xl space-y-6">
         <SectionCard>
           <EmptyState
             title="Suggestions could not be loaded"
-            description="Nutrix hit an issue while loading your smart suggestion state. Try refreshing in a moment."
+            description="Nutrix hit an issue while loading your suggestion state. Try refreshing in a moment."
           />
         </SectionCard>
       </div>
@@ -143,264 +177,150 @@ function GenerateSuggestionsSection() {
 
   return (
     <>
-      <div className="mx-auto max-w-5xl space-y-5 pb-10">
-        <div className="border-b border-white/10 px-1 pb-4">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="inline-flex items-center gap-2 rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-3 py-1 text-[10px] font-black tracking-[0.2em] text-[#e4ff00] uppercase">
-                  Nutrix AI
-                </div>
-                <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black tracking-[0.2em] text-[#d7d7d7] uppercase">
-                  Beta
-                </div>
-              </div>
-              <h2 className="font-mono text-2xl font-black tracking-tighter text-[#f5f5f5] uppercase sm:text-4xl">
-                Smart <span className="text-[#e4ff00]">Suggestions</span>
-              </h2>
-              <p className="max-w-2xl text-sm leading-relaxed text-[#777]">
-                Pick the type of food you want first, then tap generate only
-                when you want a fresh smart suggestion set.
-              </p>
-            </div>
+      <div className="mx-auto max-w-5xl space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="mb-2 text-2xl text-[#f5f5f5]">Smart Suggestions</h2>
+            <p className="max-w-2xl text-sm leading-relaxed text-[#777]">
+              Generate meal ideas from your goal, recent logs, and selected
+              style.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setIsPreferencesOpen(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-[#0a0a0a] px-4 py-2 text-sm text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-[#e4ff00]"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Preferences
+            </Button>
+            <Link
+              href="/dashboard/suggestions/saved"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-[#0a0a0a] px-4 py-2 text-sm text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-[#e4ff00]"
+            >
+              <BookmarkCheck className="h-4 w-4" />
+              Saved ideas
+            </Link>
+          </div>
+        </div>
 
+        <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#101010] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-sm text-[#f5f5f5]">
+              {activeStyleMeta.label} / {formatMealPreference(selectedMealType)}
+            </div>
+            <div className="mt-1 text-xs text-[#777]">
+              {usage?.remainingToday ?? 0} left today
+              {payload?.basedOn.goalMode ? ` / ${formatGoalMode(payload.basedOn.goalMode)}` : ''}
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 sm:items-end">
             <Button
               type="button"
               onClick={() => void handleGenerateSuggestions()}
               disabled={generateSuggestionsMutation.isPending || !canGenerate}
-              className="flex items-center justify-center gap-3 self-start rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-bold tracking-widest text-[#d7d7d7] uppercase transition-colors hover:border-[#e4ff00]/30 hover:text-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center justify-center gap-2 rounded-full border border-[#e4ff00]/30 bg-[#e4ff00] px-4 py-2 text-sm font-bold text-[#0a0a0a] transition-colors hover:bg-[#efff4d] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-[#242424] disabled:text-[#777]"
             >
               {generateSuggestionsMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : canGenerate ? (
-                <Bot className="h-4 w-4" />
+                <BrainCircuit className="h-4 w-4" />
               ) : (
                 <Lock className="h-4 w-4" />
               )}
-              {canGenerate ? 'Get Suggestions' : 'Daily Limit Reached'}
+              {canGenerate ? 'Generate Ideas' : 'Daily Limit Reached'}
             </Button>
-          </div>
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <SuggestionTopCard
-              icon={<Target className="h-4 w-4" />}
-              label="Goal mode"
-              value={payload?.basedOn.goalMode ?? 'Custom'}
-              helper="Suggestions are tuned around your active goal"
-            />
-            <SuggestionTopCard
-              icon={<ChefHat className="h-4 w-4" />}
-              label="Meal focus"
-              value={payload?.basedOn.generatedForMealType ?? 'Mixed'}
-              helper="Nutrix uses what you usually log most often"
-            />
-            <SuggestionTopCard
-              icon={<Salad className="h-4 w-4" />}
-              label="Daily usage"
-              value={`${usage?.remainingToday ?? 0} left`}
-              helper={`You can generate up to ${usage?.dailyLimit ?? 3} times before ${usage?.resetAtLabel ?? '12:00 AM'}`}
-            />
+            <div className="text-xs text-[#666]">
+              Used {usage?.usedToday ?? 0} / {usage?.dailyLimit ?? 3}
+            </div>
           </div>
         </div>
 
-        <SectionCard className="space-y-4 border-0 bg-transparent p-0 shadow-none">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
-                Suggestion style
-              </div>
-              <div className="mt-2 text-sm text-[#7a7a7a]">
-                Choose what kind of meals you want Nutrix to generate when you
-                spend one of your daily uses.
-              </div>
-            </div>
-            <div className="hidden rounded-full border border-white/10 bg-[#111] px-3 py-1 text-[10px] font-black tracking-[0.2em] text-[#e4ff00] uppercase sm:inline-flex">
-              {formatStyleLabel(
-                payload?.basedOn.suggestionStyle ?? selectedStyle
-              )}
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {suggestionStyleOptions.map((option) => {
-              const isActive = option.id === selectedStyle
-
-              return (
-                <Button
-                  key={option.id}
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setSelectedStyle(option.id)
-                    setActiveCategory('All')
-                    setSelectedSuggestionId(null)
-                  }}
-                  className={cn(
-                    'h-auto w-full justify-start whitespace-normal rounded-[1.5rem] border p-4 text-left transition-colors hover:bg-transparent',
-                    isActive
-                      ? 'border-[#e4ff00] bg-[#1e2307]'
-                      : 'border-white/10 bg-[#111111] hover:border-white/20'
-                  )}
-                >
-                  <div className="flex w-full flex-col items-start text-left">
-                    <div className="text-sm font-bold tracking-wide text-[#f5f5f5] uppercase">
-                      {option.label}
-                    </div>
-                    <div className="mt-2 text-sm leading-relaxed text-[#777]">
-                      {option.description}
-                    </div>
-                  </div>
-                </Button>
-              )
-            })}
-          </div>
-        </SectionCard>
-
-        <SectionCard className="flex flex-col gap-3 border-0 bg-transparent p-0 shadow-none sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-[10px] font-black tracking-[0.2em] text-[#555] uppercase">
-              Daily limit
-            </div>
-            <div className="mt-1.5 text-xs text-[#777]">
-              {suggestions.length > 0
-                ? `These are your current ${formatStyleLabel(selectedStyle)} suggestions from this session. Generating again will use another one of your daily attempts.`
-                : `You have ${usage?.remainingToday ?? 0} of ${usage?.dailyLimit ?? 3} suggestion attempts left today.`}
-            </div>
-            <div className="mt-1 text-[10px] font-medium text-[#555]">
-              Used today: {usage?.usedToday ?? 0} / {usage?.dailyLimit ?? 3}
-            </div>
-          </div>
-          <Link
-            href="/dashboard/suggestions/saved"
-            className="flex items-center justify-center gap-2 self-start rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2 text-xs font-bold tracking-widest text-[#d7d7d7] uppercase transition-colors hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]"
-          >
-            <BookmarkCheck className="h-3.5 w-3.5" />
-            Saved meals
-          </Link>
-        </SectionCard>
-
         {suggestions.length > 0 ? (
-          <>
-            <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-2">
-              {categories.map((cat) => {
-                const isActive = activeCategory === cat
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setActiveCategory(cat)}
-                    className={cn(
-                      'shrink-0 rounded-xl px-4 py-2 text-xs font-bold tracking-wider whitespace-nowrap uppercase transition-all',
-                      isActive
-                        ? 'border border-[#e4ff00] bg-[#e4ff00] text-black hover:bg-[#efff4d]'
-                        : 'border border-white/5 bg-[#141414] text-[#888] hover:border-white/10 hover:bg-[#1a1a1a] hover:text-white'
-                    )}
-                  >
-                    {cat}
-                  </button>
-                )
-              })}
+          <SectionCard>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-lg text-[#f5f5f5]">Current Ideas</h3>
+                <p className="mt-1 text-sm text-[#777]">
+                  Latest {activeStyleMeta.label.toLowerCase()} suggestions.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((category) => {
+                  const isActive = activeCategory === category
+
+                  return (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setActiveCategory(category)}
+                      className={cn(
+                        'rounded-full px-3 py-1.5 text-xs font-bold transition-colors',
+                        isActive
+                          ? 'bg-[#e4ff00] text-[#0a0a0a]'
+                          : 'border border-white/10 bg-[#0a0a0a] text-[#888] hover:border-[#e4ff00]/40 hover:text-[#e4ff00]'
+                      )}
+                    >
+                      {category}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-              {filteredSuggestions.map((item) => (
-                <Button
-                  key={item.id}
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setSelectedSuggestionId(item.id)}
-                  className="group flex h-full w-full flex-col items-stretch justify-start overflow-hidden whitespace-normal rounded-[1.75rem] border border-white/8 bg-[#111111] px-5 py-5 text-left transition-all hover:border-[#e4ff00]/30 hover:bg-[#121212]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-[10px] font-black tracking-[0.22em] text-[#666] uppercase">
-                        Open recipe
-                      </div>
-                      <h3 className="mt-3 text-2xl leading-tight font-bold text-[#f5f5f5] transition-colors group-hover:text-[#e4ff00]">
-                        {item.name}
-                      </h3>
-                    </div>
-                    <div className="rounded-full border border-white/10 bg-black/35 px-3 py-1 text-[10px] font-bold tracking-[0.18em] text-white uppercase">
-                      {item.prepTime}
-                    </div>
-                  </div>
-
-                  <p className="mt-4 text-sm leading-relaxed text-[#7a7a7a]">
-                    {item.description}
-                  </p>
-
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    <span className="rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-2.5 py-1 text-[9px] font-black tracking-wider text-[#e4ff00] uppercase">
-                      {item.difficulty}
-                    </span>
-                    {item.tags.slice(0, 3).map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[9px] font-black tracking-wider text-[#cfcfcf] uppercase"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                    {item.tags.length > 3 ? (
-                      <span className="rounded-full border border-white/8 bg-white/[0.03] px-2.5 py-1 text-[9px] font-black tracking-wider text-[#8d8d8d] uppercase">
-                        +{item.tags.length - 3}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-5 grid grid-cols-4 gap-2">
-                    <SuggestionMacroStat
-                      label="Cals"
-                      value={`${item.calories}`}
-                    />
-                    <SuggestionMacroStat
-                      label="Prot"
-                      value={`${item.protein}g`}
-                    />
-                    <SuggestionMacroStat
-                      label="Carb"
-                      value={`${item.carbs}g`}
-                    />
-                    <SuggestionMacroStat label="Fat" value={`${item.fat}g`} />
-                  </div>
-
-
-                  <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/6 pt-4 text-xs text-[#727272]">
-                    <span className="truncate">
-                      Recipe from{' '}
-                      <span className="text-[#bcbcbc]">{item.sourceLabel}</span>
-                    </span>
-                    <span className="shrink-0 uppercase tracking-[0.18em] text-[#8a8a8a]">
-                      Real recipe
-                    </span>
-                  </div>
-                </Button>
-              ))}
-            </div>
-
-            {filteredSuggestions.length === 0 ? (
-              <SectionCard className="text-center">
-                <div className="text-sm text-[#777]">
-                  No suggestions match this filter yet. Try switching back to{' '}
-                  <span className="text-[#f5f5f5]">All</span>.
-                </div>
-              </SectionCard>
-            ) : null}
-          </>
+            {filteredSuggestions.length > 0 ? (
+              <div className="grid gap-4 lg:grid-cols-3">
+                {filteredSuggestions.map((suggestion) => (
+                  <SuggestionCardButton
+                    key={suggestion.id}
+                    suggestion={suggestion}
+                    onOpen={() => setSelectedSuggestionId(suggestion.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="No ideas match that tag"
+                description="Switch back to All or generate a new batch."
+              />
+            )}
+          </SectionCard>
         ) : (
           <SectionCard>
             <EmptyState
               title="No suggestions generated yet"
-              description="Opening this page does not spend a daily use anymore. Pick a style, then tap Generate Suggestions when you want a fresh set."
+              description="Pick a style, then generate a batch when you want fresh meal ideas."
             />
           </SectionCard>
         )}
       </div>
 
-      {selectedSuggestion ? (
-        <RecipeSheet
-          suggestion={selectedSuggestion}
-          onClose={() => setSelectedSuggestionId(null)}
+      {isPreferencesOpen ? (
+        <PreferencesModal
+          selectedStyle={selectedStyle}
+          selectedMealType={selectedMealType}
+          onStyleChange={(value) => {
+            setSelectedStyle(value)
+            setActiveCategory('All')
+            setSelectedSuggestionId(null)
+          }}
+          onMealTypeChange={(value) => {
+            setSelectedMealType(value)
+            setActiveCategory('All')
+            setSelectedSuggestionId(null)
+          }}
+          onGenerate={() => {
+            setIsPreferencesOpen(false)
+            void handleGenerateSuggestions()
+          }}
+          canGenerate={canGenerate}
+          isGenerating={generateSuggestionsMutation.isPending}
+          remainingToday={usage?.remainingToday ?? 0}
+          usedToday={usage?.usedToday ?? 0}
+          dailyLimit={usage?.dailyLimit ?? 3}
+          onClose={() => setIsPreferencesOpen(false)}
         />
       ) : null}
     </>
@@ -409,6 +329,7 @@ function GenerateSuggestionsSection() {
 
 function SavedSuggestionsSection() {
   const savedSuggestionsQuery = useSavedMealSuggestionsQuery()
+  const saveSuggestionMutation = useSaveMealSuggestionMutation()
   const [selectedSuggestionId, setSelectedSuggestionId] = useState<
     string | null
   >(null)
@@ -417,9 +338,24 @@ function SavedSuggestionsSection() {
     suggestions.find((suggestion) => suggestion.id === selectedSuggestionId) ??
     null
 
+  async function handleRemoveSavedSuggestion(suggestionId: string) {
+    try {
+      await saveSuggestionMutation.mutateAsync({
+        suggestionId,
+        isSaved: false,
+      })
+      toast.success('Removed from saved ideas')
+      if (selectedSuggestionId === suggestionId) {
+        setSelectedSuggestionId(null)
+      }
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Could not remove suggestion'))
+    }
+  }
+
   if (savedSuggestionsQuery.isLoading) {
     return (
-      <div className="mx-auto max-w-5xl space-y-8 pb-10">
+      <div className="mx-auto max-w-5xl space-y-6">
         <SectionCard className="flex items-center justify-center py-16">
           <Loader2 className="h-5 w-5 animate-spin text-[#e4ff00]" />
         </SectionCard>
@@ -429,127 +365,324 @@ function SavedSuggestionsSection() {
 
   if (savedSuggestionsQuery.isError) {
     return (
-      <div className="mx-auto max-w-5xl space-y-8 pb-10">
+      <div className="mx-auto max-w-5xl space-y-6">
         <SectionCard>
           <EmptyState
-            title="Saved meals could not be loaded"
-            description="Nutrix hit an issue while loading your saved meal suggestions. Try again in a moment."
+            title="Saved ideas could not be loaded"
+            description="Nutrix hit an issue while loading your saved suggestions. Try again in a moment."
           />
         </SectionCard>
       </div>
     )
   }
 
+  if (selectedSuggestion) {
+    return (
+      <RecipeDetailView
+        suggestion={selectedSuggestion}
+        suggestionStyle={null}
+        onBack={() => setSelectedSuggestionId(null)}
+        onRemoved={() => setSelectedSuggestionId(null)}
+      />
+    )
+  }
+
   return (
     <>
-      <div className="mx-auto max-w-5xl space-y-5 pb-10">
-        <div className="rounded-[2rem] border border-white/10 bg-[#141414] p-6 sm:p-8">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-3 py-1 text-[10px] font-black tracking-[0.2em] text-[#e4ff00] uppercase">
-                Saved meals
-              </div>
-              <h2 className="mt-4 font-mono text-2xl font-black tracking-tighter text-[#f5f5f5] uppercase sm:text-4xl">
-                Saved <span className="text-[#e4ff00]">Suggestions</span>
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[#777]">
-                Meals you saved from smart suggestions live here so you can come
-                back to the recipe source later.
-              </p>
-            </div>
-            <Link
-              href="/dashboard/suggestions"
-              className="flex items-center justify-center gap-3 self-start rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-bold tracking-widest text-[#d7d7d7] uppercase transition-colors hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]"
-            >
-              <Bot className="h-4 w-4" />
-              Generate more
-            </Link>
+      <div className="mx-auto max-w-5xl space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="mb-2 text-2xl text-[#f5f5f5]">Saved Suggestions</h2>
+            <p className="max-w-2xl text-sm leading-relaxed text-[#777]">
+              Ideas you saved for later.
+            </p>
           </div>
+          <Link
+            href="/dashboard/suggestions"
+            className="inline-flex items-center justify-center gap-2 self-start rounded-full border border-white/10 bg-[#0a0a0a] px-4 py-2 text-sm text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-[#e4ff00]"
+          >
+            <BrainCircuit className="h-4 w-4" />
+            Generate more
+          </Link>
         </div>
 
         {suggestions.length > 0 ? (
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {suggestions.map((item) => (
-              <Button
-                key={item.id}
-                type="button"
-                variant="ghost"
-                onClick={() => setSelectedSuggestionId(item.id)}
-                className="group flex h-full w-full flex-col items-stretch justify-start overflow-hidden whitespace-normal rounded-[1.75rem] border border-white/8 bg-[#111111] px-5 py-5 text-left transition-all hover:border-[#e4ff00]/30 hover:bg-[#121212]"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 text-[10px] font-black tracking-[0.22em] text-[#e4ff00] uppercase">
-                      <BookmarkCheck className="h-3.5 w-3.5" />
-                      Saved
-                    </div>
-                    <h3 className="mt-3 text-2xl leading-tight font-bold text-[#f5f5f5] transition-colors group-hover:text-[#e4ff00]">
-                      {item.name}
-                    </h3>
-                  </div>
-                  <div className="rounded-full border border-white/10 bg-black/35 px-3 py-1 text-[10px] font-bold tracking-[0.18em] text-white uppercase">
-                    {item.prepTime}
-                  </div>
-                </div>
-
-                <p className="mt-4 text-sm leading-relaxed text-[#7a7a7a]">
-                  {item.description}
-                </p>
-
-                <div className="mt-5 grid grid-cols-4 gap-2">
-                  <SuggestionMacroStat
-                    label="Cals"
-                    value={`${item.calories}`}
-                  />
-                  <SuggestionMacroStat
-                    label="Prot"
-                    value={`${item.protein}g`}
-                  />
-                  <SuggestionMacroStat
-                    label="Carb"
-                    value={`${item.carbs}g`}
-                  />
-                  <SuggestionMacroStat label="Fat" value={`${item.fat}g`} />
-                </div>
-
-                <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/6 pt-4 text-xs text-[#727272]">
-                  <span className="truncate">
-                    Recipe from{' '}
-                    <span className="text-[#bcbcbc]">{item.sourceLabel}</span>
-                  </span>
-                  <span className="shrink-0 uppercase tracking-[0.18em] text-[#8a8a8a]">
-                    Open recipe
-                  </span>
-                </div>
-              </Button>
-            ))}
-          </div>
+          <SectionCard>
+            <div className="grid gap-4 lg:grid-cols-3">
+              {suggestions.map((suggestion) => (
+                <SuggestionCardButton
+                  key={suggestion.id}
+                  suggestion={suggestion}
+                  onOpen={() => setSelectedSuggestionId(suggestion.id)}
+                  onRemove={() => void handleRemoveSavedSuggestion(suggestion.id)}
+                  removePending={saveSuggestionMutation.isPending}
+                  showRemove
+                />
+              ))}
+            </div>
+          </SectionCard>
         ) : (
           <SectionCard>
             <EmptyState
-              title="No saved meals yet"
-              description="Save a suggestion from the recipe sheet and it will show up here."
+              title="No saved ideas yet"
+              description="Save a suggestion and it will appear here."
             />
           </SectionCard>
         )}
       </div>
 
-      {selectedSuggestion ? (
-        <RecipeSheet
-          suggestion={selectedSuggestion}
-          onClose={() => setSelectedSuggestionId(null)}
-        />
-      ) : null}
     </>
   )
 }
 
-function RecipeSheet({
+function SuggestionCardButton({
   suggestion,
-  onClose,
+  onOpen,
+  onRemove,
+  removePending = false,
+  showRemove = false,
 }: {
   suggestion: SuggestionCard
+  onOpen: () => void
+  onRemove?: () => void
+  removePending?: boolean
+  showRemove?: boolean
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      onClick={onOpen}
+      className="group flex h-full min-h-[260px] w-full flex-col items-stretch justify-start whitespace-normal rounded-[1.35rem] border border-white/[0.08] bg-[#101010] p-4 text-left transition-colors hover:border-[#e4ff00]/25 hover:bg-[#131313]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span className="rounded-full border border-white/[0.06] bg-white/[0.03] px-2 py-1 text-[9px] font-black tracking-[0.18em] text-[#888] uppercase">
+          {suggestion.difficulty}
+        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold tracking-wider text-[#555] uppercase">
+            {suggestion.prepTime}
+          </span>
+          {showRemove && onRemove ? (
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label={`Remove ${suggestion.name} from saved suggestions`}
+              onClick={(event) => {
+                event.stopPropagation()
+                onRemove()
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  onRemove()
+                }
+              }}
+              className={cn(
+                'inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/[0.08] bg-black/20 text-[#555] transition-colors hover:border-red-500/30 hover:text-red-400',
+                removePending && 'pointer-events-none opacity-60'
+              )}
+            >
+              {removePending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="h-3.5 w-3.5" />
+              )}
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="mt-3 min-h-[86px]">
+        <h3 className="line-clamp-2 text-base leading-snug font-semibold text-[#f1f1f1]">
+          {suggestion.name}
+        </h3>
+        <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-[#777]">
+          {suggestion.description}
+        </p>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-white/[0.06] bg-black/20 p-3">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <div className="text-[9px] font-black tracking-[0.22em] text-[#555] uppercase">
+              Calories
+            </div>
+            <div className="mt-1 font-mono text-xl font-black text-[#e4ff00]">
+              {suggestion.calories}
+              <span className="ml-1 text-[10px] tracking-wider text-[#6f7c00]">
+                kcal
+              </span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-right">
+            <MacroPill label="P" value={`${Math.round(suggestion.protein)}g`} />
+            <MacroPill label="C" value={`${Math.round(suggestion.carbs)}g`} />
+            <MacroPill label="F" value={`${Math.round(suggestion.fat)}g`} />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {suggestion.tags.slice(0, 3).map((tag) => (
+          <span
+            key={tag}
+            className="rounded-full border border-white/[0.06] bg-white/[0.03] px-2 py-1 text-[9px] font-bold tracking-wide text-[#777] uppercase"
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+    </Button>
+  )
+}
+
+function PreferenceSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  options: ReadonlyArray<{ id: string; label: string }>
+}) {
+  return (
+    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+      <label className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 min-w-40 rounded-full border border-white/10 bg-[#0a0a0a] px-4 text-sm font-semibold text-[#f5f5f5] outline-none transition-colors hover:border-[#e4ff00]/40 focus:border-[#e4ff00]/70"
+      >
+        {options.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+function PreferencesModal({
+  selectedStyle,
+  selectedMealType,
+  onStyleChange,
+  onMealTypeChange,
+  onGenerate,
+  canGenerate,
+  isGenerating,
+  remainingToday,
+  usedToday,
+  dailyLimit,
+  onClose,
+}: {
+  selectedStyle: SuggestionStyle
+  selectedMealType: MealTypePreference
+  onStyleChange: (value: SuggestionStyle) => void
+  onMealTypeChange: (value: MealTypePreference) => void
+  onGenerate: () => void
+  canGenerate: boolean
+  isGenerating: boolean
+  remainingToday: number
+  usedToday: number
+  dailyLimit: number
   onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/65 backdrop-blur-sm sm:items-center">
+      <Button
+        type="button"
+        aria-label="Close preferences"
+        variant="ghost"
+        className="absolute inset-0 cursor-default hover:bg-transparent"
+        onClick={onClose}
+      />
+      <div className="relative z-10 w-full max-w-lg rounded-t-[2rem] border border-white/10 bg-[#111111] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.45)] sm:rounded-[2rem] sm:p-6">
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-xl font-semibold text-[#f5f5f5]">
+              Select preferences
+            </h3>
+            <p className="mt-1 text-sm leading-relaxed text-[#777]">
+              Set the style and meal before generating.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-lg"
+            onClick={onClose}
+            className="shrink-0 rounded-full border border-white/10 bg-[#151515] text-[#999] transition-colors hover:bg-[#151515] hover:text-white"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          <PreferenceSelect
+            label="Style"
+            value={selectedStyle}
+            onChange={(value) => onStyleChange(value as SuggestionStyle)}
+            options={suggestionStyleOptions}
+          />
+          <PreferenceSelect
+            label="Meal"
+            value={selectedMealType}
+            onChange={(value) => onMealTypeChange(value as MealTypePreference)}
+            options={mealTypeOptions}
+          />
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-white/10 bg-[#0d0d0d] px-4 py-3 text-sm text-[#888]">
+          {remainingToday} left today / Used {usedToday} of {dailyLimit}
+        </div>
+
+        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onClose}
+            className="rounded-full border border-white/10 bg-[#0a0a0a] px-4 py-2 text-sm text-[#888] transition-colors hover:text-white"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            onClick={onGenerate}
+            disabled={isGenerating || !canGenerate}
+            className="flex items-center justify-center gap-2 rounded-full border border-[#e4ff00]/30 bg-[#e4ff00] px-4 py-2 text-sm font-bold text-[#0a0a0a] transition-colors hover:bg-[#efff4d] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-[#242424] disabled:text-[#777]"
+          >
+            {isGenerating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : canGenerate ? (
+              <BrainCircuit className="h-4 w-4" />
+            ) : (
+              <Lock className="h-4 w-4" />
+            )}
+            {canGenerate ? 'Generate Ideas' : 'Daily Limit Reached'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function RecipeDetailView({
+  suggestion,
+  suggestionStyle,
+  onRemoved,
+  onBack,
+}: {
+  suggestion: SuggestionCard
+  suggestionStyle: SuggestionStyle | null
+  onRemoved?: () => void
+  onBack: () => void
 }) {
   const saveSuggestionMutation = useSaveMealSuggestionMutation()
 
@@ -560,66 +693,56 @@ function RecipeSheet({
         isSaved: !suggestion.isSaved,
       })
       toast.success(
-        suggestion.isSaved
-          ? 'Suggestion removed from saved'
-          : 'Suggestion saved'
+        suggestion.isSaved ? 'Removed from saved ideas' : 'Suggestion saved'
       )
+      if (suggestion.isSaved) {
+        onRemoved?.()
+      }
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Could not save suggestion'))
     }
   }
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/65 backdrop-blur-sm">
-      <Button
-        type="button"
-        aria-label="Close recipe"
-        variant="ghost"
-        className="absolute inset-0 cursor-default hover:bg-transparent"
-        onClick={onClose}
-      />
-      <div className="relative z-10 flex h-[88vh] min-h-0 w-full max-w-3xl flex-col overflow-hidden rounded-t-[2rem] border border-white/10 bg-[#111111] lg:mb-8 lg:h-auto lg:max-h-[86vh] lg:rounded-[2rem]">
-        <div className="flex justify-center pt-3 lg:hidden">
-          <div className="h-1.5 w-14 rounded-full bg-white/10" />
-        </div>
-
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 px-5 pt-4 pb-4 sm:px-6">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-2.5 py-1 text-[10px] font-black tracking-[0.2em] text-[#e4ff00] uppercase">
-                Recipe
-              </span>
-              <span className="rounded-full border border-white/10 bg-[#161616] px-2.5 py-1 text-[10px] font-black tracking-[0.2em] text-[#cfcfcf] uppercase">
-                {suggestion.difficulty}
-              </span>
-            </div>
-            <h3 className="mt-3 text-2xl font-bold text-[#f5f5f5]">
-              {suggestion.name}
-            </h3>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#7a7a7a]">
-              {suggestion.description}
-            </p>
-          </div>
-
+    <div className="mx-auto max-w-5xl space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
           <Button
             type="button"
-            onClick={onClose}
             variant="ghost"
-            size="icon-lg"
-            className="shrink-0 rounded-full border border-white/10 bg-[#151515] text-[#999] transition-colors hover:bg-[#151515] hover:text-white"
+            onClick={onBack}
+            className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-[#0a0a0a] px-4 py-2 text-sm text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-[#e4ff00]"
           >
-            <X className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
+            Back
           </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-white/10 bg-[#141414] px-2.5 py-1 text-[10px] font-black tracking-[0.2em] text-[#888] uppercase">
+              {suggestion.difficulty}
+            </span>
+            <span className="rounded-full border border-white/10 bg-[#141414] px-2.5 py-1 text-[10px] font-black tracking-[0.2em] text-[#888] uppercase">
+              {suggestion.prepTime}
+            </span>
+            {suggestionStyle ? (
+              <span className="rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-2.5 py-1 text-[10px] font-black tracking-[0.2em] text-[#e4ff00] uppercase">
+                {formatStyleLabel(suggestionStyle)}
+              </span>
+            ) : null}
+          </div>
+          <h2 className="mt-4 text-3xl font-bold leading-tight text-[#f5f5f5]">
+            {suggestion.name}
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-[#888]">
+            {suggestion.description}
+          </p>
         </div>
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-5 pb-6 sm:px-6">
+        <div className="sm:pt-12">
           <Button
             type="button"
             onClick={() => void handleSaveSuggestion()}
             disabled={saveSuggestionMutation.isPending}
-            size="lg"
             className={cn(
-              'mb-5 flex w-full items-center justify-center gap-3 rounded-2xl border px-5 text-sm font-bold tracking-widest uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-60',
+              'flex items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60',
               suggestion.isSaved
                 ? 'border-[#e4ff00]/30 bg-[#e4ff00] text-black'
                 : 'border-white/10 bg-white/[0.03] text-[#d7d7d7] hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]'
@@ -632,160 +755,114 @@ function RecipeSheet({
             ) : (
               <Bookmark className="h-4 w-4" />
             )}
-            {suggestion.isSaved ? 'Saved Suggestion' : 'Save Suggestion'}
+            {suggestion.isSaved ? 'Remove Saved Suggestion' : 'Save Suggestion'}
           </Button>
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <RecipeMetaCard
-              icon={<Clock className="h-4 w-4" />}
-              label="Prep"
-              value={suggestion.prepTime}
-            />
-            <RecipeMetaCard
-              icon={<Target className="h-4 w-4" />}
-              label="Calories"
-              value={`${suggestion.calories}`}
-            />
-            <RecipeMetaCard
-              icon={<Salad className="h-4 w-4" />}
-              label="Protein"
-              value={`${suggestion.protein}g`}
-            />
-            <RecipeMetaCard
-              icon={<ChefHat className="h-4 w-4" />}
-              label="Carbs"
-              value={`${suggestion.carbs}g`}
-            />
-            <RecipeMetaCard
-              icon={<Salad className="h-4 w-4" />}
-              label="Fat"
-              value={`${suggestion.fat}g`}
-            />
-          </div>
-
-          <div className="mt-6 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-            <SectionCard className="space-y-4 bg-[#131313]">
-              <div>
-                <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
-                  Recipe source
-                </div>
-                <div className="mt-2 text-sm text-[#777]">
-                  Nutrix selected this from a real recipe source so you can
-                  follow the actual cooking guide.
-                </div>
-              </div>
-              <a
-                href={suggestion.sourceUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-between gap-3 rounded-2xl border border-[#e4ff00]/20 bg-[#171a0a] px-4 py-4 text-sm text-[#f5f5f5] transition-colors hover:border-[#e4ff00]/40 hover:text-[#e4ff00]"
-              >
-                <div>
-                  <div className="font-semibold">{suggestion.sourceLabel}</div>
-                  <div className="mt-1 text-xs text-[#7d7d7d]">
-                    Open the full recipe and cooking steps
-                  </div>
-                </div>
-                <ExternalLink className="h-4 w-4 shrink-0" />
-              </a>
-              <div className="rounded-2xl border border-white/8 bg-[#0f0f0f] px-4 py-4 text-sm leading-relaxed text-[#cfcfcf]">
-                {suggestion.description}
-              </div>
-            </SectionCard>
-
-            <SectionCard className="space-y-4 bg-[#131313]">
-              <div>
-                <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
-                  Why this might work for you
-                </div>
-                <div className="mt-2 text-sm text-[#777]">
-                  This is the personalization layer. The cooking itself comes
-                  from the linked recipe source.
-                </div>
-              </div>
-              <div className="rounded-2xl border border-white/8 bg-[#0f0f0f] px-4 py-4 text-sm leading-relaxed text-[#e7e7e7]">
-                {suggestion.reasoning}
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-white/8 bg-[#0f0f0f] px-4 py-4">
-                  <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
-                    Difficulty
-                  </div>
-                  <div className="mt-2 text-sm font-semibold text-[#f5f5f5] capitalize">
-                    {suggestion.difficulty}
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-white/8 bg-[#0f0f0f] px-4 py-4">
-                  <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
-                    Source
-                  </div>
-                  <div className="mt-2 text-sm font-semibold text-[#f5f5f5]">
-                    {suggestion.sourceLabel}
-                  </div>
-                </div>
-              </div>
-            </SectionCard>
-          </div>
         </div>
       </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <MetaCard
+          icon={<Clock className="h-4 w-4" />}
+          label="Prep"
+          value={suggestion.prepTime}
+        />
+        <MetaCard
+          icon={<Target className="h-4 w-4" />}
+          label="Calories"
+          value={`${suggestion.calories}`}
+        />
+        <MetaCard
+          icon={<ChefHat className="h-4 w-4" />}
+          label="Protein"
+          value={`${suggestion.protein}g`}
+        />
+        <MetaCard label="Carbs" value={`${suggestion.carbs}g`} />
+        <MetaCard label="Fat" value={`${suggestion.fat}g`} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+        <SectionCard>
+          <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
+            Ingredients
+          </div>
+          {suggestion.ingredients.length > 0 ? (
+            <ul className="mt-4 space-y-3">
+              {suggestion.ingredients.map((ingredient, index) => (
+                <li
+                  key={`${ingredient}-${index}`}
+                  className="flex gap-3 rounded-2xl border border-white/10 bg-[#0d0d0d] px-4 py-3 text-sm leading-relaxed text-[#d7d7d7]"
+                >
+                  <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#e4ff00]" />
+                  <span>{ingredient}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-sm text-[#777]">
+              This saved suggestion was created before recipe details were added.
+              Generate a fresh batch to get ingredients.
+            </p>
+          )}
+        </SectionCard>
+
+        <SectionCard>
+          <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
+            Cooking Steps
+          </div>
+          {suggestion.instructions.length > 0 ? (
+            <ol className="mt-4 space-y-3">
+              {suggestion.instructions.map((step, index) => (
+                <li
+                  key={`${step}-${index}`}
+                  className="grid grid-cols-[2rem_1fr] gap-3 rounded-2xl border border-white/10 bg-[#0d0d0d] px-4 py-3 text-sm leading-relaxed text-[#d7d7d7]"
+                >
+                  <span className="font-mono text-sm font-black text-[#e4ff00]">
+                    {index + 1}
+                  </span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <p className="mt-3 text-sm text-[#777]">
+              This saved suggestion was created before recipe details were added.
+              Generate a fresh batch to get cooking steps.
+            </p>
+          )}
+        </SectionCard>
+      </div>
+
+      <SectionCard>
+        <div className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
+          Notes
+        </div>
+        <p className="mt-3 text-sm leading-relaxed text-[#d0d0d0]">
+          {suggestion.cookingNotes || suggestion.reasoning}
+        </p>
+      </SectionCard>
     </div>
   )
 }
 
-function SuggestionTopCard({
-  icon,
-  label,
-  value,
-  helper,
-}: {
-  icon: ReactNode
-  label: string
-  value: string
-  helper: string
-}) {
+function MacroPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="px-1 py-3">
-      <div className="flex items-center gap-2 text-[#e4ff00]">
-        {icon}
-        <div className="text-[10px] font-black tracking-[0.2em] text-[#777] uppercase">
-          {label}
-        </div>
-      </div>
-      <div className="mt-3 text-lg font-semibold text-[#f5f5f5] capitalize">
-        {value}
-      </div>
-      <div className="mt-1 text-xs leading-relaxed text-[#6f6f6f]">
-        {helper}
-      </div>
-    </div>
-  )
-}
-
-function SuggestionMacroStat({
-  label,
-  value,
-}: {
-  label: string
-  value: string
-}) {
-  return (
-    <div className="rounded-2xl border border-white/6 bg-white/[0.025] px-3 py-3 text-center">
-      <div className="text-[10px] font-bold tracking-[0.16em] text-[#5b5b5b] uppercase">
+    <div>
+      <div className="text-[8px] font-black tracking-widest text-[#555] uppercase">
         {label}
       </div>
-      <div className="mt-2 font-mono text-base font-bold text-[#d2d2d2]">
+      <div className="mt-1 font-mono text-xs font-bold text-[#d7d7d7]">
         {value}
       </div>
     </div>
   )
 }
 
-function RecipeMetaCard({
+function MetaCard({
   icon,
   label,
   value,
 }: {
-  icon: ReactNode
+  icon?: ReactNode
   label: string
   value: string
 }) {
@@ -810,5 +887,24 @@ function formatStyleLabel(style: SuggestionStyle) {
       return 'High Protein'
     default:
       return style.charAt(0).toUpperCase() + style.slice(1)
+  }
+}
+
+function formatMealPreference(mealType: MealTypePreference) {
+  return mealTypeOptions.find((option) => option.id === mealType)?.label ?? 'Any meal'
+}
+
+function formatGoalMode(goalMode: GoalMode | undefined) {
+  switch (goalMode) {
+    case 'cutting':
+      return 'Cutting'
+    case 'maintenance':
+      return 'Maintenance'
+    case 'bulking':
+      return 'Bulking'
+    case 'custom':
+      return 'Custom'
+    default:
+      return 'Not set'
   }
 }

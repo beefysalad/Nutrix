@@ -225,6 +225,9 @@ model FoodSuggestion {
   fat                  Decimal  @db.Decimal(6, 2)
   tags                 Json
   reasoning            String
+  ingredients          Json     @default("[]")
+  instructions         Json     @default("[]")
+  cookingNotes         String   @default("")
   prepTime             String
   difficulty           String
   sourceLabel          String

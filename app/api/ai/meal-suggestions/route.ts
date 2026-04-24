@@ -5,6 +5,7 @@ import { requireAppUser } from '@/lib/api/current-app-user'
 import { mealAiService } from '@/lib/services/meal-ai-service'
 
 const suggestionStyleSchema = z.enum(['quick', 'lutong-bahay', 'budget', 'high-protein']).optional()
+const suggestionMealTypeSchema = z.enum(['breakfast', 'lunch', 'dinner', 'snack', 'other']).optional()
 
 export async function GET(request: Request) {
   const result = await requireAppUser()
@@ -18,10 +19,14 @@ export async function GET(request: Request) {
     const suggestionStyle = suggestionStyleSchema.parse(
       url.searchParams.get('style') ?? undefined,
     )
+    const mealType = suggestionMealTypeSchema.parse(
+      url.searchParams.get('mealType') ?? undefined,
+    )
 
     const response = await mealAiService.getMealSuggestionsForUser({
       userId: result.user.id,
       suggestionStyle,
+      mealType,
     })
 
     return NextResponse.json(response)
@@ -44,12 +49,17 @@ export async function POST(request: Request) {
   }
 
   try {
-    const json = (await request.json().catch(() => ({}))) as { style?: string }
+    const json = (await request.json().catch(() => ({}))) as {
+      style?: string
+      mealType?: string
+    }
     const suggestionStyle = suggestionStyleSchema.parse(json.style)
+    const mealType = suggestionMealTypeSchema.parse(json.mealType)
 
     const response = await mealAiService.generateMealSuggestionsForUser({
       userId: result.user.id,
       suggestionStyle,
+      mealType,
     })
 
     return NextResponse.json(response)
