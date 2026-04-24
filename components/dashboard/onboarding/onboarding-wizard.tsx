@@ -1,9 +1,9 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { useState } from 'react'
-import { type UseFormRegisterReturn, useForm, useWatch } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import { useOnboardingMutation } from '@/lib/hooks/use-dashboard-api'
@@ -15,129 +15,9 @@ import {
   type OnboardingFormValues,
 } from '@/lib/validations/dashboard-forms'
 
-type Step = 0 | 1 | 2 | 3 | 4 | 5
-
-const genderOptions = ['male', 'female'] as const
-const activityOptions = [
-  {
-    id: 'sedentary',
-    label: 'Sedentary',
-    desc: 'Minimal movement, office life',
-  },
-  {
-    id: 'lightly-active',
-    label: 'Lightly Active',
-    desc: '1-3 days of exercise',
-  },
-  {
-    id: 'moderately-active',
-    label: 'Moderately Active',
-    desc: '3-5 days of hard work',
-  },
-  {
-    id: 'very-active',
-    label: 'Very Active',
-    desc: '6-7 days of intense training',
-  },
-  {
-    id: 'extra-active',
-    label: 'Extra Active',
-    desc: 'Physical job & pro athlete',
-  },
-] as const
-const goalOptions = [
-  {
-    id: 'lose-weight',
-    label: 'Lose Weight',
-    desc: 'Aggressive calorie deficit for fat loss',
-  },
-  {
-    id: 'maintain-weight',
-    label: 'Maintenance',
-    desc: 'Optimize performance and vitality',
-  },
-  {
-    id: 'gain-weight',
-    label: 'Gain Muscle',
-    desc: 'Calorie surplus geared for hypertrophy',
-  },
-] as const
-const featureOptions = [
-  {
-    label: 'Search',
-    desc: 'Look up foods quickly and add them with portions.',
-  },
-  {
-    label: 'AI parsing',
-    desc: 'Type meals like "4 siomai and rice" and Nutrix estimates the entry.',
-  },
-  {
-    label: 'Custom',
-    desc: 'Manually add exact calories and macros when you already know them.',
-  },
-  {
-    label: 'Telegram',
-    desc: 'Send meals to @NutrrixBot when you want to log from chat.',
-  },
-] as const
-
-function OnboardingStepHeader({
-  title,
-  description,
-}: {
-  title: string
-  description: string
-}) {
-  return (
-    <div>
-      <h2 className="text-2xl font-bold tracking-tight text-white uppercase">
-        {title}
-      </h2>
-      <p className="mt-1 text-[#666]">{description}</p>
-    </div>
-  )
-}
-
-function OnboardingNav({
-  back,
-  next,
-  nextLabel = 'Next',
-  disabled,
-  loading,
-}: {
-  back: () => void
-  next: () => void
-  nextLabel?: string
-  disabled?: boolean
-  loading?: boolean
-}) {
-  return (
-    <div className="flex justify-end gap-2 pt-2">
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon"
-        onClick={back}
-        className="rounded-xl border border-white/10 bg-transparent text-[#777] transition-all hover:bg-transparent hover:text-white"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        onClick={next}
-        disabled={disabled || loading}
-        size="lg"
-        className="flex items-center justify-center gap-2 rounded-xl bg-[#e4ff00] px-5 text-xs font-bold tracking-widest text-black uppercase transition-all hover:bg-[#f0ff4d] disabled:opacity-30"
-      >
-        {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <>{nextLabel}</>
-        )}
-      </Button>
-    </div>
-  )
-}
+import { OnboardingInput } from './components/onboarding-input'
+import { OnboardingNav, OnboardingStepHeader } from './components/shared-ui'
+import { activityOptions, featureOptions, genderOptions, goalOptions, type Step } from './components/types'
 
 export function OnboardingWizard() {
   const [step, setStep] = useState<Step>(0)
@@ -463,41 +343,6 @@ export function OnboardingWizard() {
           )}
         </div>
       </div>
-    </div>
-  )
-}
-
-function OnboardingInput({
-  label,
-  register,
-  error,
-}: {
-  label: string
-  register: UseFormRegisterReturn
-  error?: string
-}) {
-  const isWeightField = label.toLowerCase().includes('weight')
-
-  return (
-    <div className="space-y-2">
-      <label className="text-xs font-bold tracking-widest text-[#555] uppercase">
-        {label}
-      </label>
-      <input
-        {...register}
-        type="number"
-        step={isWeightField ? '0.1' : '1'}
-        min="0"
-        className={cn(
-          'w-full rounded-xl border border-white/10 bg-transparent px-4 py-3 font-mono text-white transition-all outline-none focus:border-[#e4ff00]',
-          error && 'border-red-500/50 text-red-100'
-        )}
-      />
-      {error && (
-        <div className="text-[10px] tracking-tighter text-red-400 uppercase">
-          {error}
-        </div>
-      )}
     </div>
   )
 }

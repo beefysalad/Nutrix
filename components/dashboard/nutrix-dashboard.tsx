@@ -7,8 +7,8 @@ import {
   History,
   Home,
   Bot,
-  PanelLeftClose,
-  PanelLeftOpen,
+  ChevronLeft,
+  ChevronRight,
   Plus,
   PlusCircle,
   Settings as SettingsIcon,
@@ -227,9 +227,9 @@ export function NutrixDashboard({
                     className="hidden h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[#111111] text-[#888] transition-colors hover:border-[#e4ff00]/40 hover:text-[#e4ff00] lg:flex"
                   >
                     {isSidebarCollapsed ? (
-                      <PanelLeftOpen className="h-4 w-4" />
+                      <ChevronRight className="h-4 w-4" />
                     ) : (
-                      <PanelLeftClose className="h-4 w-4" />
+                      <ChevronLeft className="h-4 w-4" />
                     )}
                   </Button>
                   <Button
