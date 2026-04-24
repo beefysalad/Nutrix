@@ -1,13 +1,20 @@
 'use client'
 
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Bot, ChevronLeft, Loader2, PlusCircle, Search, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Bot, ChevronLeft, Loader2, PencilLine, PlusCircle, X } from 'lucide-react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 
 import { EmptyState, SectionCard, cn } from '@/components/dashboard/ui'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   getApiErrorMessage,
   useCreateMealMutation,
@@ -26,11 +33,9 @@ import {
 type MealType = 'breakfast' | 'lunch' | 'snack' | 'dinner' | 'other'
 type AiModel = 'gemini-2.5-flash-lite' | 'gemini-2.5-flash'
 type AiFeedback = 'accurate' | 'inaccurate' | null
-type MobileStep = 'mode' | 'meal' | 'form'
-type MealInputMode = 'search' | 'custom' | 'ai'
+type SheetLogMode = 'ai' | 'manual' | null
 
-const mealTags: MealType[] = ['breakfast', 'lunch', 'snack', 'dinner']
-const LAST_USED_MODE_STORAGE_KEY = 'nutrix-last-meal-input-mode'
+const mealTags: MealType[] = ['breakfast', 'lunch', 'dinner', 'snack', 'other']
 
 function getDefaultMealTypeForCurrentTime(): MealType {
   const hour = new Date().getHours()
@@ -41,6 +46,10 @@ function getDefaultMealTypeForCurrentTime(): MealType {
   return 'dinner'
 }
 
+function formatMealType(mealType: MealType | string) {
+  return mealType.charAt(0).toUpperCase() + mealType.slice(1)
+}
+
 export function LogMealSection({
   presentation = 'page',
   onClose,
@@ -48,15 +57,9 @@ export function LogMealSection({
   presentation?: 'page' | 'sheet'
   onClose?: () => void
 }) {
-  const [activeTab, setActiveTab] = useState<MealInputMode>(() => {
-    if (typeof window === 'undefined') return 'search'
-    const stored = window.localStorage.getItem(LAST_USED_MODE_STORAGE_KEY)
-    if (stored === 'search' || stored === 'custom' || stored === 'ai') return stored
-    return 'search'
-  })
   const [selectedMealTag, setSelectedMealTag] = useState<MealType>(getDefaultMealTypeForCurrentTime)
-  const [isActionSheetOpen, setIsActionSheetOpen] = useState(false)
-  const [mobileStep, setMobileStep] = useState<MobileStep>('mode')
+  const [showManualEntry, setShowManualEntry] = useState(false)
+  const [sheetLogMode, setSheetLogMode] = useState<SheetLogMode>(null)
   const [aiResult, setAiResult] = useState<ParsedMeal | null>(null)
   const [usedModel, setUsedModel] = useState<string | null>(null)
   const [fallbackFrom, setFallbackFrom] = useState<string | null>(null)
@@ -88,49 +91,10 @@ export function LogMealSection({
 
   const resolvedPreferredModel: AiModel =
     preferencesQuery.data?.preferences.aiModel ?? 'gemini-2.5-flash-lite'
-
-  const tabs = [
-    { id: 'search', label: 'Search', description: 'Look up foods', icon: Search },
-    { id: 'custom', label: 'Custom', description: 'Add manually', icon: PlusCircle },
-    { id: 'ai', label: 'AI Parsing', description: 'Paste meal text', icon: Bot },
-  ] as const
   const isSheetPresentation = presentation === 'sheet'
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    window.localStorage.setItem(LAST_USED_MODE_STORAGE_KEY, activeTab)
-  }, [activeTab])
-
-  useEffect(() => {
-    if (!isActionSheetOpen || isSheetPresentation) {
-      return
-    }
-
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-
-    return () => {
-      document.body.style.overflow = previousOverflow
-    }
-  }, [isActionSheetOpen, isSheetPresentation])
-
-  function openActionSheet() {
-    setSelectedMealTag(getDefaultMealTypeForCurrentTime())
-    setMobileStep('form')
-    setIsActionSheetOpen(true)
-  }
-
-  function closeActionSheet() {
-    setMobileStep('mode')
-    if (isSheetPresentation) {
-      onClose?.()
-      return
-    }
-
-    setIsActionSheetOpen(false)
+  function closeLoggingSurface() {
+    onClose?.()
   }
 
   async function handleAiParse(values: AiMealParseFormValues) {
@@ -148,7 +112,7 @@ export function LogMealSection({
       setAiResult(data.parsed)
       setUsedModel(data.model ?? null)
       setFallbackFrom(data.fallbackFrom ?? null)
-      toast.success('Meal parsed with Gemini')
+      toast.success('Meal parsed')
     } catch (error) {
       const message = getApiErrorMessage(error, 'Unable to parse meal')
       setAiError(message)
@@ -185,7 +149,7 @@ export function LogMealSection({
       setFallbackFrom(null)
       setUsedModel(null)
       setAiFeedback(null)
-      closeActionSheet()
+      closeLoggingSurface()
     } catch (error) {
       toast.error(getApiErrorMessage(error, 'Unable to save parsed meal'))
     }
@@ -210,14 +174,12 @@ export function LogMealSection({
                 ? values.carbsGrams
                 : undefined,
             fatGrams:
-              values.fatGrams && !Number.isNaN(values.fatGrams)
-                ? values.fatGrams
-                : undefined,
+              values.fatGrams && !Number.isNaN(values.fatGrams) ? values.fatGrams : undefined,
           },
         ],
       })
 
-      toast.success('Custom meal saved')
+      toast.success('Meal saved')
       manualForm.reset({
         foodName: '',
         calories: undefined,
@@ -226,689 +188,333 @@ export function LogMealSection({
         fatGrams: undefined,
         servingSize: '',
       })
-      closeActionSheet()
+      closeLoggingSurface()
     } catch (error) {
-      toast.error(getApiErrorMessage(error, 'Unable to save custom meal'))
+      toast.error(getApiErrorMessage(error, 'Unable to save meal'))
     }
   }
 
-  const currentMode = tabs.find((tab) => tab.id === activeTab)
-
   if (isSheetPresentation) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 items-start gap-3">
-            {mobileStep !== 'mode' ? (
+            {sheetLogMode ? (
               <Button
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                onClick={() => setMobileStep(mobileStep === 'form' ? 'meal' : 'mode')}
-                className="mt-0.5 rounded-full border border-white/10 bg-[#161616] text-[#888] hover:bg-[#161616] hover:text-[#f5f5f5]"
+                onClick={() => setSheetLogMode(null)}
+                className="mt-0.5 rounded-full border border-white/10 bg-[#141414] text-[#888]"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
             ) : null}
+
             <div>
               <div className="text-xs font-black uppercase tracking-[0.2em] text-[#666]">
-                Meal Actions
+                Meal log
               </div>
-              <div className="mt-2 text-xl font-semibold text-[#f5f5f5]">
-                {mobileStep === 'mode'
-                  ? 'Choose input mode'
-                  : mobileStep === 'meal'
-                    ? 'Choose meal type'
-                    : 'Log your meal'}
-              </div>
-              <div className="mt-1 text-sm text-[#777]">
-                {mobileStep === 'mode'
-                  ? 'Start with how you want to add this meal.'
-                  : mobileStep === 'meal'
-                    ? 'Now choose where this meal belongs in your day.'
-                    : 'Start logging right away and change the mode or meal type only if needed.'}
-                  </div>
-                </div>
-              </div>
-          {onClose ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={closeActionSheet}
-              className="rounded-full border border-white/10 bg-[#161616] text-[#888] hover:bg-[#161616] hover:text-[#f5f5f5]"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          ) : null}
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          {(['mode', 'meal', 'form'] as MobileStep[]).map((step, index) => {
-            const currentIndex = ['mode', 'meal', 'form'].indexOf(mobileStep)
-
-            return (
-              <div
-                key={step}
-                className={cn(
-                  'rounded-full px-3 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em]',
-                  mobileStep === step
-                    ? 'bg-[#e4ff00] text-[#0a0a0a]'
-                    : index < currentIndex
-                      ? 'bg-[#e4ff00]/12 text-[#e4ff00]'
-                      : 'bg-[#161616] text-[#666]',
-                )}
-              >
-                {step}
-              </div>
-            )
-          })}
-        </div>
-
-        {mobileStep === 'mode' ? (
-          <div className="grid gap-2">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              const selected = activeTab === tab.id
-
-              return (
-                <Button
-                  key={tab.id}
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setActiveTab(tab.id)
-                    setMobileStep('meal')
-                  }}
-                  className={cn(
-                    'h-auto w-full justify-start whitespace-normal rounded-2xl border px-4 py-4 text-left transition-colors hover:bg-transparent',
-                    selected
-                      ? 'border-[#e4ff00] bg-[#e4ff00]/8 text-[#f5f5f5]'
-                      : 'border-white/10 bg-[#0f0f0f] text-[#888] hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]',
-                  )}
-                >
-                  <div
-                    className={cn(
-                      'mt-0.5 rounded-xl border p-2',
-                      selected
-                        ? 'border-[#e4ff00]/30 bg-[#e4ff00] text-[#0a0a0a]'
-                        : 'border-white/10 bg-[#141414] text-[#888]',
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className={cn('text-sm font-medium', selected ? 'text-white' : 'text-[#d0d0d0]')}>
-                      {tab.label}
-                    </div>
-                    <div className="mt-1 text-xs text-[#777]">{tab.description}</div>
-                  </div>
-                </Button>
-              )
-            })}
-          </div>
-        ) : null}
-
-        {mobileStep === 'meal' ? (
-          <div className="grid grid-cols-2 gap-2">
-            {mealTags.map((tag) => (
-              <Button
-                key={tag}
-                type="button"
-                variant="ghost"
-                onClick={() => {
-                  setSelectedMealTag(tag)
-                  setMobileStep('form')
-                }}
-                className={cn(
-                  'h-auto w-full whitespace-normal rounded-2xl border px-4 py-4 text-sm font-medium capitalize transition-colors hover:bg-transparent',
-                  selectedMealTag === tag
-                    ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
-                    : 'border-white/10 bg-[#141414] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]',
-                )}
-              >
-                {tag}
-              </Button>
-            ))}
-          </div>
-        ) : null}
-
-        {mobileStep === 'form' ? (
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-white/10 bg-[#0d0d0d] p-4">
-              <div className="text-xs font-black uppercase tracking-[0.18em] text-[#666]">
-                Quick setup
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setMobileStep('mode')}
-                  className="rounded-full border border-white/10 bg-[#141414] px-3 text-sm text-[#f5f5f5] hover:bg-[#141414]"
-                >
-                  {currentMode?.label}
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setMobileStep('meal')}
-                  className="rounded-full border border-white/10 bg-[#141414] px-3 text-sm capitalize text-[#f5f5f5] hover:bg-[#141414]"
-                >
-                  {selectedMealTag}
-                </Button>
-              </div>
+              <h2 className="mt-2 text-2xl font-semibold text-[#f5f5f5]">
+                {sheetLogMode === 'ai'
+                  ? 'Log with AI'
+                  : sheetLogMode === 'manual'
+                    ? 'Log manually'
+                    : 'How do you want to log?'}
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-[#888]">
+                {sheetLogMode === 'ai'
+                  ? 'Type what you ate and review the estimate before saving.'
+                  : sheetLogMode === 'manual'
+                    ? 'Enter the meal details directly when you already know the numbers.'
+                    : 'Start with AI for plain-language logging, or use manual when you have exact macros.'}
+              </p>
             </div>
-            <MealActionContent
-              activeTab={activeTab}
-              selectedMealTag={selectedMealTag}
-              resolvedPreferredModel={resolvedPreferredModel}
-              aiForm={aiForm}
-              manualForm={manualForm}
-              createMealMutation={createMealMutation}
-              parseMealMutation={parseMealMutation}
-              aiError={aiError}
-              aiResult={aiResult}
-              usedModel={usedModel}
-              fallbackFrom={fallbackFrom}
-              aiFeedback={aiFeedback}
-              setAiFeedback={setAiFeedback}
-              handleAiParse={handleAiParse}
-              handleManualSubmit={handleManualSubmit}
-              saveParsedMeal={saveParsedMeal}
-              mobile
-            />
           </div>
-        ) : null}
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={onClose}
+            className="rounded-full border border-white/10 bg-[#141414] text-[#888]"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {sheetLogMode ? (
+          <SectionCard className="space-y-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-lg font-semibold text-[#f5f5f5]">
+                  {sheetLogMode === 'ai' ? (
+                    <Bot className="h-5 w-5 text-[#e4ff00]" />
+                  ) : (
+                    <PencilLine className="h-5 w-5 text-[#888]" />
+                  )}
+                  {sheetLogMode === 'ai' ? 'AI log' : 'Manual entry'}
+                </div>
+                <p className="mt-1 max-w-xl text-sm leading-6 text-[#888]">
+                  {sheetLogMode === 'ai'
+                    ? 'Example: “2 eggs, rice, chicken adobo, coke zero”.'
+                    : 'Use this for custom foods, packaged meals, or known macro totals.'}
+                </p>
+              </div>
+
+              <MealTypeSelect value={selectedMealTag} onChange={setSelectedMealTag} />
+            </div>
+
+            {sheetLogMode === 'ai' ? (
+              <QuickAiLog
+                aiForm={aiForm}
+                aiError={aiError}
+                aiResult={aiResult}
+                usedModel={usedModel}
+                fallbackFrom={fallbackFrom}
+                aiFeedback={aiFeedback}
+                setAiFeedback={setAiFeedback}
+                selectedMealTag={selectedMealTag}
+                resolvedPreferredModel={resolvedPreferredModel}
+                parseMealMutation={parseMealMutation}
+                createMealMutation={createMealMutation}
+                handleAiParse={handleAiParse}
+                saveParsedMeal={saveParsedMeal}
+              />
+            ) : (
+              <ManualMealForm
+                manualForm={manualForm}
+                createMealMutation={createMealMutation}
+                handleManualSubmit={handleManualSubmit}
+              />
+            )}
+          </SectionCard>
+        ) : (
+          <LogModeChoice onSelect={setSheetLogMode} />
+        )}
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <div className="space-y-3">
+    <div
+      className={cn(
+        'space-y-5',
+        'mx-auto max-w-4xl px-0 md:px-2',
+      )}
+    >
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-semibold text-[#f5f5f5]">Log Meal</h2>
-          <p className="mt-1 text-sm text-[#777]">
-            Pick a meal, choose an input mode, and keep the flow quick on mobile.
+          <div className="text-xs font-black uppercase tracking-[0.2em] text-[#666]">
+            Meal log
+          </div>
+          <h2 className="mt-2 text-2xl font-semibold text-[#f5f5f5] md:text-3xl">
+            What did you eat?
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#888]">
+            Type it naturally, check the estimate, save it. Manual entry is still here when
+            you already know the numbers.
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-          {mealTags.map((tag) => (
-            <Button
-              key={tag}
-              type="button"
-              variant="ghost"
-              onClick={() => setSelectedMealTag(tag)}
-              className={cn(
-                'h-auto w-full whitespace-normal rounded-2xl border px-4 py-3 text-sm font-medium capitalize transition-colors hover:bg-transparent sm:w-auto sm:rounded-full sm:px-4 sm:py-2',
-                selectedMealTag === tag
-                  ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
-                  : 'border-white/10 bg-[#141414] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]',
-              )}
-            >
-              {tag}
-            </Button>
-          ))}
-        </div>
       </div>
 
-      <div className="md:hidden">
-        <SectionCard className="space-y-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="text-xs font-black uppercase tracking-[0.2em] text-[#666]">
-                Quick Actions
-              </div>
-              <div className="mt-2 text-lg font-semibold text-[#f5f5f5]">
-                {selectedMealTag} via {currentMode?.label}
-              </div>
-              <div className="mt-1 text-sm text-[#777]">
-                Open the action sheet and go step by step: mode, meal type, then logging.
-              </div>
+      <SectionCard className="space-y-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-lg font-semibold text-[#f5f5f5]">
+              <Bot className="h-5 w-5 text-[#e4ff00]" />
+              Quick log
             </div>
-            <div className="rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#e4ff00]">
-              Mobile
+            <p className="mt-1 max-w-xl text-sm leading-6 text-[#888]">
+              Example: “2 boiled eggs, rice, chicken adobo, coke zero”.
+            </p>
+          </div>
+
+          <MealTypeSelect value={selectedMealTag} onChange={setSelectedMealTag} />
+        </div>
+
+        <QuickAiLog
+          aiForm={aiForm}
+          aiError={aiError}
+          aiResult={aiResult}
+          usedModel={usedModel}
+          fallbackFrom={fallbackFrom}
+          aiFeedback={aiFeedback}
+          setAiFeedback={setAiFeedback}
+          selectedMealTag={selectedMealTag}
+          resolvedPreferredModel={resolvedPreferredModel}
+          parseMealMutation={parseMealMutation}
+          createMealMutation={createMealMutation}
+          handleAiParse={handleAiParse}
+          saveParsedMeal={saveParsedMeal}
+        />
+      </SectionCard>
+
+      <SectionCard className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-base font-semibold text-[#f5f5f5]">
+              <PencilLine className="h-4 w-4 text-[#888]" />
+              Manual entry
             </div>
+            <p className="mt-1 text-sm text-[#888]">
+              Use this when you already have calories and macros.
+            </p>
           </div>
           <Button
             type="button"
-            size="lg"
-            onClick={openActionSheet}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d]"
+            variant="outline"
+            onClick={() => setShowManualEntry((value) => !value)}
+            className="rounded-full"
           >
-            <PlusCircle className="h-4 w-4" />
-            Open Meal Actions
+            {showManualEntry ? 'Hide manual form' : 'Enter manually'}
           </Button>
-        </SectionCard>
-      </div>
-
-      <SectionCard className="hidden overflow-hidden p-0 md:block">
-        <div className="border-b border-white/10 p-3 sm:p-4">
-          <div className="grid gap-2 sm:grid-cols-3">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              const selected = activeTab === tab.id
-
-              return (
-                <Button
-                  key={tab.id}
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    'h-auto w-full justify-start whitespace-normal rounded-2xl border px-4 py-3 text-left transition-colors hover:bg-transparent',
-                    selected
-                      ? 'border-[#e4ff00] bg-[#e4ff00]/8 text-[#f5f5f5]'
-                      : 'border-white/10 bg-[#0f0f0f] text-[#888] hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]',
-                  )}
-                >
-                  <div
-                    className={cn(
-                      'mt-0.5 rounded-xl border p-2',
-                      selected
-                        ? 'border-[#e4ff00]/30 bg-[#e4ff00] text-[#0a0a0a]'
-                        : 'border-white/10 bg-[#141414] text-[#888]',
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className={cn('text-sm font-medium', selected ? 'text-white' : 'text-[#d0d0d0]')}>
-                      {tab.label}
-                    </div>
-                    <div className="mt-1 text-xs text-[#777]">{tab.description}</div>
-                  </div>
-                </Button>
-              )
-            })}
-          </div>
         </div>
 
-        <div className="p-4 sm:p-6">
-          <MealActionContent
-            activeTab={activeTab}
-            selectedMealTag={selectedMealTag}
-            resolvedPreferredModel={resolvedPreferredModel}
-            aiForm={aiForm}
+        {showManualEntry ? (
+          <ManualMealForm
             manualForm={manualForm}
             createMealMutation={createMealMutation}
-            parseMealMutation={parseMealMutation}
-            aiError={aiError}
-            aiResult={aiResult}
-            usedModel={usedModel}
-            fallbackFrom={fallbackFrom}
-            aiFeedback={aiFeedback}
-            setAiFeedback={setAiFeedback}
-            handleAiParse={handleAiParse}
             handleManualSubmit={handleManualSubmit}
-            saveParsedMeal={saveParsedMeal}
           />
-        </div>
+        ) : null}
       </SectionCard>
-
-      {isActionSheetOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-end bg-black/60 backdrop-blur-sm md:hidden">
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-transparent"
-            onClick={closeActionSheet}
-          />
-          <div className="relative z-10 max-h-[88dvh] w-full overflow-hidden rounded-t-[2rem] border border-white/10 bg-[#111111]">
-            <div className="flex justify-center pt-3">
-              <div className="h-1.5 w-14 rounded-full bg-white/10" />
-            </div>
-
-            <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-3">
-              <div className="flex min-w-0 items-start gap-3">
-                {mobileStep !== 'mode' ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => setMobileStep(mobileStep === 'form' ? 'meal' : 'mode')}
-                    className="mt-0.5 rounded-full border border-white/10 bg-[#161616] text-[#888] hover:bg-[#161616] hover:text-[#f5f5f5]"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                ) : null}
-                <div>
-                  <div className="text-xs font-black uppercase tracking-[0.2em] text-[#666]">
-                    Meal Actions
-                  </div>
-                  <div className="mt-2 text-xl font-semibold text-[#f5f5f5]">
-                    {mobileStep === 'mode'
-                      ? 'Choose input mode'
-                      : mobileStep === 'meal'
-                        ? 'Choose meal type'
-                        : 'Finish logging'}
-                  </div>
-                  <div className="mt-1 text-sm text-[#777]">
-                    {mobileStep === 'mode'
-                      ? 'Start with how you want to add this meal.'
-                      : mobileStep === 'meal'
-                        ? 'Now choose where this meal belongs in your day.'
-                        : 'Complete the meal entry form below.'}
-                  </div>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={closeActionSheet}
-                className="rounded-full border border-white/10 bg-[#161616] text-[#888] hover:bg-[#161616] hover:text-[#f5f5f5]"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="px-4 pb-3">
-              <div className="grid grid-cols-3 gap-2">
-                {(['mode', 'meal', 'form'] as MobileStep[]).map((step, index) => {
-                  const currentIndex = ['mode', 'meal', 'form'].indexOf(mobileStep)
-
-                  return (
-                    <div
-                      key={step}
-                      className={cn(
-                        'rounded-full px-3 py-2 text-center text-[11px] font-bold uppercase tracking-[0.18em]',
-                        mobileStep === step
-                          ? 'bg-[#e4ff00] text-[#0a0a0a]'
-                          : index < currentIndex
-                            ? 'bg-[#e4ff00]/12 text-[#e4ff00]'
-                            : 'bg-[#161616] text-[#666]',
-                      )}
-                    >
-                      {step}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div className="max-h-[calc(88dvh-148px)] overflow-y-auto px-4 pb-6">
-              {mobileStep === 'mode' ? (
-                <div className="grid gap-2">
-                  {tabs.map((tab) => {
-                    const Icon = tab.icon
-                    const selected = activeTab === tab.id
-
-                    return (
-                      <Button
-                        key={tab.id}
-                        type="button"
-                        variant="ghost"
-                        onClick={() => {
-                          setActiveTab(tab.id)
-                          setMobileStep('meal')
-                        }}
-                        className={cn(
-                          'h-auto w-full justify-start whitespace-normal rounded-2xl border px-4 py-4 text-left transition-colors hover:bg-transparent',
-                          selected
-                            ? 'border-[#e4ff00] bg-[#e4ff00]/8 text-[#f5f5f5]'
-                            : 'border-white/10 bg-[#0f0f0f] text-[#888] hover:border-[#e4ff00]/30 hover:text-[#f5f5f5]',
-                        )}
-                      >
-                        <div
-                          className={cn(
-                            'mt-0.5 rounded-xl border p-2',
-                            selected
-                              ? 'border-[#e4ff00]/30 bg-[#e4ff00] text-[#0a0a0a]'
-                              : 'border-white/10 bg-[#141414] text-[#888]',
-                          )}
-                        >
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className={cn('text-sm font-medium', selected ? 'text-white' : 'text-[#d0d0d0]')}>
-                            {tab.label}
-                          </div>
-                          <div className="mt-1 text-xs text-[#777]">{tab.description}</div>
-                        </div>
-                      </Button>
-                    )
-                  })}
-                </div>
-              ) : null}
-
-              {mobileStep === 'meal' ? (
-                <div className="grid grid-cols-2 gap-2">
-                  {mealTags.map((tag) => (
-                    <Button
-                      key={tag}
-                      type="button"
-                      variant="ghost"
-                      onClick={() => {
-                        setSelectedMealTag(tag)
-                        setMobileStep('form')
-                      }}
-                      className={cn(
-                        'h-auto w-full whitespace-normal rounded-2xl border px-4 py-4 text-sm font-medium capitalize transition-colors hover:bg-transparent',
-                        selectedMealTag === tag
-                          ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
-                          : 'border-white/10 bg-[#141414] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]',
-                      )}
-                    >
-                      {tag}
-                    </Button>
-                  ))}
-                </div>
-              ) : null}
-
-              {mobileStep === 'form' ? (
-                <div className="space-y-4">
-                  <div className="rounded-2xl border border-white/10 bg-[#0d0d0d] px-4 py-3">
-                    <div className="text-xs font-black uppercase tracking-[0.18em] text-[#666]">
-                      Selected Flow
-                    </div>
-                    <div className="mt-2 text-sm text-[#f5f5f5]">
-                      {currentMode?.label} for {selectedMealTag}
-                    </div>
-                  </div>
-                  <SectionCard className="p-0">
-                    <div className="p-4">
-                      <MealActionContent
-                        activeTab={activeTab}
-                        selectedMealTag={selectedMealTag}
-                        resolvedPreferredModel={resolvedPreferredModel}
-                        aiForm={aiForm}
-                        manualForm={manualForm}
-                        createMealMutation={createMealMutation}
-                        parseMealMutation={parseMealMutation}
-                        aiError={aiError}
-                        aiResult={aiResult}
-                        usedModel={usedModel}
-                        fallbackFrom={fallbackFrom}
-                        aiFeedback={aiFeedback}
-                        setAiFeedback={setAiFeedback}
-                        handleAiParse={handleAiParse}
-                        handleManualSubmit={handleManualSubmit}
-                        saveParsedMeal={saveParsedMeal}
-                        mobile
-                      />
-                    </div>
-                  </SectionCard>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }
 
-function MealActionContent({
-  activeTab,
-  selectedMealTag,
-  resolvedPreferredModel,
+function LogModeChoice({ onSelect }: { onSelect: (mode: Exclude<SheetLogMode, null>) => void }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => onSelect('ai')}
+        className="h-auto justify-start rounded-3xl p-5 text-left"
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#e4ff00] text-[#0a0a0a]">
+          <Bot className="h-5 w-5" />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-base font-semibold text-[#f5f5f5]">Log with AI</span>
+          <span className="mt-1 block whitespace-normal text-sm leading-6 text-[#888]">
+            Type a normal sentence and review the estimate.
+          </span>
+        </span>
+      </Button>
+
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => onSelect('manual')}
+        className="h-auto justify-start rounded-3xl p-5 text-left"
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-[#0a0a0a] text-[#d0d0d0]">
+          <PencilLine className="h-5 w-5" />
+        </span>
+        <span className="min-w-0">
+          <span className="block text-base font-semibold text-[#f5f5f5]">Log manually</span>
+          <span className="mt-1 block whitespace-normal text-sm leading-6 text-[#888]">
+            Enter calories and macros yourself.
+          </span>
+        </span>
+      </Button>
+    </div>
+  )
+}
+
+function MealTypeSelect({
+  value,
+  onChange,
+}: {
+  value: MealType
+  onChange: (value: MealType) => void
+}) {
+  return (
+    <div className="w-full sm:w-48">
+      <label className="mb-2 block text-xs font-black uppercase tracking-[0.18em] text-[#666]">
+        Meal
+      </label>
+      <Select value={value} onValueChange={(nextValue) => onChange(nextValue as MealType)}>
+        <SelectTrigger className="h-12 rounded-2xl border-white/10 bg-[#0a0a0a] text-[#f5f5f5]">
+          <SelectValue placeholder="Choose meal" />
+        </SelectTrigger>
+        <SelectContent>
+          {mealTags.map((mealType) => (
+            <SelectItem key={mealType} value={mealType}>
+              {formatMealType(mealType)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
+
+function QuickAiLog({
   aiForm,
-  manualForm,
-  createMealMutation,
-  parseMealMutation,
   aiError,
   aiResult,
   usedModel,
   fallbackFrom,
   aiFeedback,
   setAiFeedback,
+  selectedMealTag,
+  resolvedPreferredModel,
+  parseMealMutation,
+  createMealMutation,
   handleAiParse,
-  handleManualSubmit,
   saveParsedMeal,
-  mobile = false,
 }: {
-  activeTab: MealInputMode
-  selectedMealTag: MealType
-  resolvedPreferredModel: AiModel
   aiForm: ReturnType<typeof useForm<AiMealParseFormValues>>
-  manualForm: ReturnType<typeof useForm<ManualMealFormInput, unknown, ManualMealFormValues>>
-  createMealMutation: ReturnType<typeof useCreateMealMutation>
-  parseMealMutation: ReturnType<typeof useParseMealMutation>
   aiError: string | null
   aiResult: ParsedMeal | null
   usedModel: string | null
   fallbackFrom: string | null
   aiFeedback: AiFeedback
   setAiFeedback: (value: AiFeedback) => void
+  selectedMealTag: MealType
+  resolvedPreferredModel: AiModel
+  parseMealMutation: ReturnType<typeof useParseMealMutation>
+  createMealMutation: ReturnType<typeof useCreateMealMutation>
   handleAiParse: (values: AiMealParseFormValues) => Promise<void>
-  handleManualSubmit: (values: ManualMealFormValues) => Promise<void>
   saveParsedMeal: () => Promise<void>
-  mobile?: boolean
 }) {
-  if (activeTab === 'search') {
-    return (
-      <div className="space-y-4">
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d0d] p-4">
-          <div className="mb-1 text-sm font-medium text-[#f5f5f5]">Search food</div>
-          <div className="text-xs text-[#777]">
-            Best for quick entry once a food source or internal food library is connected.
-          </div>
-        </div>
-        <input
-          type="text"
-          placeholder="Search for food..."
-          className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
-        />
-        <EmptyState
-          title="Food search is not connected yet"
-          description="USDA Food Database is not connected yet."
-        />
-      </div>
-    )
-  }
-
-  if (activeTab === 'custom') {
-    return (
-      <form onSubmit={manualForm.handleSubmit(handleManualSubmit)} className="space-y-4">
-        <div className="rounded-2xl border border-white/10 bg-[#0d0d0d] p-4">
-          <div className="mb-1 text-sm font-medium text-[#f5f5f5]">Manual entry</div>
-          <div className="text-xs text-[#777]">
-            Good for custom foods, recipes, or quick nutrition snapshots while the database is still minimal.
-          </div>
-        </div>
-        <input
-          type="text"
-          placeholder="Food name"
-          {...manualForm.register('foodName')}
-          className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
-        />
-        <div className={cn('grid gap-4', mobile ? 'grid-cols-1' : 'md:grid-cols-2')}>
-          <input
-            type="number"
-            placeholder="Calories"
-            {...manualForm.register('calories')}
-            className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 font-mono text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
-          />
-          <input
-            type="number"
-            placeholder="Protein (g)"
-            {...manualForm.register('proteinGrams')}
-            className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 font-mono text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
-          />
-          <input
-            type="number"
-            placeholder="Carbs (g)"
-            {...manualForm.register('carbsGrams')}
-            className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 font-mono text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
-          />
-          <input
-            type="number"
-            placeholder="Fat (g)"
-            {...manualForm.register('fatGrams')}
-            className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 font-mono text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
-          />
-        </div>
-        <input
-          type="text"
-          placeholder="Portion eaten, e.g. 1 cup, 2 pieces, 100g"
-          aria-label="Portion eaten"
-          {...manualForm.register('servingSize')}
-          className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
-        />
-        {manualForm.formState.errors.foodName || manualForm.formState.errors.calories ? (
-          <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
-            {manualForm.formState.errors.foodName?.message ||
-              manualForm.formState.errors.calories?.message}
-          </div>
-        ) : null}
-        <Button
-          type="submit"
-          disabled={manualForm.formState.isSubmitting || createMealMutation.isPending}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3.5 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {manualForm.formState.isSubmitting || createMealMutation.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <PlusCircle className="h-4 w-4" />
-          )}
-          Add Custom Food
-        </Button>
-      </form>
-    )
-  }
+  const isParsing = aiForm.formState.isSubmitting || parseMealMutation.isPending
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-white/10 bg-[#0d0d0d] p-4">
-        <div className="mb-1 text-sm font-medium text-[#f5f5f5]">AI meal parse</div>
-        <div className="text-xs text-[#777]">
-          Paste a natural sentence like “chicken rice and iced coffee” and let AI structure it into meal items.
-        </div>
-        <div className="mt-2 text-xs text-[#999]">
-          AI nutrition estimates may be imperfect, so review the parsed calories and macros before saving.
-        </div>
-        <div className="mt-3 inline-flex rounded-full border border-[#e4ff00]/20 bg-[#e4ff00]/10 px-3 py-1 text-[11px] uppercase tracking-wide text-[#e4ff00]">
-          Using {resolvedPreferredModel === 'gemini-2.5-flash' ? 'Gemini 2.5 Flash' : 'Gemini 2.5 Flash-Lite'}
-        </div>
-      </div>
-
-      <form onSubmit={aiForm.handleSubmit(handleAiParse)} className="space-y-4">
+      <form onSubmit={aiForm.handleSubmit(handleAiParse)} className="space-y-3">
         <textarea
-          rows={7}
-          placeholder="Paste what you ate... e.g. 2 eggs, toast, orange juice"
+          rows={6}
+          placeholder="Type what you ate..."
           {...aiForm.register('text')}
           className="w-full resize-none rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
         />
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-xs text-[#777]">
+            Using{' '}
+            {resolvedPreferredModel === 'gemini-2.5-flash'
+              ? 'Gemini 2.5 Flash'
+              : 'Gemini 2.5 Flash-Lite'}
+          </div>
+          <Button
+            type="submit"
+            disabled={isParsing}
+            className="flex items-center justify-center gap-2 rounded-full"
+          >
+            {isParsing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bot className="h-4 w-4" />}
+            {isParsing ? 'Parsing' : 'Parse meal'}
+          </Button>
+        </div>
+
         {aiForm.formState.errors.text ? (
           <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
             {aiForm.formState.errors.text.message}
           </div>
         ) : null}
-        <Button
-          type="submit"
-          disabled={aiForm.formState.isSubmitting || parseMealMutation.isPending}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3.5 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {aiForm.formState.isSubmitting || parseMealMutation.isPending ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Bot className="h-4 w-4" />
-          )}
-          {aiForm.formState.isSubmitting || parseMealMutation.isPending ? 'Parsing Meal' : 'Parse with AI'}
-        </Button>
       </form>
 
       {aiError ? (
@@ -918,111 +524,210 @@ function MealActionContent({
       ) : null}
 
       {aiResult ? (
-        <div className="space-y-4 rounded-2xl border border-white/10 bg-[#0d0d0d] p-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="text-sm font-medium text-[#f5f5f5]">Parsed meal</div>
-              <div className="text-xs text-[#777]">
-                {usedModel ? `Generated with ${usedModel}` : 'Generated with Gemini'}
-              </div>
-              {fallbackFrom ? (
-                <div className="mt-1 text-xs text-[#999]">
-                  Retried with {usedModel} after {fallbackFrom} did not return usable JSON.
-                </div>
-              ) : null}
-            </div>
-            <div className="rounded-full border border-[#e4ff00]/30 bg-[#e4ff00]/10 px-3 py-1 text-xs uppercase tracking-wide text-[#e4ff00]">
-              {aiResult.mealType ?? selectedMealTag}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {aiResult.items.map((item, index) => (
-              <div
-                key={`${item.foodName}-${index}`}
-                className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="text-sm font-medium text-[#f5f5f5]">{item.foodName}</div>
-                    <div className="mt-1 text-xs text-[#777]">
-                      {item.quantity && item.unit
-                        ? `${item.quantity} ${item.unit}`
-                        : item.quantity
-                          ? `${item.quantity}`
-                          : 'Portion size estimated by AI'}
-                    </div>
-                  </div>
-                  <div className="text-right text-sm text-[#f5f5f5]">{Math.round(item.calories)} cal</div>
-                </div>
-                <div className={cn('mt-3 grid grid-cols-3 gap-2 text-xs text-[#888]')}>
-                  <div className="rounded-xl border border-white/10 bg-[#111111] px-3 py-2">
-                    Protein {item.proteinGrams}g
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-[#111111] px-3 py-2">
-                    Carbs {item.carbsGrams}g
-                  </div>
-                  <div className="rounded-xl border border-white/10 bg-[#111111] px-3 py-2">
-                    Fat {item.fatGrams}g
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4">
-            <div className="text-sm font-medium text-[#f5f5f5]">Was this estimate accurate?</div>
-            <div className="mt-1 text-xs text-[#777]">
-              This helps us understand whether the AI got the calories and macros roughly right.
-            </div>
-            <div className="mt-3 flex flex-wrap gap-3">
-              <Button
-                type="button"
-                onClick={() => setAiFeedback('accurate')}
-                className={cn(
-                  'rounded-full border px-4 py-2 text-sm transition-colors',
-                  aiFeedback === 'accurate'
-                    ? 'border-[#e4ff00] bg-[#e4ff00] text-[#0a0a0a]'
-                    : 'border-white/10 bg-[#141414] text-[#888] hover:border-[#e4ff00]/50 hover:text-[#f5f5f5]',
-                )}
-              >
-                Looks accurate
-              </Button>
-              <Button
-                type="button"
-                onClick={() => setAiFeedback('inaccurate')}
-                className={cn(
-                  'rounded-full border px-4 py-2 text-sm transition-colors',
-                  aiFeedback === 'inaccurate'
-                    ? 'border-red-400 bg-red-500/10 text-red-200'
-                    : 'border-white/10 bg-[#141414] text-[#888] hover:border-red-400/50 hover:text-red-200',
-                )}
-              >
-                Needs work
-              </Button>
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            onClick={() => void saveParsedMeal()}
-            disabled={createMealMutation.isPending}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e4ff00] px-4 py-3.5 font-medium text-[#0a0a0a] transition-colors hover:bg-[#f0ff4d] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {createMealMutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <PlusCircle className="h-4 w-4" />
-            )}
-            {createMealMutation.isPending ? 'Saving Meal' : 'Save Parsed Meal'}
-          </Button>
-        </div>
+        <ParsedMealReview
+          aiResult={aiResult}
+          usedModel={usedModel}
+          fallbackFrom={fallbackFrom}
+          aiFeedback={aiFeedback}
+          setAiFeedback={setAiFeedback}
+          selectedMealTag={selectedMealTag}
+          createMealMutation={createMealMutation}
+          saveParsedMeal={saveParsedMeal}
+        />
       ) : (
         <EmptyState
-          title="Paste a meal and let Gemini structure it"
-          description="Nutrix will estimate calories and macros, then you can review and save the parsed meal into your history."
+          title="No parsed meal yet"
+          description="Paste a meal above and Nutrix will turn it into food items you can review before saving."
         />
       )}
     </div>
+  )
+}
+
+function ParsedMealReview({
+  aiResult,
+  usedModel,
+  fallbackFrom,
+  aiFeedback,
+  setAiFeedback,
+  selectedMealTag,
+  createMealMutation,
+  saveParsedMeal,
+}: {
+  aiResult: ParsedMeal
+  usedModel: string | null
+  fallbackFrom: string | null
+  aiFeedback: AiFeedback
+  setAiFeedback: (value: AiFeedback) => void
+  selectedMealTag: MealType
+  createMealMutation: ReturnType<typeof useCreateMealMutation>
+  saveParsedMeal: () => Promise<void>
+}) {
+  return (
+    <div className="space-y-4 rounded-2xl border border-white/10 bg-[#0d0d0d] p-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-sm font-medium text-[#f5f5f5]">Review before saving</div>
+          <div className="text-xs text-[#777]">
+            {usedModel ? `Generated with ${usedModel}` : 'Generated from your meal text'}
+          </div>
+          {fallbackFrom ? (
+            <div className="mt-1 text-xs text-[#999]">
+              Retried after {fallbackFrom} returned an unusable response.
+            </div>
+          ) : null}
+        </div>
+        <div className="rounded-full border border-[#e4ff00]/30 bg-[#e4ff00]/10 px-3 py-1 text-xs uppercase tracking-wide text-[#e4ff00]">
+          {formatMealType(aiResult.mealType ?? selectedMealTag)}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {aiResult.items.map((item, index) => (
+          <div
+            key={`${item.foodName}-${index}`}
+            className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-4"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-sm font-medium text-[#f5f5f5]">{item.foodName}</div>
+                <div className="mt-1 text-xs text-[#777]">
+                  {item.quantity && item.unit
+                    ? `${item.quantity} ${item.unit}`
+                    : item.quantity
+                      ? `${item.quantity}`
+                      : 'Portion estimated'}
+                </div>
+              </div>
+              <div className="text-right text-sm text-[#f5f5f5]">
+                {Math.round(item.calories)} cal
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-[#888]">
+              <MacroChip label="Protein" value={item.proteinGrams} />
+              <MacroChip label="Carbs" value={item.carbsGrams} />
+              <MacroChip label="Fat" value={item.fatGrams} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-[#0a0a0a] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-sm font-medium text-[#f5f5f5]">Estimate quality</div>
+          <div className="mt-1 text-xs text-[#777]">Optional, but useful when the AI misses.</div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant={aiFeedback === 'accurate' ? 'default' : 'outline'}
+            onClick={() => setAiFeedback('accurate')}
+            className="rounded-full"
+          >
+            Looks right
+          </Button>
+          <Button
+            type="button"
+            variant={aiFeedback === 'inaccurate' ? 'destructive' : 'outline'}
+            onClick={() => setAiFeedback('inaccurate')}
+            className="rounded-full"
+          >
+            Needs edit
+          </Button>
+        </div>
+      </div>
+
+      <Button
+        type="button"
+        onClick={() => void saveParsedMeal()}
+        disabled={createMealMutation.isPending}
+        className="flex w-full items-center justify-center gap-2 rounded-full"
+      >
+        {createMealMutation.isPending ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <PlusCircle className="h-4 w-4" />
+        )}
+        {createMealMutation.isPending ? 'Saving' : 'Save meal'}
+      </Button>
+    </div>
+  )
+}
+
+function MacroChip({ label, value }: { label: string; value?: number | null }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-[#111111] px-3 py-2">
+      {label} {value ?? 0}g
+    </div>
+  )
+}
+
+function ManualMealForm({
+  manualForm,
+  createMealMutation,
+  handleManualSubmit,
+}: {
+  manualForm: ReturnType<typeof useForm<ManualMealFormInput, unknown, ManualMealFormValues>>
+  createMealMutation: ReturnType<typeof useCreateMealMutation>
+  handleManualSubmit: (values: ManualMealFormValues) => Promise<void>
+}) {
+  const isSaving = manualForm.formState.isSubmitting || createMealMutation.isPending
+
+  return (
+    <form onSubmit={manualForm.handleSubmit(handleManualSubmit)} className="space-y-4">
+      <input
+        type="text"
+        placeholder="Food name"
+        {...manualForm.register('foodName')}
+        className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
+      />
+      <div className="grid gap-4 md:grid-cols-2">
+        <input
+          type="number"
+          placeholder="Calories"
+          {...manualForm.register('calories')}
+          className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 font-mono text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
+        />
+        <input
+          type="number"
+          placeholder="Protein (g)"
+          {...manualForm.register('proteinGrams')}
+          className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 font-mono text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
+        />
+        <input
+          type="number"
+          placeholder="Carbs (g)"
+          {...manualForm.register('carbsGrams')}
+          className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 font-mono text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
+        />
+        <input
+          type="number"
+          placeholder="Fat (g)"
+          {...manualForm.register('fatGrams')}
+          className="rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 font-mono text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
+        />
+      </div>
+      <input
+        type="text"
+        placeholder="Portion eaten, e.g. 1 cup, 2 pieces, 100g"
+        aria-label="Portion eaten"
+        {...manualForm.register('servingSize')}
+        className="w-full rounded-2xl border border-white/10 bg-[#0a0a0a] px-4 py-3.5 text-[#f5f5f5] outline-none placeholder:text-[#666] focus:border-[#e4ff00]"
+      />
+      {manualForm.formState.errors.foodName || manualForm.formState.errors.calories ? (
+        <div className="rounded-2xl border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">
+          {manualForm.formState.errors.foodName?.message ||
+            manualForm.formState.errors.calories?.message}
+        </div>
+      ) : null}
+      <Button
+        type="submit"
+        disabled={isSaving}
+        className="flex w-full items-center justify-center gap-2 rounded-full"
+      >
+        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlusCircle className="h-4 w-4" />}
+        {isSaving ? 'Saving' : 'Save manual meal'}
+      </Button>
+    </form>
   )
 }
