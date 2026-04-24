@@ -11,7 +11,7 @@ import {
   getApiErrorMessage,
   useMealsQuery,
   useUpdateMealAiFeedbackMutation,
-} from '@/lib/hooks/use-dashboard-api'
+} from '@/hooks/dashboard'
 
 import { DayCard } from './meals/day-card'
 import { shiftIsoDate, toLocalIsoDate } from './meals/utils'

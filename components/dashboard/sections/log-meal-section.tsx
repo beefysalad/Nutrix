@@ -14,7 +14,7 @@ import {
   useParseMealMutation,
   usePreferencesQuery,
   type ParsedMeal,
-} from '@/lib/hooks/use-dashboard-api'
+} from '@/hooks/dashboard'
 import {
   aiMealParseFormSchema,
   manualMealFormSchema,

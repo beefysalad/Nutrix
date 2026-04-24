@@ -19,7 +19,7 @@ import {
   getApiErrorMessage,
   type usePreferencesQuery,
   type useSavePreferencesMutation,
-} from '@/lib/hooks/use-dashboard-api'
+} from '@/hooks/dashboard'
 import {
   settingsFormSchema,
   type SettingsFormValues,

@@ -1,7 +1,7 @@
 import { Bot, ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { type MealResponse } from '@/lib/hooks/use-dashboard-api'
+import { type MealResponse } from '@/hooks/dashboard'
 
 import { MealCard } from './meal-card'
 import { StatCard } from './stat-card'

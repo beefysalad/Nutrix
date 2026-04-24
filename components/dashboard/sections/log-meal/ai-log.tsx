@@ -9,7 +9,7 @@ import {
   type ParsedMeal,
   type useCreateMealMutation,
   type useParseMealMutation,
-} from '@/lib/hooks/use-dashboard-api'
+} from '@/hooks/dashboard'
 import { type AiMealParseFormValues } from '@/lib/validations/dashboard-forms'
 
 import { formatMealType, type AiFeedback, type AiModel, type MealType } from './types'

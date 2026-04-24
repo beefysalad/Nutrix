@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 
-import { useOnboardingMutation } from '@/lib/hooks/use-dashboard-api'
+import { useOnboardingMutation } from '@/hooks/dashboard'
 import { cn } from '@/components/dashboard/ui'
 import { Button } from '@/components/ui/button'
 import {

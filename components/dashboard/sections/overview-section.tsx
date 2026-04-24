@@ -5,7 +5,7 @@ import Link from 'next/link'
 
 import { MiniDonut } from '@/components/dashboard/charts'
 import { SectionCard } from '@/components/dashboard/ui'
-import { useDashboardSummaryQuery } from '@/lib/hooks/use-dashboard-api'
+import { useDashboardSummaryQuery } from '@/hooks/dashboard'
 
 // Neon accent palette — one color per stat / macro
 const NEON = {

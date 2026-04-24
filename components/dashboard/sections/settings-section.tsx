@@ -5,7 +5,7 @@ import {
   usePreferencesQuery,
   useSavePreferencesMutation,
   useTelegramIntegrationQuery,
-} from '@/lib/hooks/use-dashboard-api'
+} from '@/hooks/dashboard'
 
 import { AccountSettings } from './settings/account-settings'
 import { DataExportSettings } from './settings/data-export-settings'

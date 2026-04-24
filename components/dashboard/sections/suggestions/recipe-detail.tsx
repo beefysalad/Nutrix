@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import {
   getApiErrorMessage,
   useSaveMealSuggestionMutation,
-} from '@/lib/hooks/use-dashboard-api'
+} from '@/hooks/dashboard'
 
 import { formatStyleLabel, type SuggestionCard, type SuggestionStyle } from './types'
 

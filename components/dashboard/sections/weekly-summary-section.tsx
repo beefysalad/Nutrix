@@ -14,7 +14,7 @@ import {
 
 import { EmptyState, SectionCard } from '@/components/dashboard/ui'
 import { Button } from '@/components/ui/button'
-import { useMealsQuery } from '@/lib/hooks/use-dashboard-api'
+import { useMealsQuery } from '@/hooks/dashboard'
 
 function getWeekStart(date: Date) {
   const next = new Date(date)

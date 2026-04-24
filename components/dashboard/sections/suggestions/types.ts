@@ -1,4 +1,4 @@
-import { type MealSuggestionResponse } from '@/lib/hooks/use-dashboard-api'
+import { type MealSuggestionResponse } from '@/hooks/dashboard'
 
 export const suggestionStyleOptions = [
   {

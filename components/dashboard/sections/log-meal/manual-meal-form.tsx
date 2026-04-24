@@ -4,7 +4,7 @@ import { Loader2, PlusCircle } from 'lucide-react'
 import { type useForm } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
-import { type useCreateMealMutation } from '@/lib/hooks/use-dashboard-api'
+import { type useCreateMealMutation } from '@/hooks/dashboard'
 import { type ManualMealFormInput, type ManualMealFormValues } from '@/lib/validations/dashboard-forms'
 
 export function ManualMealForm({

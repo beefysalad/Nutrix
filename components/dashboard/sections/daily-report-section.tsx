@@ -12,7 +12,7 @@ import {
   getApiErrorMessage,
   useDailyReportQuery,
   useSaveDailyReportMutation,
-} from '@/lib/hooks/use-dashboard-api'
+} from '@/hooks/dashboard'
 import {
   dailyReportFormSchema,
   type DailyReportFormValues,

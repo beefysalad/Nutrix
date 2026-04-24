@@ -15,7 +15,7 @@ import {
 } from 'recharts'
 
 import { EmptyState, SectionCard } from '@/components/dashboard/ui'
-import { useDashboardTrendsQuery } from '@/lib/hooks/use-dashboard-api'
+import { useDashboardTrendsQuery } from '@/hooks/dashboard'
 
 export function TrendsSection() {
   const trendsQuery = useDashboardTrendsQuery()

@@ -13,7 +13,7 @@ import {
   useDashboardSummaryQuery,
   useGoalsQuery,
   useSaveGoalsMutation,
-} from '@/lib/hooks/use-dashboard-api'
+} from '@/hooks/dashboard'
 import {
   goalsFormSchema,
   tdeeCalculatorSchema,

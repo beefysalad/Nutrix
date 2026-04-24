@@ -31,7 +31,7 @@ import {
 } from '@/components/dashboard/types'
 import { cn } from '@/components/dashboard/ui'
 import { Button } from '@/components/ui/button'
-import { useDashboardSummaryQuery } from '@/lib/hooks/use-dashboard-api'
+import { useDashboardSummaryQuery } from '@/hooks/dashboard'
 
 const iconMap = {
   dashboard: Home,

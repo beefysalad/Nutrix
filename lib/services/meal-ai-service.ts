@@ -1,6 +1,5 @@
-import { Prisma, type FoodSuggestion } from '@/app/generated/prisma/client'
-
-import type { SuggestionStyle } from '@/lib/data/recipe-catalog'
+import { Prisma } from '@/app/generated/prisma/client'
+import { type z } from 'zod'
 import { env } from '@/lib/env'
 import prisma from '@/lib/prisma'
 import {
@@ -8,7 +7,11 @@ import {
   generatedMealSuggestionsSchema,
   parsedMealResultSchema,
 } from '@/lib/validations/nutrition'
-import type { z } from 'zod'
+import type { SuggestionStyle } from '@/lib/data/recipe-catalog'
+import { mealRepository } from '@/lib/repositories/meal-repository'
+import { goalRepository } from '@/lib/repositories/goal-repository'
+import { userRepository } from '@/lib/repositories/user-repository'
+import { suggestionRepository } from '@/lib/repositories/suggestion-repository'
 
 const systemPrompt = `
 You are a nutrition meal parser for Nutrix.
@@ -256,8 +259,19 @@ function getSuggestionDate(timezone?: string | null) {
   }).format(new Date())
 }
 
-type SuggestionGoalMode = 'cutting' | 'maintenance' | 'bulking' | 'custom' | null
-type SuggestionMealType = 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'other' | null
+type SuggestionGoalMode =
+  | 'cutting'
+  | 'maintenance'
+  | 'bulking'
+  | 'custom'
+  | null
+type SuggestionMealType =
+  | 'breakfast'
+  | 'lunch'
+  | 'dinner'
+  | 'snack'
+  | 'other'
+  | null
 
 type MealSuggestionsPayload = {
   model: string
@@ -294,7 +308,10 @@ function getStringArrayFromJson(value: unknown) {
     : []
 }
 
-function buildPayloadFromSuggestionRows(rows: FoodSuggestion[]): MealSuggestionsPayload | null {
+function buildPayloadFromSuggestionRows(
+  //eslint-disable-next-line @typescript-eslint/no-explicit-any
+  rows: any[]
+): MealSuggestionsPayload | null {
   if (rows.length === 0) {
     return null
   }
@@ -302,11 +319,15 @@ function buildPayloadFromSuggestionRows(rows: FoodSuggestion[]): MealSuggestions
   const firstSuggestion = rows[0]
 
   return {
-    model: firstSuggestion.sourceLabel === 'Nutrix AI' ? 'gemini-ai-suggestions' : 'stored-suggestions',
+    model:
+      firstSuggestion.sourceLabel === 'Nutrix AI'
+        ? 'gemini-ai-suggestions'
+        : 'stored-suggestions',
     basedOn: {
       goalMode: firstSuggestion.goalMode as SuggestionGoalMode,
       recentFoods: getStringArrayFromJson(firstSuggestion.recentFoods),
-      generatedForMealType: firstSuggestion.generatedForMealType as SuggestionMealType,
+      generatedForMealType:
+        firstSuggestion.generatedForMealType as SuggestionMealType,
       suggestionStyle: firstSuggestion.style as SuggestionStyle,
     },
     suggestions: rows.map((suggestion) => ({
@@ -357,7 +378,7 @@ async function callGemini(model: GeminiModel, text: string, mealType?: string) {
           temperature: 0.2,
         },
       }),
-    },
+    }
   )
 
   if (!response.ok) {
@@ -423,7 +444,7 @@ function slugifySuggestionId(value: string, fallback: string) {
 
 function normalizeGeneratedSuggestions(payload: unknown) {
   const parsed = generatedMealSuggestionsSchema.safeParse(
-    Array.isArray(payload) ? { suggestions: payload } : payload,
+    Array.isArray(payload) ? { suggestions: payload } : payload
   )
 
   if (!parsed.success) {
@@ -431,7 +452,10 @@ function normalizeGeneratedSuggestions(payload: unknown) {
   }
 
   return parsed.data.suggestions.slice(0, 3).map((suggestion, index) => ({
-    id: slugifySuggestionId(suggestion.id ?? suggestion.name, `ai-suggestion-${index + 1}`),
+    id: slugifySuggestionId(
+      suggestion.id ?? suggestion.name,
+      `ai-suggestion-${index + 1}`
+    ),
     name: suggestion.name.trim(),
     description: suggestion.description.trim().slice(0, 400),
     calories: Math.round(suggestion.calories),
@@ -439,11 +463,7 @@ function normalizeGeneratedSuggestions(payload: unknown) {
     carbs: Number(suggestion.carbs.toFixed(1)),
     fat: Number(suggestion.fat.toFixed(1)),
     tags: Array.from(
-      new Set(
-        suggestion.tags
-          .map((tag) => tag.trim())
-          .filter(Boolean),
-      ),
+      new Set(suggestion.tags.map((tag) => tag.trim()).filter(Boolean))
     ).slice(0, 4),
     reasoning: suggestion.reasoning.trim().slice(0, 400),
     ingredients: suggestion.ingredients
@@ -471,7 +491,7 @@ function formatGoalContext(
     proteinGrams?: number | null
     carbsGrams?: number | null
     fatGrams?: number | null
-  } | null,
+  } | null
 ) {
   return {
     mode: goalMode ?? 'custom',
@@ -555,7 +575,7 @@ async function callGeminiMealSuggestions(input: {
           temperature: 0.8,
         },
       }),
-    },
+    }
   )
 
   if (!response.ok) {
@@ -615,12 +635,10 @@ export const mealAiService = {
     let selectedModel: GeminiModel = 'gemini-2.5-flash-lite'
 
     try {
-      const profile = await prisma.userProfile.findUnique({
-        where: { userId },
-        select: { aiModel: true },
-      })
-
-      selectedModel = aiModelSchema.parse(profile?.aiModel ?? 'gemini-2.5-flash-lite')
+      const profile = await userRepository.findProfileByUserId(userId)
+      selectedModel = aiModelSchema.parse(
+        profile?.aiModel ?? 'gemini-2.5-flash-lite'
+      )
     } catch (error) {
       if (!isMissingAiModelColumn(error)) {
         throw error
@@ -630,9 +648,17 @@ export const mealAiService = {
     return selectedModel
   },
 
-  async parseMealForUser(input: { userId: string; text: string; mealType?: string }) {
+  async parseMealForUser(input: {
+    userId: string
+    text: string
+    mealType?: string
+  }) {
     const selectedModel = await this.getUserPreferredModel(input.userId)
-    const primaryAttempt = await callGemini(selectedModel, input.text, input.mealType)
+    const primaryAttempt = await callGemini(
+      selectedModel,
+      input.text,
+      input.mealType
+    )
 
     if (primaryAttempt.ok) {
       return {
@@ -643,7 +669,11 @@ export const mealAiService = {
 
     if (selectedModel === 'gemini-2.5-flash-lite') {
       const fallbackModel: GeminiModel = 'gemini-2.5-flash'
-      const fallbackAttempt = await callGemini(fallbackModel, input.text, input.mealType)
+      const fallbackAttempt = await callGemini(
+        fallbackModel,
+        input.text,
+        input.mealType
+      )
 
       if (fallbackAttempt.ok) {
         return {
@@ -665,41 +695,23 @@ export const mealAiService = {
     mealType?: Exclude<SuggestionMealType, null>
   }) {
     const selectedStyle = input.suggestionStyle ?? 'quick'
-    const [profile, user] = await Promise.all([
-      prisma.userProfile.findUnique({
-        where: { userId: input.userId },
-        select: { timezone: true },
-      }),
-      prisma.user.findUnique({
-        where: { id: input.userId },
-        select: { foodSuggestionLimit: true },
-      }),
+    const [profile, usageCount] = await Promise.all([
+      userRepository.findProfileByUserId(input.userId),
+      userRepository.getFoodSuggestionLimit(input.userId),
     ])
+
     const suggestionDate = getSuggestionDate(profile?.timezone)
-    const usageCount = user?.foodSuggestionLimit ?? 0
-    const latestSuggestion = await prisma.foodSuggestion.findFirst({
-      where: {
-        userId: input.userId,
-        style: selectedStyle,
-        ...(input.mealType ? { generatedForMealType: input.mealType } : {}),
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      select: {
-        generationId: true,
-      },
-    })
-    const latestSuggestions = latestSuggestion
-      ? await prisma.foodSuggestion.findMany({
-          where: {
-            userId: input.userId,
-            generationId: latestSuggestion.generationId,
-          },
-          orderBy: {
-            createdAt: 'asc',
-          },
-        })
+    const generationId = await suggestionRepository.findLatestGenerationId(
+      input.userId,
+      selectedStyle,
+      input.mealType
+    )
+
+    const latestSuggestions = generationId
+      ? await suggestionRepository.findSuggestionsByGenerationId(
+          input.userId,
+          generationId
+        )
       : []
 
     return {
@@ -771,18 +783,25 @@ export const mealAiService = {
     const recentFoods = Array.from(
       new Set(
         recentMeals
-          .flatMap((meal) => meal.items.map((item) => item.foodNameSnapshot.trim()))
-          .filter(Boolean),
-      ),
+          .flatMap((meal) =>
+            meal.items.map((item) => item.foodNameSnapshot.trim())
+          )
+          .filter(Boolean)
+      )
     ).slice(0, 8)
 
-    const mealTypeCounts = recentMeals.reduce<Record<string, number>>((accumulator, meal) => {
-      accumulator[meal.mealType] = (accumulator[meal.mealType] ?? 0) + 1
-      return accumulator
-    }, {})
+    const mealTypeCounts = recentMeals.reduce<Record<string, number>>(
+      (accumulator, meal) => {
+        accumulator[meal.mealType] = (accumulator[meal.mealType] ?? 0) + 1
+        return accumulator
+      },
+      {}
+    )
 
     const inferredMealTypeFocus =
-      Object.entries(mealTypeCounts).sort((left, right) => right[1] - left[1])[0]?.[0] ?? null
+      Object.entries(mealTypeCounts).sort(
+        (left, right) => right[1] - left[1]
+      )[0]?.[0] ?? null
     const mealTypeFocus = input.mealType ?? inferredMealTypeFocus
 
     const selectedModel = await this.getUserPreferredModel(input.userId)
@@ -826,65 +845,67 @@ export const mealAiService = {
       suggestions: suggestionBatch.suggestions,
     }
 
-    const createdSuggestions = await prisma.$transaction(async (transaction) => {
-      const currentUser = await transaction.user.findUnique({
-        where: { id: input.userId },
-        select: { foodSuggestionLimit: true },
-      })
-      const currentUsageCount = currentUser?.foodSuggestionLimit ?? 0
+    const createdSuggestions = await prisma.$transaction(
+      async (transaction) => {
+        const currentUser = await transaction.user.findUnique({
+          where: { id: input.userId },
+          select: { foodSuggestionLimit: true },
+        })
+        const currentUsageCount = currentUser?.foodSuggestionLimit ?? 0
 
-      if (currentUsageCount >= 3) {
-        throw new Error('Daily smart suggestion limit reached')
-      }
+        if (currentUsageCount >= 3) {
+          throw new Error('Daily smart suggestion limit reached')
+        }
 
-      await transaction.user.update({
-        where: { id: input.userId },
-        data: {
-          foodSuggestionLimit: {
-            increment: 1,
-          },
-        },
-      })
-
-      await transaction.foodSuggestion.deleteMany({
-        where: {
-          userId: input.userId,
-          style: selectedStyle,
-          isSaved: false,
-        },
-      })
-
-      return Promise.all(
-        payloadBase.suggestions.map((suggestion) =>
-          transaction.foodSuggestion.create({
-            data: {
-              userId: input.userId,
-              generationId,
-              style: selectedStyle,
-              recipeId: suggestion.id,
-              name: suggestion.name,
-              description: suggestion.description,
-              calories: suggestion.calories,
-              protein: new Prisma.Decimal(suggestion.protein),
-              carbs: new Prisma.Decimal(suggestion.carbs),
-              fat: new Prisma.Decimal(suggestion.fat),
-              tags: suggestion.tags,
-              reasoning: suggestion.reasoning,
-              ingredients: suggestion.ingredients,
-              instructions: suggestion.instructions,
-              cookingNotes: suggestion.cookingNotes ?? '',
-              prepTime: suggestion.prepTime,
-              difficulty: suggestion.difficulty,
-              sourceLabel: suggestion.sourceLabel,
-              sourceUrl: suggestion.sourceUrl,
-              goalMode: payloadBase.basedOn.goalMode,
-              recentFoods: payloadBase.basedOn.recentFoods,
-              generatedForMealType: payloadBase.basedOn.generatedForMealType,
+        await transaction.user.update({
+          where: { id: input.userId },
+          data: {
+            foodSuggestionLimit: {
+              increment: 1,
             },
-          }),
-        ),
-      )
-    })
+          },
+        })
+
+        await transaction.foodSuggestion.deleteMany({
+          where: {
+            userId: input.userId,
+            style: selectedStyle,
+            isSaved: false,
+          },
+        })
+
+        return Promise.all(
+          payloadBase.suggestions.map((suggestion) =>
+            transaction.foodSuggestion.create({
+              data: {
+                userId: input.userId,
+                generationId,
+                style: selectedStyle,
+                recipeId: suggestion.id,
+                name: suggestion.name,
+                description: suggestion.description,
+                calories: suggestion.calories,
+                protein: new Prisma.Decimal(suggestion.protein),
+                carbs: new Prisma.Decimal(suggestion.carbs),
+                fat: new Prisma.Decimal(suggestion.fat),
+                tags: suggestion.tags,
+                reasoning: suggestion.reasoning,
+                ingredients: suggestion.ingredients,
+                instructions: suggestion.instructions,
+                cookingNotes: suggestion.cookingNotes ?? '',
+                prepTime: suggestion.prepTime,
+                difficulty: suggestion.difficulty,
+                sourceLabel: suggestion.sourceLabel,
+                sourceUrl: suggestion.sourceUrl,
+                goalMode: payloadBase.basedOn.goalMode,
+                recentFoods: payloadBase.basedOn.recentFoods,
+                generatedForMealType: payloadBase.basedOn.generatedForMealType,
+              },
+            })
+          )
+        )
+      }
+    )
 
     return {
       usage: {
@@ -903,26 +924,20 @@ export const mealAiService = {
     suggestionId: string
     isSaved?: boolean
   }) {
-    const updateResult = await prisma.foodSuggestion.updateMany({
-      where: {
-        id: input.suggestionId,
-        userId: input.userId,
-      },
-      data: {
-        isSaved: input.isSaved ?? true,
-      },
-    })
+    const updateResult = await suggestionRepository.updateSaveStatus(
+      input.userId,
+      input.suggestionId,
+      input.isSaved ?? true
+    )
 
     if (updateResult.count === 0) {
       throw new Error('Suggestion not found')
     }
 
-    const suggestion = await prisma.foodSuggestion.findFirst({
-      where: {
-        id: input.suggestionId,
-        userId: input.userId,
-      },
-    })
+    const suggestion = await suggestionRepository.findById(
+      input.suggestionId,
+      input.userId
+    )
 
     return {
       suggestion,
@@ -930,22 +945,18 @@ export const mealAiService = {
   },
 
   async getSavedMealSuggestionsForUser(input: { userId: string }) {
-    const suggestions = await prisma.foodSuggestion.findMany({
-      where: {
-        userId: input.userId,
-        isSaved: true,
-      },
-      orderBy: {
-        updatedAt: 'desc',
-      },
-    })
+    const suggestions = await suggestionRepository.findSavedSuggestions(
+      input.userId
+    )
 
     return {
-      suggestions: buildPayloadFromSuggestionRows(suggestions)?.suggestions ?? [],
+      suggestions:
+        buildPayloadFromSuggestionRows(suggestions)?.suggestions ?? [],
     }
   },
 
   async resetDailySuggestionUsage() {
+    // This is admin/internal, but let's keep it consistent
     await prisma.user.updateMany({
       data: {
         foodSuggestionLimit: 0,

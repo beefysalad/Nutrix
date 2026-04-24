@@ -4,7 +4,7 @@ import { ExternalLink } from 'lucide-react'
 
 import { cn } from '@/components/dashboard/ui'
 import { Button } from '@/components/ui/button'
-import { type useTelegramIntegrationQuery } from '@/lib/hooks/use-dashboard-api'
+import { type useTelegramIntegrationQuery } from '@/hooks/dashboard'
 
 function TelegramStatusTile({
   title,

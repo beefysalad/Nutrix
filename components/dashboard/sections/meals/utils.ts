@@ -1,4 +1,4 @@
-import { type MealResponse } from '@/lib/hooks/use-dashboard-api'
+import { type MealResponse } from '@/hooks/dashboard'
 
 export function formatDayHeader(iso: string) {
   return new Intl.DateTimeFormat('en-US', {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 
 import { requireAppUser } from '@/lib/api/current-app-user'
-import prisma from '@/lib/prisma'
+import { mealService } from '@/lib/services/meal-service'
 
 type MealRouteContext = {
   params: Promise<{
@@ -18,25 +18,13 @@ export async function DELETE(_request: Request, context: MealRouteContext) {
 
   const { mealId } = await context.params
 
-  const meal = await prisma.mealEntry.findFirst({
-    where: {
-      id: mealId,
-      userId: result.user.id,
-    },
-    select: {
-      id: true,
-    },
-  })
-
-  if (!meal) {
-    return NextResponse.json({ error: 'Meal not found' }, { status: 404 })
+  try {
+    await mealService.deleteMeal(mealId, result.user.id)
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Meal not found') {
+      return NextResponse.json({ error: 'Meal not found' }, { status: 404 })
+    }
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-
-  await prisma.mealEntry.delete({
-    where: {
-      id: meal.id,
-    },
-  })
-
-  return NextResponse.json({ success: true })
 }

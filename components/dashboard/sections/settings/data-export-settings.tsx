@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import {
   getApiErrorMessage,
   type useExportDataMutation,
-} from '@/lib/hooks/use-dashboard-api'
+} from '@/hooks/dashboard'
 
 export function DataExportSettings({
   exportDataMutation,

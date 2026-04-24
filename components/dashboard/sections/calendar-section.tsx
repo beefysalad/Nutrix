@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react'
 
 import { SectionCard, cn } from '@/components/dashboard/ui'
 import { Button } from '@/components/ui/button'
-import { useMealsQuery } from '@/lib/hooks/use-dashboard-api'
+import { useMealsQuery } from '@/hooks/dashboard'
 
 function startOfMonth(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1)

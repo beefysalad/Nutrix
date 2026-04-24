@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
-
 import { requireAppUser } from '@/lib/api/current-app-user'
-import prisma from '@/lib/prisma'
+import { dataExportService } from '@/lib/services/data-export-service'
 
 type ExportFormat = 'csv' | 'json'
 
@@ -9,7 +8,6 @@ function normalizeFormat(value: string | null): ExportFormat | null {
   if (value === 'csv' || value === 'json') {
     return value
   }
-
   return null
 }
 
@@ -29,7 +27,6 @@ function toNumber(value: unknown) {
   if (value == null) {
     return null
   }
-
   return Number(value)
 }
 
@@ -100,32 +97,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'format must be csv or json' }, { status: 400 })
   }
 
-  const [profile, goals, dailyReports, integrationConnections, meals] = await Promise.all([
-    prisma.userProfile.findUnique({
-      where: { userId: result.user.id },
-    }),
-    prisma.goal.findMany({
-      where: { userId: result.user.id },
-      orderBy: { createdAt: 'desc' },
-    }),
-    prisma.dailyReport.findMany({
-      where: { userId: result.user.id },
-      orderBy: { reportDate: 'desc' },
-    }),
-    prisma.integrationConnection.findMany({
-      where: { userId: result.user.id },
-      orderBy: { createdAt: 'desc' },
-    }),
-    prisma.mealEntry.findMany({
-      where: { userId: result.user.id },
-      include: {
-        items: {
-          orderBy: { createdAt: 'asc' },
-        },
-      },
-      orderBy: { loggedAt: 'desc' },
-    }),
-  ])
+  const {
+    user,
+    profile,
+    goals,
+    dailyReports,
+    integrationConnections,
+    meals,
+  } = await dataExportService.getExportData(result.user.id)
 
   const stamp = formatDateStamp(new Date())
 
@@ -143,16 +122,18 @@ export async function GET(request: Request) {
 
   const archive = {
     exportedAt: new Date().toISOString(),
-    user: {
-      id: result.user.id,
-      clerkId: result.user.clerkId,
-      name: result.user.name,
-      email: result.user.email,
-      image: result.user.image,
-      onBoarded: result.user.onBoarded,
-      createdAt: result.user.createdAt.toISOString(),
-      updatedAt: result.user.updatedAt.toISOString(),
-    },
+    user: user
+      ? {
+          id: user.id,
+          clerkId: user.clerkId,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          onBoarded: user.onBoarded,
+          createdAt: user.createdAt.toISOString(),
+          updatedAt: user.updatedAt.toISOString(),
+        }
+      : null,
     profile: profile
       ? {
           ...profile,

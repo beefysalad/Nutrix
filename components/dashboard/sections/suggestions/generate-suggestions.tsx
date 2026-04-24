@@ -11,7 +11,7 @@ import {
   getApiErrorMessage,
   useGenerateMealSuggestionsMutation,
   useMealSuggestionsQuery,
-} from '@/lib/hooks/use-dashboard-api'
+} from '@/hooks/dashboard'
 
 import { PreferencesModal } from './preferences-modal'
 import { RecipeDetailView } from './recipe-detail'

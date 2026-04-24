@@ -3,7 +3,7 @@
 import { Bot, Loader2 } from 'lucide-react'
 
 import { SectionCard } from '@/components/dashboard/ui'
-import { useDashboardInsightsQuery } from '@/lib/hooks/use-dashboard-api'
+import { useDashboardInsightsQuery } from '@/hooks/dashboard'
 
 export function InsightsSection() {
   const insightsQuery = useDashboardInsightsQuery()

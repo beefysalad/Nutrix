@@ -15,6 +15,12 @@ export const userRepository = {
     })
   },
 
+  findById(id: string) {
+    return prisma.user.findUnique({
+      where: { id },
+    })
+  },
+
   upsertByClerkId(input: {
     clerkId: string
     email: string
@@ -66,4 +72,49 @@ export const userRepository = {
       where: { id },
     })
   },
-} satisfies Record<string, (...args: never[]) => Promise<User | null> | Promise<User>>
+
+  async findProfileByUserId(userId: string) {
+    return prisma.userProfile.findUnique({
+      where: { userId },
+    })
+  },
+
+  async getFoodSuggestionLimit(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { foodSuggestionLimit: true },
+    })
+    return user?.foodSuggestionLimit ?? 0
+  },
+
+  async incrementFoodSuggestionLimit(userId: string) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: {
+        foodSuggestionLimit: {
+          increment: 1,
+        },
+      },
+    })
+  },
+
+  async resetFoodSuggestionLimit(userId: string) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: {
+        foodSuggestionLimit: 0,
+      },
+    })
+  },
+
+  async updateOnboardingStatus(userId: string, onBoarded: boolean) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { onBoarded },
+    })
+  },
+
+  async countAll() {
+    return prisma.user.count()
+  },
+}

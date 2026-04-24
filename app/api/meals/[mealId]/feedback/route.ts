@@ -1,21 +1,23 @@
 import { NextResponse } from 'next/server'
 
-import { AiMealFeedback, Prisma } from '@/app/generated/prisma/client'
 import { requireAppUser } from '@/lib/api/current-app-user'
-import prisma from '@/lib/prisma'
+import { mealService } from '@/lib/services/meal-service'
 import { updateMealAiFeedbackSchema } from '@/lib/validations/nutrition'
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ mealId: string }> },
-) {
+type MealRouteContext = {
+  params: Promise<{
+    mealId: string
+  }>
+}
+
+export async function PATCH(request: Request, context: MealRouteContext) {
   const result = await requireAppUser()
 
   if ('response' in result) {
     return result.response
   }
 
-  const { mealId } = await params
+  const { mealId } = await context.params
   const json = await request.json()
   const parsed = updateMealAiFeedbackSchema.safeParse(json)
 
@@ -23,32 +25,20 @@ export async function PATCH(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const meal = await prisma.mealEntry.findFirst({
-    where: {
-      id: mealId,
-      userId: result.user.id,
-    },
-  })
-
-  if (!meal) {
-    return NextResponse.json({ error: 'Meal not found' }, { status: 404 })
-  }
-
-  if (meal.source !== 'ai' && meal.source !== 'telegram') {
+  try {
+    await mealService.updateMealFeedback(
+      mealId,
+      result.user.id,
+      parsed.data.aiFeedback
+    )
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Meal not found') {
+      return NextResponse.json({ error: 'Meal not found' }, { status: 404 })
+    }
     return NextResponse.json(
-      { error: 'Feedback is only available for AI-generated meals' },
-      { status: 400 },
+      { error: 'Internal server error' },
+      { status: 500 }
     )
   }
-
-  const updateData: Prisma.MealEntryUncheckedUpdateInput = {
-    aiFeedback: (parsed.data.aiFeedback as AiMealFeedback | null) ?? null,
-  }
-
-  const updatedMeal = await prisma.mealEntry.update({
-    where: { id: mealId },
-    data: updateData,
-  })
-
-  return NextResponse.json({ meal: updatedMeal })
 }

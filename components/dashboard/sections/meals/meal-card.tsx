@@ -1,6 +1,6 @@
 import { Bot, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { type MealResponse } from '@/lib/hooks/use-dashboard-api'
+import { type MealResponse } from '@/hooks/dashboard'
 import { formatTime, mealCalories, mealMacroTotals } from './utils'
 
 function MacroPill({ label, value }: { label: string; value: string }) {

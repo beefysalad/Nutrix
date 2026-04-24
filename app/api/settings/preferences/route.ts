@@ -1,18 +1,8 @@
-import { Prisma } from '@/app/generated/prisma/client'
 import { NextResponse } from 'next/server'
 
 import { requireAppUser } from '@/lib/api/current-app-user'
-import prisma from '@/lib/prisma'
+import { preferenceService } from '@/lib/services/preference-service'
 import { updatePreferencesSchema } from '@/lib/validations/nutrition'
-
-function isMissingAiModelColumn(error: unknown) {
-  return (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === 'P2022' &&
-    typeof error.meta?.column === 'string' &&
-    error.meta.column.includes('aiModel')
-  )
-}
 
 export async function GET() {
   const result = await requireAppUser()
@@ -21,41 +11,9 @@ export async function GET() {
     return result.response
   }
 
-  try {
-    const profile = await prisma.userProfile.findUnique({
-      where: { userId: result.user.id },
-      select: {
-        unitSystem: true,
-        aiModel: true,
-      },
-    })
+  const preferences = await preferenceService.getPreferences(result.user.id)
 
-    return NextResponse.json({
-      preferences: {
-        unitSystem: profile?.unitSystem ?? 'metric',
-        aiModel: profile?.aiModel ?? 'gemini-2.5-flash-lite',
-      },
-    })
-  } catch (error) {
-    if (!isMissingAiModelColumn(error)) {
-      throw error
-    }
-
-    const profile = await prisma.userProfile.findUnique({
-      where: { userId: result.user.id },
-      select: {
-        unitSystem: true,
-      },
-    })
-
-    return NextResponse.json({
-      preferences: {
-        unitSystem: profile?.unitSystem ?? 'metric',
-        aiModel: 'gemini-2.5-flash-lite',
-        aiModelPersistencePendingMigration: true,
-      },
-    })
-  }
+  return NextResponse.json({ preferences })
 }
 
 export async function PUT(request: Request) {
@@ -72,50 +30,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  try {
-    const profile = await prisma.userProfile.upsert({
-      where: { userId: result.user.id },
-      update: {
-        ...(parsed.data.unitSystem ? { unitSystem: parsed.data.unitSystem } : {}),
-        ...(parsed.data.aiModel ? { aiModel: parsed.data.aiModel } : {}),
-      },
-      create: {
-        userId: result.user.id,
-        unitSystem: parsed.data.unitSystem ?? 'metric',
-        aiModel: parsed.data.aiModel ?? 'gemini-2.5-flash-lite',
-      },
-      select: {
-        unitSystem: true,
-        aiModel: true,
-      },
-    })
+  const preferences = await preferenceService.updatePreferences(result.user.id, parsed.data)
 
-    return NextResponse.json({ preferences: profile })
-  } catch (error) {
-    if (!isMissingAiModelColumn(error)) {
-      throw error
-    }
-
-    const profile = await prisma.userProfile.upsert({
-      where: { userId: result.user.id },
-      update: {
-        ...(parsed.data.unitSystem ? { unitSystem: parsed.data.unitSystem } : {}),
-      },
-      create: {
-        userId: result.user.id,
-        unitSystem: parsed.data.unitSystem ?? 'metric',
-      },
-      select: {
-        unitSystem: true,
-      },
-    })
-
-    return NextResponse.json({
-      preferences: {
-        unitSystem: profile.unitSystem,
-        aiModel: parsed.data.aiModel ?? 'gemini-2.5-flash-lite',
-        aiModelPersistencePendingMigration: true,
-      },
-    })
-  }
+  return NextResponse.json({ preferences })
 }

@@ -10,7 +10,7 @@ import {
   getApiErrorMessage,
   useSavedMealSuggestionsQuery,
   useSaveMealSuggestionMutation,
-} from '@/lib/hooks/use-dashboard-api'
+} from '@/hooks/dashboard'
 
 import { RecipeDetailView } from './recipe-detail'
 import { SuggestionCardButton } from './suggestion-card'
