@@ -69,6 +69,7 @@ export function DayCard({
                <div className="flex flex-shrink-0 items-center gap-1">
                 <Button
                   type="button"
+                  variant="ghost"
                   onClick={onPrev}
                   disabled={!canGoPrev}
                   aria-label="Previous day"
@@ -78,6 +79,7 @@ export function DayCard({
                 </Button>
                 <Button
                   type="button"
+                  variant="ghost"
                   onClick={onNext}
                   disabled={!canGoNext}
                   aria-label="Next day"

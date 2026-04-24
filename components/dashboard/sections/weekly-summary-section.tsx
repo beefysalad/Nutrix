@@ -91,14 +91,16 @@ export function WeeklySummarySection() {
         </div>
         <div className="flex gap-2">
           <Button
+            variant="ghost"
             onClick={() => setAnchorDate((value) => new Date(value.getFullYear(), value.getMonth(), value.getDate() - 7))}
-            className="rounded-full border border-white/10 bg-[#141414] p-2 text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-white"
+            className="rounded-full border border-white/10 bg-[#141414] p-2 text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:bg-white/[0.04] hover:text-white"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button
+            variant="ghost"
             onClick={() => setAnchorDate((value) => new Date(value.getFullYear(), value.getMonth(), value.getDate() + 7))}
-            className="rounded-full border border-white/10 bg-[#141414] p-2 text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-white"
+            className="rounded-full border border-white/10 bg-[#141414] p-2 text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:bg-white/[0.04] hover:text-white"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>

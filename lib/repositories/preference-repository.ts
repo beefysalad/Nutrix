@@ -1,5 +1,9 @@
-import { Prisma } from '@/app/generated/prisma/client'
+import { Prisma, type UnitSystem } from '@/app/generated/prisma/client'
 import prisma from '@/lib/prisma'
+
+function toUnitSystem(value: string | undefined): UnitSystem {
+  return value === 'imperial' ? 'imperial' : 'metric'
+}
 
 export const preferenceRepository = {
   async findProfile(userId: string, selectAiModel = true) {
@@ -24,12 +28,12 @@ export const preferenceRepository = {
     return prisma.userProfile.upsert({
       where: { userId },
       update: {
-        ...(data.unitSystem ? { unitSystem: data.unitSystem as any } : {}),
+        ...(data.unitSystem ? { unitSystem: toUnitSystem(data.unitSystem) } : {}),
         ...(selectAiModel && data.aiModel ? { aiModel: data.aiModel } : {}),
       },
       create: {
         userId,
-        unitSystem: (data.unitSystem ?? 'metric') as any,
+        unitSystem: toUnitSystem(data.unitSystem),
         ...(selectAiModel ? { aiModel: data.aiModel ?? 'gemini-2.5-flash-lite' } : {}),
       },
       select: selectAiModel

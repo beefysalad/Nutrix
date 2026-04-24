@@ -222,9 +222,10 @@ export function NutrixDashboard({
                 <div className="flex items-center gap-4">
                   <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
                     aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                    className="hidden h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[#111111] text-[#888] transition-colors hover:border-[#e4ff00]/40 hover:text-[#e4ff00] lg:flex"
+                    className="hidden h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-[#111111] text-[#888] transition-colors hover:border-[#e4ff00]/40 hover:bg-white/[0.04] hover:text-[#e4ff00] lg:flex"
                   >
                     {isSidebarCollapsed ? (
                       <ChevronRight className="h-4 w-4" />

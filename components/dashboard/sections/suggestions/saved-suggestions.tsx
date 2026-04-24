@@ -89,8 +89,7 @@ export function SavedSuggestionsSection() {
             href="/dashboard/suggestions"
             className="inline-flex items-center justify-center gap-2 self-start rounded-full border border-white/10 bg-[#0a0a0a] px-4 py-2 text-sm text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-[#e4ff00]"
           >
-            <BrainCircuit className="h-4 w-4" />
-            Generate more
+            Back
           </Link>
         </div>
 
@@ -102,7 +101,9 @@ export function SavedSuggestionsSection() {
                   key={suggestion.id}
                   suggestion={suggestion}
                   onOpen={() => setSelectedSuggestionId(suggestion.id)}
-                  onRemove={() => void handleRemoveSavedSuggestion(suggestion.id)}
+                  onRemove={() =>
+                    void handleRemoveSavedSuggestion(suggestion.id)
+                  }
                   removePending={saveSuggestionMutation.isPending}
                   showRemove
                 />

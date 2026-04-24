@@ -1,6 +1,6 @@
 'use client'
 
-import { BrainCircuit, Loader2, Lock, SlidersHorizontal } from 'lucide-react'
+import { Loader2, SlidersHorizontal } from 'lucide-react'
 import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
@@ -143,7 +143,6 @@ export function GenerateSuggestionsSection() {
               href="/dashboard/suggestions/saved"
               className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-[#0a0a0a] px-4 py-2 text-sm text-[#888] transition-colors hover:border-[#e4ff00]/50 hover:text-[#e4ff00]"
             >
-              <BrainCircuit className="h-4 w-4" /> {/* Replacing BookmarkCheck to fix import since it's only in details usually, wait, bookmarkcheck used there? BrainCircuit is fine */}
               Saved ideas
             </Link>
           </div>
@@ -156,7 +155,9 @@ export function GenerateSuggestionsSection() {
             </div>
             <div className="mt-1 text-xs text-[#777]">
               {usage?.remainingToday ?? 0} left today
-              {payload?.basedOn.goalMode ? ` / ${formatGoalMode(payload.basedOn.goalMode)}` : ''}
+              {payload?.basedOn.goalMode
+                ? ` / ${formatGoalMode(payload.basedOn.goalMode)}`
+                : ''}
             </div>
           </div>
           <div className="flex flex-col gap-2 sm:items-end">
@@ -168,11 +169,7 @@ export function GenerateSuggestionsSection() {
             >
               {generateSuggestionsMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
-              ) : canGenerate ? (
-                <BrainCircuit className="h-4 w-4" />
-              ) : (
-                <Lock className="h-4 w-4" />
-              )}
+              ) : null}
               {canGenerate ? 'Generate Ideas' : 'Daily Limit Reached'}
             </Button>
             <div className="text-xs text-[#666]">
