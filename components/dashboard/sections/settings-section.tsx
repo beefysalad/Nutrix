@@ -1,20 +1,21 @@
 'use client'
 
-import { zodResolver } from '@hookform/resolvers/zod'
 import { useClerk, useUser } from '@clerk/nextjs'
-import {
-  Check,
-  Download,
-  ExternalLink,
-  Loader2,
-  Save,
-  Send,
-  User,
-} from 'lucide-react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Download, ExternalLink, Loader2, Save, User } from 'lucide-react'
 import { useEffect } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 
+import { cn } from '@/components/dashboard/ui'
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   getApiErrorMessage,
   useExportDataMutation,
@@ -26,8 +27,6 @@ import {
   settingsFormSchema,
   type SettingsFormValues,
 } from '@/lib/validations/dashboard-forms'
-import { SectionCard, cn } from '@/components/dashboard/ui'
-import { Button } from '@/components/ui/button'
 
 export function SettingsSection() {
   const clerk = useClerk()
@@ -37,7 +36,6 @@ export function SettingsSection() {
   const savePreferencesMutation = useSavePreferencesMutation()
   const exportDataMutation = useExportDataMutation()
   const {
-    register,
     handleSubmit,
     reset,
     setValue,
@@ -53,6 +51,8 @@ export function SettingsSection() {
   })
 
   const selectedUnitSystem = useWatch({ control, name: 'unitSystem' })
+  const selectedAiModel = useWatch({ control, name: 'aiModel' })
+  const selectedLanguage = useWatch({ control, name: 'language' })
 
   const primaryEmail =
     user?.primaryEmailAddress?.emailAddress ??
@@ -329,16 +329,27 @@ export function SettingsSection() {
                   Choose the Gemini model used for AI meal parsing.
                 </div>
               </div>
-              <select
-                {...register('aiModel')}
+              <Select
+                value={selectedAiModel}
+                onValueChange={(value) =>
+                  setValue('aiModel', value as SettingsFormValues['aiModel'], {
+                    shouldDirty: true,
+                  })
+                }
                 disabled={preferencesQuery.isLoading || isSubmitting}
-                className="w-full rounded-xl border border-white/10 bg-[#141414] px-4 py-3 text-[#f5f5f5] transition-colors outline-none focus:border-[#e4ff00] disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
               >
-                <option value="gemini-2.5-flash-lite">
-                  Gemini 2.5 Flash-Lite
-                </option>
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-              </select>
+                <SelectTrigger className="h-12 w-full rounded-xl border-white/10 bg-[#141414] px-4 py-3 text-[#f5f5f5] focus:border-[#e4ff00] focus:ring-0 disabled:cursor-not-allowed disabled:opacity-60 md:w-64">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-white/10 bg-[#141414] text-[#f5f5f5]">
+                  <SelectItem value="gemini-2.5-flash-lite">
+                    Gemini 2.5 Flash-Lite
+                  </SelectItem>
+                  <SelectItem value="gemini-2.5-flash">
+                    Gemini 2.5 Flash
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="mt-6 flex flex-col gap-6 border-t border-white/10 pt-6 md:flex-row md:items-center md:justify-between">
@@ -348,12 +359,25 @@ export function SettingsSection() {
                   Interface language
                 </div>
               </div>
-              <select
-                {...register('language')}
-                className="w-full rounded-xl border border-white/10 bg-[#141414] px-4 py-3 text-[#f5f5f5] transition-colors outline-none focus:border-[#e4ff00] md:w-auto"
+              <Select
+                value={selectedLanguage}
+                onValueChange={(value) =>
+                  setValue(
+                    'language',
+                    value as SettingsFormValues['language'],
+                    {
+                      shouldDirty: true,
+                    }
+                  )
+                }
               >
-                <option value="English">English</option>
-              </select>
+                <SelectTrigger className="h-12 w-full rounded-xl border-white/10 bg-[#141414] px-4 py-3 text-[#f5f5f5] focus:border-[#e4ff00] focus:ring-0 md:w-64">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-white/10 bg-[#141414] text-[#f5f5f5]">
+                  <SelectItem value="English">English</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

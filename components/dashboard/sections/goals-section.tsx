@@ -10,6 +10,13 @@ import { dietModes } from '@/components/dashboard/data'
 import { SectionCard, cn } from '@/components/dashboard/ui'
 import { Button } from '@/components/ui/button'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   getApiErrorMessage,
   useDashboardSummaryQuery,
   useGoalsQuery,
@@ -99,6 +106,11 @@ export function GoalsSection() {
   const selectedMode = useWatch({ control, name: 'mode' })
   const dailyCalories = useWatch({ control, name: 'dailyCalories' })
   const proteinGrams = useWatch({ control, name: 'proteinGrams' })
+  const tdeeSex = useWatch({ control: tdeeForm.control, name: 'sex' })
+  const tdeeActivityLevel = useWatch({
+    control: tdeeForm.control,
+    name: 'activityLevel',
+  })
 
   useEffect(() => {
     if (!goalsQuery.data?.goal) {
@@ -269,22 +281,44 @@ export function GoalsSection() {
                 Estimate maintenance calories and apply a target for the selected goal mode.
               </div>
               <div className="grid gap-3 md:grid-cols-2">
-                <select
-                  {...tdeeForm.register('sex')}
-                  className="rounded-2xl border border-white/10 bg-[#141414] px-4 py-3 text-[#f5f5f5] outline-none focus:border-[#e4ff00]"
+                <Select
+                  value={tdeeSex}
+                  onValueChange={(value) =>
+                    tdeeForm.setValue('sex', value as TdeeCalculatorValues['sex'], {
+                      shouldDirty: true,
+                    })
+                  }
                 >
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
-                <select
-                  {...tdeeForm.register('activityLevel')}
-                  className="rounded-2xl border border-white/10 bg-[#141414] px-4 py-3 text-[#f5f5f5] outline-none focus:border-[#e4ff00]"
+                  <SelectTrigger className="h-12 w-full rounded-2xl border-white/10 bg-[#141414] px-4 py-3 text-[#f5f5f5] focus:border-[#e4ff00] focus:ring-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-white/10 bg-[#141414] text-[#f5f5f5]">
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={tdeeActivityLevel}
+                  onValueChange={(value) =>
+                    tdeeForm.setValue(
+                      'activityLevel',
+                      value as TdeeCalculatorValues['activityLevel'],
+                      {
+                        shouldDirty: true,
+                      },
+                    )
+                  }
                 >
-                  <option value="sedentary">Sedentary</option>
-                  <option value="lightly-active">Lightly Active</option>
-                  <option value="moderately-active">Moderately Active</option>
-                  <option value="very-active">Very Active</option>
-                </select>
+                  <SelectTrigger className="h-12 w-full rounded-2xl border-white/10 bg-[#141414] px-4 py-3 text-[#f5f5f5] focus:border-[#e4ff00] focus:ring-0">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="border-white/10 bg-[#141414] text-[#f5f5f5]">
+                    <SelectItem value="sedentary">Sedentary</SelectItem>
+                    <SelectItem value="lightly-active">Lightly Active</SelectItem>
+                    <SelectItem value="moderately-active">Moderately Active</SelectItem>
+                    <SelectItem value="very-active">Very Active</SelectItem>
+                  </SelectContent>
+                </Select>
                 <input
                   type="number"
                   placeholder="Age"

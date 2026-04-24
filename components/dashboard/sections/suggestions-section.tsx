@@ -23,6 +23,13 @@ import type { SuggestionsSubview } from '@/components/dashboard/types'
 import { EmptyState, SectionCard, cn } from '@/components/dashboard/ui'
 import { Button } from '@/components/ui/button'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   getApiErrorMessage,
   useGenerateMealSuggestionsMutation,
   useMealSuggestionsQuery,
@@ -554,17 +561,21 @@ function PreferenceSelect({
       <label className="text-[10px] font-black tracking-[0.2em] text-[#666] uppercase">
         {label}
       </label>
-      <select
+      <Select
         value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-10 min-w-40 rounded-full border border-white/10 bg-[#0a0a0a] px-4 text-sm font-semibold text-[#f5f5f5] outline-none transition-colors hover:border-[#e4ff00]/40 focus:border-[#e4ff00]/70"
+        onValueChange={onChange}
       >
-        {options.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger className="h-10 min-w-40 rounded-full border-white/10 bg-[#0a0a0a] px-4 text-sm font-semibold text-[#f5f5f5] focus:border-[#e4ff00]/70 focus:ring-0">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent className="border-white/10 bg-[#141414] text-[#f5f5f5]">
+          {options.map((option) => (
+            <SelectItem key={option.id} value={option.id}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   )
 }
