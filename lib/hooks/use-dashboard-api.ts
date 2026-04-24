@@ -116,10 +116,13 @@ export type MealSuggestionResponse = {
       fat: number
       tags: string[]
       reasoning: string
+      ingredients: string[]
+      instructions: string[]
+      cookingNotes: string | null
       prepTime: string
       difficulty: 'easy' | 'medium'
-      sourceLabel: string
-      sourceUrl: string
+      sourceLabel: string | null
+      sourceUrl: string | null
       isSaved: boolean
     }>
   } | null
@@ -230,6 +233,8 @@ export type DailyReportResponse = {
 }
 
 type ExportFormat = 'csv' | 'json'
+
+const AI_GENERATION_TIMEOUT_MS = 60000
 
 function getApiErrorMessage(error: unknown, fallback: string) {
   if (error instanceof AxiosError) {
@@ -382,13 +387,17 @@ export function useParseMealMutation() {
   })
 }
 
-export function useMealSuggestionsQuery(input?: { style?: SuggestionStyle }) {
+export function useMealSuggestionsQuery(input?: {
+  style?: SuggestionStyle
+  mealType?: MealType
+}) {
   return useQuery({
-    queryKey: ['meal-suggestions', input?.style ?? 'quick'],
+    queryKey: ['meal-suggestions', input?.style ?? 'quick', input?.mealType ?? 'any'],
     queryFn: async () => {
       const response = await api.get<MealSuggestionResponse>('/ai/meal-suggestions', {
         params: {
           ...(input?.style ? { style: input.style } : {}),
+          ...(input?.mealType ? { mealType: input.mealType } : {}),
         },
       })
       return response.data
@@ -400,14 +409,24 @@ export function useGenerateMealSuggestionsMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (input?: { style?: SuggestionStyle }) => {
-      const response = await api.post<MealSuggestionResponse>('/ai/meal-suggestions', {
-        ...(input?.style ? { style: input.style } : {}),
-      })
+    mutationFn: async (input?: { style?: SuggestionStyle; mealType?: MealType }) => {
+      const response = await api.post<MealSuggestionResponse>(
+        '/ai/meal-suggestions',
+        {
+          ...(input?.style ? { style: input.style } : {}),
+          ...(input?.mealType ? { mealType: input.mealType } : {}),
+        },
+        {
+          timeout: AI_GENERATION_TIMEOUT_MS,
+        },
+      )
       return response.data
     },
     onSuccess: (data, variables) => {
-      queryClient.setQueryData(['meal-suggestions', variables?.style ?? 'quick'], data)
+      queryClient.setQueryData(
+        ['meal-suggestions', variables?.style ?? 'quick', variables?.mealType ?? 'any'],
+        data,
+      )
     },
   })
 }

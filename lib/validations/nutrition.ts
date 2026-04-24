@@ -77,10 +77,39 @@ export const mealSuggestionSchema = z.object({
   fat: z.number().nonnegative(),
   tags: z.array(z.string().min(1).max(50)).min(1).max(4),
   reasoning: z.string().min(1).max(400),
+  ingredients: z.array(z.string().min(1).max(160)).min(1).max(12),
+  instructions: z.array(z.string().min(1).max(300)).min(1).max(10),
+  cookingNotes: z.string().max(500).nullable().optional(),
   prepTime: z.string().min(1).max(50),
   difficulty: z.enum(['easy', 'medium']),
-  sourceLabel: z.string().min(1).max(120),
-  sourceUrl: z.url().max(500),
+  sourceLabel: z.string().min(1).max(120).nullable().optional(),
+  sourceUrl: z.string().max(500).nullable().optional(),
+})
+
+const generatedMealSuggestionSchema = z.object({
+  id: z.string().min(1).max(120).nullable().optional(),
+  name: z.string().min(1).max(220),
+  description: z.string().min(1).max(800),
+  calories: z.coerce.number().nonnegative(),
+  protein: z.coerce.number().nonnegative(),
+  carbs: z.coerce.number().nonnegative(),
+  fat: z.coerce.number().nonnegative(),
+  tags: z.array(z.coerce.string().min(1).max(80)).default([]),
+  reasoning: z.string().min(1).max(1000),
+  ingredients: z.array(z.coerce.string().min(1).max(220)).default([]),
+  instructions: z.array(z.coerce.string().min(1).max(500)).default([]),
+  cookingNotes: z.string().max(1000).nullable().optional(),
+  prepTime: z.string().min(1).max(80),
+  difficulty: z.preprocess(
+    (value) => String(value).toLowerCase(),
+    z.enum(['easy', 'medium']).catch('easy'),
+  ),
+  sourceLabel: z.string().min(1).max(120).nullable().optional(),
+  sourceUrl: z.string().max(500).nullable().optional(),
+})
+
+export const generatedMealSuggestionsSchema = z.object({
+  suggestions: z.array(generatedMealSuggestionSchema).min(1).max(6),
 })
 
 export const mealSuggestionsResultSchema = z.object({
